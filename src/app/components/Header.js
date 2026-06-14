@@ -2,77 +2,29 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navItems = [
   {
     label: "Courses",
     dropdown: [
-      {
-        label: "Batch Schedule",
-        desc: "",
-        href: "/courses/batch",
-      },
-      {
-        label: "Course Fees",
-        desc: "",
-        href: "/courses/Course",
-      },
-      {
-        label: "IELTS",
-        desc: "",
-        href: "/courses/ielts",
-      },
-      {
-        label: "Spoken English",
-        desc: "",
-        href: "/courses/spokenEnglish",
-      },
-      {
-        label: "Advance Writing",
-        desc: "",
-        href: "/courses/writing",
-      },
-      {
-        label: "Grammar & Writing",
-        desc: "",
-        href: "/courses/grammar",
-      },
+      { label: "Batch Schedule", desc: "", href: "/courses/batch" },
+      { label: "Course Fees", desc: "", href: "/courses/Course" },
+      { label: "IELTS", desc: "", href: "/courses/ielts" },
+      { label: "Spoken English", desc: "", href: "/courses/spokenEnglish" },
+      { label: "Advance Writing", desc: "", href: "/courses/writing" },
+      { label: "Grammar & Writing", desc: "", href: "/courses/grammar" },
     ],
   },
   {
     label: "Instructor",
     dropdown: [
-      {
-        label: "Success Stories",
-        desc: "",
-        href: "/resources/materials",
-      },
-      {
-        label: "Guides",
-        desc: "",
-        href: "/resources/videos",
-      },
-      {
-        label: "FAQ",
-        desc: "",
-        href: "/resources/videos",
-      },
-      {
-        label: "Mock Test",
-        desc: "",
-        href: "/resources/videos",
-      },
-      {
-        label: "IELTS Calculator",
-        desc: "",
-        href: "/resources/videos",
-      },
-      {
-        label: "IELTS Result",
-        desc: "",
-        href: "/resources/videos",
-      },
+      { label: "Success Stories", desc: "", href: "/resources/materials" },
+      { label: "Guides", desc: "", href: "/resources/guides" },
+      { label: "FAQ", desc: "", href: "/resources/faq" },
+      { label: "Mock Test", desc: "", href: "/resources/mock-test" },
+      { label: "IELTS Calculator", desc: "", href: "/resources/calculator" },
+      { label: "IELTS Result", desc: "", href: "/resources/result" },
     ],
   },
   { label: "About Us", href: "/about" },
@@ -82,29 +34,40 @@ const navItems = [
 ];
 
 export default function Header() {
+  const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMobileSub, setOpenMobileSub] = useState(null);
 
-  const toggleDropdown = (label) => {
-    setOpenDropdown(openDropdown === label ? null : label);
-  };
+  // ✅ Scroll listener
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const toggleMobileSub = (label) => {
     setOpenMobileSub(openMobileSub === label ? null : label);
   };
 
   return (
-    <header className="w-full border-b border-gray-200 bg-white">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+    <header
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-white border-b border-gray-200"
+          : "bg-transparent border-b border-transparent"
+      }`}
+    >
+      <div className="mx-auto flex h-16 container items-center justify-between px-6">
         {/* Logo */}
-        <Link href="/" className="text-xl font-bold text-gray-900">
+        <Link href="/">
           <Image
             src="/images/IELTS7.jpeg"
             alt="logo"
-            width={110}
+            width={80}
             height={0}
-            style={{ width: "110px", height: "auto" }}
+            style={{ width: "auto", height: "auto" }}
+            className="rounded-xl"
           />
         </Link>
 
@@ -118,10 +81,18 @@ export default function Header() {
                 onMouseEnter={() => setOpenDropdown(item.label)}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
-                <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                <button
+                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    scrolled
+                      ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      : "text-white/90 hover:text-white"
+                  }`}
+                >
                   {item.label}
                   <svg
-                    className={`h-4 w-4 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 transition-transform ${
+                      openDropdown === item.label ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -148,7 +119,7 @@ export default function Header() {
                           className="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50"
                         >
                           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
-                            <span className="text-xs text-blue-600 font-bold">
+                            <span className="text-xs font-bold text-blue-600">
                               {drop.label[0]}
                             </span>
                           </div>
@@ -168,7 +139,11 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                className={`rounded-lg px-3 py-2 text-sm transition-colors ${
+                  scrolled
+                    ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    : "text-white/90 hover:text-white"
+                }`}
               >
                 {item.label}
               </Link>
@@ -183,7 +158,11 @@ export default function Header() {
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="rounded-lg border border-gray-200 p-2 text-gray-600 md:hidden"
+            className={`rounded-lg border p-2 md:hidden ${
+              scrolled
+                ? "border-gray-200 text-gray-600"
+                : "border-white/30 text-white"
+            }`}
           >
             {mobileOpen ? (
               <svg
@@ -230,7 +209,9 @@ export default function Header() {
                 >
                   {item.label}
                   <svg
-                    className={`h-4 w-4 transition-transform ${openMobileSub === item.label ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 transition-transform ${
+                      openMobileSub === item.label ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

@@ -1,7 +1,13 @@
+import Hero from "./components/Hero";
+import IeltsPrep from "./components/IeltsPrep";
+import OurCourses from "./components/OurCourses";
+
 export default function Home() {
   return (
     <main>
-      <h1>Hi, Welcome to IELTS7+</h1>
+      <Hero />
+      <OurCourses />
+      <IeltsPrep />
     </main>
   );
 }

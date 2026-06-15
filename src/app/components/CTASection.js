@@ -83,7 +83,7 @@ export default function CTASection() {
         </div>
 
         {/* Social proof */}
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex flex-col md:flex-row items-center gap-3 mt-2">
           <div className="flex -space-x-2.5">
             {[44, 32, 68, 75].map((id, i) => (
               <img

@@ -113,12 +113,12 @@ export default function IeltsPrep() {
         <div className="overflow-hidden">
           <div
             ref={trackRef}
-            className="flex gap-4 transition-transform duration-300 ease-in-out"
+            className="flex flex-col md:flex-row gap-4 transition-transform duration-300 ease-in-out"
           >
             {cardItem.map((batch, index) => (
               <div
                 key={index}
-                className="w-[calc((100%-32px)/3)] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white"
+                className="w-full md:w-[calc((100%-32px)/3)] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white"
               >
                 {/* Card Image */}
                 <div className="relative h-48 w-full">

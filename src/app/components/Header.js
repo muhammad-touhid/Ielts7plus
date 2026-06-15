@@ -153,7 +153,7 @@ export default function Header() {
 
         {/* CTA + Hamburger */}
         <div className="flex items-center gap-3">
-          <button className="hidden rounded-lg sky-blue-cus px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 md:block">
+          <button className="hidden rounded-lg bg-blue-600 hover:bg-blue-700 cursor-pointer px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 md:block">
             Get Started
           </button>
           <button
@@ -250,7 +250,7 @@ export default function Header() {
               </Link>
             ),
           )}
-          <button className="mt-4 w-full rounded-lg sky-blue-cus py-2.5 text-sm font-medium text-white">
+          <button className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white">
             Get Started
           </button>
         </div>

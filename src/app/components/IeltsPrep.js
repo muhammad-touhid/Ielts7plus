@@ -151,14 +151,14 @@ export default function IeltsPrep() {
                   {/* Schedule */}
                   <div className="mb-4 flex items-center gap-2  text-gray-500">
                     <i
-                      className="ti ti-calendar text-[#1d4ed8]"
+                      className="ti ti-calendar text-blue-600"
                       aria-hidden="true"
                     />
                     <span>{batch.schedule}</span>
                   </div>
 
                   {/* Button */}
-                  <button className="w-full rounded-lg bg-[#1d4ed8] py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer">
+                  <button className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 cursor-pointer">
                     Enroll Now
                   </button>
                 </div>

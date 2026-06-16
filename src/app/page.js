@@ -1,10 +1,10 @@
-import CTASection from "./components/CTASection";
-import Hero from "./components/Hero";
-import HowItWorks from "./components/HowItWorks";
-import IeltsPrep from "./components/IeltsPrep";
-import OurCourses from "./components/OurCourses";
-import ReviewCarousel from "./components/ReviewCarousel";
-import StatsSection from "./components/StatsSection";
+import CTASection from "../components/shared/CTASection";
+import Hero from "../components/home/Hero";
+import HowItWorks from "../components/HowItWorks";
+import IeltsPrep from "../components/IeltsPrep";
+import OurCourses from "../components/home/OurCourses";
+import ReviewCarousel from "../components/shared/ReviewCarousel";
+import StatsSection from "../components/shared/StatsSection";
 
 export default function Home() {
   return (

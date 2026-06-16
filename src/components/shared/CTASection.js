@@ -2,9 +2,9 @@
 
 export default function CTASection() {
   return (
-    <section className="relative w-full overflow-hidden bg-blue-600 py-28 px-5">
+    <section className="relative w-full overflow-hidden py-28 px-5">
       {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1e40af] via-blue-600 to-blue-600" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#354e98] to-[#4a71df]" />
 
       {/* Decorative blobs */}
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />

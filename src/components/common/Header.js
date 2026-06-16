@@ -8,27 +8,35 @@ const navItems = [
   {
     label: "Courses",
     dropdown: [
-      { label: "Batch Schedule", desc: "", href: "/courses/batch" },
-      { label: "Course Fees", desc: "", href: "/courses/Course" },
-      { label: "IELTS", desc: "", href: "/courses/ielts" },
-      { label: "Spoken English", desc: "", href: "/courses/spokenEnglish" },
-      { label: "Advance Writing", desc: "", href: "/courses/writing" },
-      { label: "Grammar & Writing", desc: "", href: "/courses/grammar" },
+      { label: "Batch Schedule", desc: "", href: "/batch-schedule" },
+      { label: "Course Fees", desc: "", href: "/course-fee" },
+      { label: "IELTS", desc: "", href: "/courses/ielts-preparation" },
+      { label: "Spoken English", desc: "", href: "/courses/spoken-english" },
+      { label: "Advance Writing", desc: "", href: "/courses/advanced-writing" },
+      {
+        label: "Grammar & Writing",
+        desc: "",
+        href: "/courses/grammar-writing",
+      },
     ],
   },
   {
     label: "Instructor",
     dropdown: [
-      { label: "Success Stories", desc: "", href: "/resources/materials" },
-      { label: "Guides", desc: "", href: "/resources/guides" },
-      { label: "FAQ", desc: "", href: "/resources/faq" },
-      { label: "Mock Test", desc: "", href: "/resources/mock-test" },
-      { label: "IELTS Calculator", desc: "", href: "/resources/calculator" },
-      { label: "IELTS Result", desc: "", href: "/resources/result" },
+      {
+        label: "Success Stories",
+        desc: "",
+        href: "/success-stories",
+      },
+      { label: "Guides", desc: "", href: "/guides" },
+      { label: "FAQ", desc: "", href: "/faq" },
+      { label: "Mock Test", desc: "", href: "/mock-test" },
+      { label: "IELTS Calculator", desc: "", href: "/calculator" },
+      { label: "IELTS Result", desc: "", href: "/result" },
     ],
   },
   { label: "About Us", href: "/about" },
-  { label: "Events", href: "/Event" },
+  { label: "Events", href: "/events" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
@@ -82,7 +90,7 @@ export default function Header() {
                 onMouseLeave={() => setOpenDropdown(null)}
               >
                 <button
-                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-m transition-colors ${
                     scrolled
                       ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       : "text-white/90 hover:text-white"
@@ -107,7 +115,7 @@ export default function Header() {
                 </button>
 
                 {openDropdown === item.label && (
-                  <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                  <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
                     {item.dropdown.map((drop, i) => (
                       <div key={drop.label}>
                         {i === item.dropdown.length - 1 && i > 0 && (
@@ -118,13 +126,8 @@ export default function Header() {
                           onClick={() => setOpenDropdown(null)}
                           className="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50"
                         >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
-                            <span className="text-xs font-bold text-blue-600">
-                              {drop.label[0]}
-                            </span>
-                          </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-m font-medium text-gray-900">
                               {drop.label}
                             </p>
                             <p className="text-xs text-gray-500">{drop.desc}</p>
@@ -139,7 +142,7 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`rounded-lg px-3 py-2 text-sm transition-colors ${
+                className={`rounded-lg px-3 py-2 text-m transition-colors ${
                   scrolled
                     ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     : "text-white/90 hover:text-white"
@@ -153,7 +156,7 @@ export default function Header() {
 
         {/* CTA + Hamburger */}
         <div className="flex items-center gap-3">
-          <button className="hidden rounded-lg bg-blue-600 hover:bg-blue-700 cursor-pointer px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 md:block">
+          <button className="hidden rounded-lg bg-blue-600 hover:bg-blue-700 cursor-pointer px-4 py-2 text-m font-medium text-white hover:bg-blue-700 md:block">
             Get Started
           </button>
           <button
@@ -205,7 +208,7 @@ export default function Header() {
               <div key={item.label}>
                 <button
                   onClick={() => toggleMobileSub(item.label)}
-                  className="flex w-full items-center justify-between border-b border-gray-100 py-3 text-sm text-gray-600"
+                  className="flex w-full items-center justify-between border-b border-gray-100 py-3 text-m text-gray-600"
                 >
                   {item.label}
                   <svg
@@ -231,7 +234,7 @@ export default function Header() {
                         key={drop.label}
                         href={drop.href}
                         onClick={() => setMobileOpen(false)}
-                        className="block py-2 text-sm text-gray-500 hover:text-gray-900"
+                        className="block py-2 text-m text-gray-500 hover:text-gray-900"
                       >
                         {drop.label}
                       </Link>
@@ -244,13 +247,13 @@ export default function Header() {
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="block border-b border-gray-100 py-3 text-sm text-gray-600"
+                className="block border-b border-gray-100 py-3 text-m text-gray-600"
               >
                 {item.label}
               </Link>
             ),
           )}
-          <button className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white">
+          <button className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 text-m font-medium text-white">
             Get Started
           </button>
         </div>

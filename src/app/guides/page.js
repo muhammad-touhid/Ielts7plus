@@ -104,7 +104,7 @@ const helpOptions = [
   {
     icon: "ti ti-phone-call",
     label: "Call Us",
-    value: "+880 1700-000000",
+    value: "+880 1711-153678",
     desc: "Available Sun–Thu, 9AM – 6PM",
     href: "tel:+8801711153678",
     btnLabel: "Call Now",
@@ -112,7 +112,7 @@ const helpOptions = [
   {
     icon: "ti ti-brand-whatsapp",
     label: "WhatsApp",
-    value: "+880 1700-000000",
+    value: "+880 1711-153678",
     desc: "Chat with us anytime, we reply fast.",
     href: "https://wa.me/8801711153678",
     btnLabel: "Message Us",

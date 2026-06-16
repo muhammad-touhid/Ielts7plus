@@ -89,8 +89,8 @@ export default function UpcomingBatches() {
     <section className="min-h-screen pt-20 text-white bg-gradient-to-r from-[#354e98] to-[#4a71df]">
       <div className="container mx-auto mt-15">
         {/* Page Header */}
-        <div className="mb-14">
-          <h1 className="text-3xl font-bold text-white leading-tight mb-4">
+        <div className="mb-14 px-3 md:px-0">
+          <h1 className="text-3xl font-bold text-white leading-tight mb-4 ">
             Upcoming Batches
           </h1>
           <p className="text-blue-100 text-m leading-relaxed max-w-xl">
@@ -179,7 +179,7 @@ export default function UpcomingBatches() {
         </div>
 
         {/* Bottom note */}
-        <p className="text-center text-sm text-white py-8 flex items-center justify-center gap-2">
+        <p className="text-center text-sm text-white py-8 px-3 flex items-center justify-center gap-2">
           <i className="ti ti-info-circle text-[#f87171] text-base" />
           Can't find a suitable time?
           <a

@@ -172,7 +172,7 @@ export default function CourseFeesSection() {
         </div>
 
         {/* Bottom note */}
-        <p className="text-center text-sm text-blue-200 mt-10 flex items-center justify-center gap-2">
+        <p className="text-center text-sm text-blue-200 mt-10 md:flex items-center justify-center gap-2">
           <i className="ti ti-shield-check text-[#f87171] text-base" />
           All courses include study materials. Need a custom plan?{" "}
           <a

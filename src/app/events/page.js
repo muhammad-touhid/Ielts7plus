@@ -140,6 +140,9 @@ export default function EventsPage() {
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl mx-auto text-center">
+          <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
+            What's On
+          </span>
           <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
             Upcoming Events
           </h1>

@@ -80,11 +80,14 @@ export default function CourseFeesSection() {
 
       <div className="relative z-10 mx-auto container">
         {/* Header */}
-        <div className="text-center mt-15 mb-14">
-          <h2 className="text-3xl font-bold text-white leading-tight mb-4">
+        <div className="max-w-2xl m-auto text-center mt-15 mb-14">
+          <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
+            Here are
+          </span>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
             Simple, Honest Course Fees
           </h2>
-          <p className="text-blue-100 text-m leading-relaxed max-w-xl mx-auto">
+          <p className="text-blue-100 text-base md:text-lg leading-relaxed">
             No hidden charges, no surprises. Pick the course that fits your
             goals and get started with expert-led coaching today.
           </p>

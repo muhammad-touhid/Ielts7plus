@@ -2,26 +2,26 @@ import Link from "next/link";
 import Image from "next/image";
 
 const quickLinks = [
-  { label: "IELTS", href: "#" },
-  { label: "IELTS Preparation", href: "#" },
+  { label: "IELTS", href: "/courses/ielts-preparation" },
+  { label: "IELTS Preparation", href: "/courses/ielts-preparation" },
   { label: "IELTS Score Calculator", href: "/courses" },
-  { label: "Course Fees", href: "#" },
-  { label: "Batch Schedule", href: "#" },
-  { label: "Success Stories", href: "#" },
+  { label: "Course Fees", href: "/course-fee" },
+  { label: "Batch Schedule", href: "/batch-schedule" },
+  { label: "Success Stories", href: "/success-stories" },
 ];
 
 const resourceLinks = [
-  { label: "Blog", href: "#" },
-  { label: "Events", href: "#" },
+  { label: "Blog", href: "/blog" },
+  { label: "Events", href: "/events" },
   { label: "Podcast", href: "#" },
-  { label: "FAQs", href: "#" },
+  { label: "FAQs", href: "/faq" },
   { label: "Community", href: "#" },
-  { label: "Support", href: "#" },
+  { label: "Support", href: "/contact" },
 ];
 
 const socialLinks = [
-  { icon: "ti-brand-facebook", href: "https://facebook.com" },
-  { icon: "ti-brand-instagram", href: "https://instagram.com" },
+  { icon: "ti-brand-facebook", href: "https://www.facebook.com/ielts7plus" },
+  { icon: "ti-brand-instagram", href: "https://www.instagram.com/ielts.7plus" },
   { icon: "ti-brand-youtube", href: "https://youtube.com" },
   { icon: "ti-brand-linkedin", href: "https://linkedin.com" },
 ];
@@ -107,14 +107,18 @@ export default function Footer() {
                 className="ti ti-mail text-xl text-[#f87171]"
                 aria-hidden="true"
               />
-              <span className=" text-gray-300">info@ielts7plus.co.uk</span>
+              <span className=" text-gray-300">
+                <a href="mailto:info@ielts7plus.co.uk">info@ielts7plus.co.uk</a>
+              </span>
             </div>
             <div className="mb-3 flex items-center gap-3">
               <i
                 className="ti ti-phone text-xl text-[#f87171]"
                 aria-hidden="true"
               />
-              <span className=" text-gray-300">+8801711153678</span>
+              <span className=" text-gray-300">
+                <a href="call:+8801711153678">+8801711153678</a>
+              </span>
             </div>
             <div className="mb-6 flex items-center gap-3">
               <i

@@ -118,9 +118,6 @@ export default function Header() {
                   <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
                     {item.dropdown.map((drop, i) => (
                       <div key={drop.label}>
-                        {i === item.dropdown.length - 1 && i > 0 && (
-                          <div className="my-1 border-t border-gray-100" />
-                        )}
                         <Link
                           href={drop.href}
                           onClick={() => setOpenDropdown(null)}

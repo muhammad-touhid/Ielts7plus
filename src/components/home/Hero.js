@@ -28,17 +28,18 @@ export default function Hero() {
       <div className="relative z-10 mx-auto container  px-6">
         <div className="max-w-2xl">
           {/* Badge */}
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-400/40 bg-blue-500/20 px-4 py-1.5 text-sm text-blue-300">
+
+          <div className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
             ★ #1 IELTS Preparation Platform
           </div>
 
           {/* Heading */}
-          <h1 className="mb-4 text-5xl font-bold leading-tight text-white">
+          <h1 className="mb-4 text-4xl md:text-5xl font-extrabold text-white leading-tight">
             Get admitted into prestigious universities with a 7+ IELTS score
           </h1>
 
           {/* Paragraph */}
-          <p className="mb-8 text-lg leading-relaxed text-white/75">
+          <p className="mb-8 text-blue-100 text-base md:text-lg leading-relaxed">
             Receive expert tutoring for an excellent IELTS score through
             personalized mentorship.
           </p>

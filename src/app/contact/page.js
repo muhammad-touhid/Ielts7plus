@@ -30,8 +30,16 @@ const contactDetails = [
 ];
 
 const socials = [
-  { icon: "ti ti-brand-facebook", href: "#", label: "Facebook" },
-  { icon: "ti ti-brand-instagram", href: "#", label: "Instagram" },
+  {
+    icon: "ti ti-brand-facebook",
+    href: "https://www.facebook.com/ielts7plus",
+    label: "Facebook",
+  },
+  {
+    icon: "ti ti-brand-instagram",
+    href: "https://www.instagram.com/ielts.7plus",
+    label: "Instagram",
+  },
   { icon: "ti ti-brand-youtube", href: "#", label: "YouTube" },
   { icon: "ti ti-brand-whatsapp", href: "#", label: "WhatsApp" },
 ];
@@ -102,7 +110,7 @@ export default function ContactPage() {
             {/* Detail cards */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 flex flex-col gap-6">
               <div>
-                <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+                <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
                   Contact Info
                 </span>
                 <h2 className="text-xl font-extrabold text-slate-800">
@@ -199,7 +207,7 @@ export default function ContactPage() {
             {!submitted ? (
               <>
                 <div className="mb-8">
-                  <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+                  <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
                     Send a Message
                   </span>
                   <h2 className="text-xl font-extrabold text-slate-800">
@@ -376,20 +384,20 @@ export default function ContactPage() {
         {/* Map */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-8 pt-8 pb-5">
-            <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+            <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
               Our Location
             </span>
             <h2 className="text-xl font-extrabold text-slate-800">
               Find Us on the Map
             </h2>
             <p className="text-slate-400 text-sm mt-1">
-              123 Mirpur Road, Kalyanpur, Dhaka 1207, Bangladesh
+              Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh
             </p>
           </div>
           <div className="w-full h-80 md:h-96">
             <iframe
               title="IELTS7+ Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3650.5785821878897!2d90.35499731536237!3d23.79474948456398!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755c0e4d5b8dffd%3A0x8e7b9c2e4f6a1a3b!2sKalyanpur%2C+Dhaka!5e0!3m2!1sen!2sbd!4v1620000000000!5m2!1sen!2sbd"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7237.781051812657!2d91.86177224549796!3d24.90171554302532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x37505521ef38d845%3A0x73a5b1a7fba07536!2sCentre%20For%20Education%20-%20Sylhet!5e0!3m2!1sen!2sbd!4v1781699565395!5m2!1sen!2sbd"
               width="100%"
               height="100%"
               style={{ border: 0 }}

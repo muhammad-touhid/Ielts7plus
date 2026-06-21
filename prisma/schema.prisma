@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Course {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  tagline          String
+  description      String
+  icon             String
+  price            String
+  duration         String
+  batchSize        String
+  classes          String
+  level            String
+  badge            String?
+  features         String[]
+  highlights       Json
+  whatYouWillLearn Json
+  published        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  batches          Batch[]
+}
+
+model Batch {
+  id          String       @id @default(cuid())
+  name        String
+  courseId    String?
+  course      Course?      @relation(fields: [courseId], references: [id])
+  module      String
+  time        String
+  schedule    String
+  startDate   String
+  seats       Int
+  duration    String
+  badge       String?
+  published   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  enrollments Enrollment[]
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  name        String
+  designation String
+  image       String?
+  rating      Int
+  review      String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model MockTestSubmission {
+  id               String   @id @default(cuid())
+  name             String
+  email            String
+  phone            String
+  targetBand       String?
+  completedModules String[]
+  answers          Json
+  status           String   @default("pending")
+  resultSent       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  batchId   String
+  batch     Batch    @relation(fields: [batchId], references: [id])
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  title     String
+  badge     String
+  para      String
+  date      String
+  time      String
+  campus    String
+  image     String?
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model BlogPost {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  excerpt   String
+  content   String
+  category  String
+  image     String?
+  author    String
+  readTime  String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

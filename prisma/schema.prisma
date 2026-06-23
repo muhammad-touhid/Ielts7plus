@@ -124,3 +124,13 @@ model BlogPost {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+model MockTestQuestion {
+  id        String   @id @default(cuid())
+  module    String
+  type      String
+  order     Int
+  content   Json
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

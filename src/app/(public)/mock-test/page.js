@@ -520,7 +520,7 @@ function ModuleSelectScreen({ completed, onSelect }) {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+        <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
           Step 2
         </span>
         <h2 className="text-2xl font-extrabold text-slate-800 mb-2">
@@ -972,6 +972,7 @@ export default function MockTestPage() {
   const [activeModule, setActiveModule] = useState(null);
   const [completed, setCompleted] = useState([]);
   const [answers, setAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = (data) => {
     setStudent(data);
@@ -987,7 +988,30 @@ export default function MockTestPage() {
     setActiveModule(null);
     setStep(2);
   };
-  const handleSubmit = () => setStep(4);
+  const handleSubmit = async () => {
+    try {
+      const res = await fetch("/api/mock-tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: student.name,
+          email: student.email,
+          phone: student.phone,
+          targetBand: student.targetBand,
+          completedModules: completed,
+          answers: answers,
+        }),
+      });
+
+      if (res.ok) {
+        setStep(4);
+      } else {
+        alert("Failed to submit. Please try again.");
+      }
+    } catch (error) {
+      alert("Something went wrong. Please try again.");
+    }
+  };
 
   return (
     <main className="bg-slate-50 min-h-screen">
@@ -1000,15 +1024,27 @@ export default function MockTestPage() {
             <ModuleSelectScreen
               completed={completed}
               onSelect={handleModuleSelect}
+              onSubmit={handleSubmit}
+              submitting={submitting}
             />
             {completed.length > 0 && (
               <div className="flex justify-end">
                 <button
                   onClick={handleSubmit}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-70 transition-all duration-200"
                 >
-                  <i className="ti ti-send text-base" />
-                  Submit All & Get Results
+                  {submitting ? (
+                    <>
+                      <i className="ti ti-loader-2 animate-spin text-base" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="ti ti-send text-base" />
+                      Submit All & Get Results
+                    </>
+                  )}
                 </button>
               </div>
             )}

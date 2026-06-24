@@ -2,182 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-
-const modules = [
-  {
-    id: "listening",
-    label: "Listening",
-    icon: "ti ti-headphones",
-    duration: "30 min",
-    questions: 40,
-    desc: "Listen to four recordings and answer 40 questions.",
-  },
-  {
-    id: "reading",
-    label: "Reading",
-    icon: "ti ti-book",
-    duration: "60 min",
-    questions: 40,
-    desc: "Read three passages and answer 40 questions.",
-  },
-  {
-    id: "writing",
-    label: "Writing",
-    icon: "ti ti-pencil",
-    duration: "60 min",
-    questions: 2,
-    desc: "Complete Task 1 (report) and Task 2 (essay).",
-  },
-  {
-    id: "speaking",
-    label: "Speaking",
-    icon: "ti ti-microphone",
-    duration: "15 min",
-    questions: 3,
-    desc: "Answer questions across three parts.",
-  },
-];
-
-const listeningQuestions = [
-  {
-    id: 1,
-    text: "What is the name of the student who calls the accommodation office?",
-    options: ["Sarah Mitchell", "James Cooper", "Emily Watson", "David Lee"],
-    answer: null,
-  },
-  {
-    id: 2,
-    text: "What type of room does the student initially request?",
-    options: [
-      "Single room",
-      "Double room",
-      "Shared dormitory",
-      "Studio apartment",
-    ],
-    answer: null,
-  },
-  {
-    id: 3,
-    text: "On which floor is the available room located?",
-    options: ["Ground floor", "Second floor", "Third floor", "Fourth floor"],
-    answer: null,
-  },
-  {
-    id: 4,
-    text: "How much is the weekly rent for the available room?",
-    options: ["£85", "£95", "£105", "£115"],
-    answer: null,
-  },
-  {
-    id: 5,
-    text: "What is included in the rent?",
-    options: ["Meals only", "Bills only", "Meals and bills", "Internet only"],
-    answer: null,
-  },
-];
-
-const readingPassage = `The concept of emotional intelligence (EI) was popularised in the 1990s by psychologist Daniel Goleman, who argued that a person's ability to understand and manage their own emotions — and those of others — was as important as cognitive intelligence in determining success in life and work. Goleman identified five core components of emotional intelligence: self-awareness, self-regulation, motivation, empathy, and social skills.
-
-Research conducted over the past three decades has produced mixed findings regarding the predictive power of EI. Several studies suggest that individuals with higher emotional intelligence perform better in leadership roles, demonstrate greater resilience under stress, and report higher levels of job satisfaction. However, critics argue that EI is difficult to measure reliably and that many EI assessments overlap significantly with existing personality frameworks such as the Big Five model.
-
-Despite ongoing academic debate, emotional intelligence training programmes have been widely adopted in corporate settings. Multinational companies including Google, Amazon, and Unilever have invested substantially in EI-based leadership development, citing improvements in team cohesion, conflict resolution, and employee retention as key benefits.`;
-
-const readingQuestions = [
-  {
-    id: 1,
-    text: "Who popularised the concept of emotional intelligence in the 1990s?",
-    options: ["Sigmund Freud", "Daniel Goleman", "Carl Jung", "Howard Gardner"],
-    answer: null,
-  },
-  {
-    id: 2,
-    text: "How many core components of EI did Goleman identify?",
-    options: ["Three", "Four", "Five", "Six"],
-    answer: null,
-  },
-  {
-    id: 3,
-    text: "According to the passage, individuals with higher EI are more likely to:",
-    options: [
-      "Score higher in IQ tests",
-      "Perform better in leadership roles",
-      "Avoid workplace stress completely",
-      "Reject corporate training programmes",
-    ],
-    answer: null,
-  },
-  {
-    id: 4,
-    text: "What do critics argue about EI assessments?",
-    options: [
-      "They are too expensive",
-      "They are culturally biased",
-      "They overlap with personality frameworks",
-      "They are only useful for managers",
-    ],
-    answer: null,
-  },
-  {
-    id: 5,
-    text: "Which of the following companies is NOT mentioned in the passage?",
-    options: ["Google", "Amazon", "Microsoft", "Unilever"],
-    answer: null,
-  },
-];
-
-const writingTasks = [
-  {
-    id: "task1",
-    label: "Task 1",
-    prompt:
-      "The chart below shows the percentage of households in different income groups that owned at least one car in a European country between 1980 and 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.\n\nWrite at least 150 words.",
-    minWords: 150,
-    timeLabel: "20 minutes recommended",
-  },
-  {
-    id: "task2",
-    label: "Task 2",
-    prompt:
-      "Some people believe that the best way to improve road safety is to increase the minimum driving age to 21. Others feel that better driver education is the solution.\n\nDiscuss both views and give your own opinion.\n\nWrite at least 250 words.",
-    minWords: 250,
-    timeLabel: "40 minutes recommended",
-  },
-];
-
-const speakingParts = [
-  {
-    part: "Part 1 — Introduction",
-    instruction:
-      "Answer these personal questions naturally. Aim for 2–3 sentences per answer.",
-    questions: [
-      "Can you tell me your full name and where you are from?",
-      "Do you currently work or are you a student? Tell me about it.",
-      "What do you enjoy doing in your free time?",
-    ],
-  },
-  {
-    part: "Part 2 — Cue Card",
-    instruction:
-      "You have one minute to prepare. Then speak for 1–2 minutes on the topic below.",
-    questions: [
-      "Describe a book or film that had a significant impact on you.\n\nYou should say:\n• what the book or film was\n• when you read or watched it\n• what it was about\n• and explain why it had such an impact on you.",
-    ],
-  },
-  {
-    part: "Part 3 — Discussion",
-    instruction:
-      "Discuss these broader questions in depth. Aim for 3–5 sentences per answer.",
-    questions: [
-      "Why do you think some books or films influence people more than others?",
-      "How has the way people consume books and films changed in recent years?",
-      "Do you think governments should fund the arts, including film and literature? Why or why not?",
-    ],
-  },
-];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function wordCount(text) {
   return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
 }
@@ -198,8 +22,6 @@ function useTimer(seconds, active) {
   return { timeLeft, display: `${mm}:${ss}` };
 }
 
-// ─── Shared UI ───────────────────────────────────────────────────────────────
-
 function ProgressBar({ steps, current }) {
   return (
     <div>
@@ -214,19 +36,13 @@ function ProgressBar({ steps, current }) {
         />
         <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative z-10 max-w-2xl mx-auto text-center">
-          {/* Badge */}
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5 mt-10">
             IELTS7+ Mock Test Portal
           </span>
-
-          {/* Heading */}
           <h1 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">
             Test Your Skills. Track Your Progress.
           </h1>
-
-          {/* Para */}
           <p className="text-blue-100 text-base leading-relaxed">
             Complete all four modules at your own pace, submit your responses,
             and receive a detailed band score report from our expert instructors
@@ -269,10 +85,10 @@ function MCQBlock({ questions, answers, onChange }) {
         >
           <p className="text-sm font-bold text-slate-700 mb-4">
             <span className="text-blue-600 mr-2">Q{qi + 1}.</span>
-            {q.text}
+            {q.content.text}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {q.options.map((opt, oi) => {
+            {q.content.options.map((opt, oi) => {
               const letter = ["A", "B", "C", "D"][oi];
               const selected = answers[q.id] === opt;
               return (
@@ -308,9 +124,52 @@ function TimerBadge({ display, warn }) {
   );
 }
 
-// ─── Screens ─────────────────────────────────────────────────────────────────
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center gap-4">
+        <i className="ti ti-loader-2 animate-spin text-blue-600 text-4xl" />
+        <p className="text-slate-400 text-sm">Loading questions...</p>
+      </div>
+    </div>
+  );
+}
 
 function LandingScreen({ onStart }) {
+  const modules = [
+    {
+      id: "listening",
+      label: "Listening",
+      icon: "ti ti-headphones",
+      duration: "30 min",
+      questions: 40,
+      desc: "Listen to four recordings and answer 40 questions.",
+    },
+    {
+      id: "reading",
+      label: "Reading",
+      icon: "ti ti-book",
+      duration: "60 min",
+      questions: 40,
+      desc: "Read three passages and answer 40 questions.",
+    },
+    {
+      id: "writing",
+      label: "Writing",
+      icon: "ti ti-pencil",
+      duration: "60 min",
+      questions: 2,
+      desc: "Complete Task 1 (report) and Task 2 (essay).",
+    },
+    {
+      id: "speaking",
+      label: "Speaking",
+      icon: "ti ti-microphone",
+      duration: "15 min",
+      questions: 3,
+      desc: "Answer questions across three parts.",
+    },
+  ];
   return (
     <div className="flex flex-col gap-10">
       <div className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] overflow-hidden p-10 md:p-14 text-center">
@@ -345,7 +204,6 @@ function LandingScreen({ onStart }) {
           </button>
         </div>
       </div>
-
       <div className="container m-auto">
         <h2 className="text-3xl font-bold text-gray-700 mb-5">
           What is Included
@@ -381,7 +239,6 @@ function LandingScreen({ onStart }) {
           ))}
         </div>
       </div>
-
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 container m-auto">
         <h2 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
           <i className="ti ti-info-circle text-blue-600 text-lg" />
@@ -516,7 +373,41 @@ function RegistrationScreen({ onSubmit }) {
   );
 }
 
-function ModuleSelectScreen({ completed, onSelect }) {
+function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
+  const modules = [
+    {
+      id: "listening",
+      label: "Listening",
+      icon: "ti ti-headphones",
+      duration: "30 min",
+      questions: 40,
+      desc: "Listen to four recordings and answer 40 questions.",
+    },
+    {
+      id: "reading",
+      label: "Reading",
+      icon: "ti ti-book",
+      duration: "60 min",
+      questions: 40,
+      desc: "Read three passages and answer 40 questions.",
+    },
+    {
+      id: "writing",
+      label: "Writing",
+      icon: "ti ti-pencil",
+      duration: "60 min",
+      questions: 2,
+      desc: "Complete Task 1 (report) and Task 2 (essay).",
+    },
+    {
+      id: "speaking",
+      label: "Speaking",
+      icon: "ti ti-microphone",
+      duration: "15 min",
+      questions: 3,
+      desc: "Answer questions across three parts.",
+    },
+  ];
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -576,7 +467,7 @@ function ModuleSelectScreen({ completed, onSelect }) {
           );
         })}
       </div>
-      {completed.length === modules.length && (
+      {completed.length === 4 && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex items-center gap-4">
           <i className="ti ti-circle-check-filled text-emerald-500 text-2xl flex-shrink-0" />
           <div>
@@ -593,7 +484,7 @@ function ModuleSelectScreen({ completed, onSelect }) {
   );
 }
 
-function ListeningScreen({ onComplete }) {
+function ListeningScreen({ onComplete, questions }) {
   const [answers, setAnswers] = useState({});
   const { display, timeLeft } = useTimer(30 * 60, true);
   const answered = Object.keys(answers).length;
@@ -637,13 +528,13 @@ function ListeningScreen({ onComplete }) {
         Read the questions before listening. You will hear the recording once.
       </div>
       <MCQBlock
-        questions={listeningQuestions}
+        questions={questions}
         answers={answers}
         onChange={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
       />
       <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
         <p className="text-sm text-slate-400">
-          {answered} of {listeningQuestions.length} answered
+          {answered} of {questions.length} answered
         </p>
         <button
           onClick={() => onComplete("listening", answers)}
@@ -657,7 +548,7 @@ function ListeningScreen({ onComplete }) {
   );
 }
 
-function ReadingScreen({ onComplete }) {
+function ReadingScreen({ onComplete, passage, questions }) {
   const [answers, setAnswers] = useState({});
   const { display, timeLeft } = useTimer(60 * 60, true);
   const answered = Object.keys(answers).length;
@@ -669,7 +560,7 @@ function ReadingScreen({ onComplete }) {
             Reading Module
           </span>
           <h2 className="text-xl font-extrabold text-slate-800">
-            Passage 1 — Emotional Intelligence
+            Passage 1 — {passage?.content?.title ?? "Reading Passage"}
           </h2>
         </div>
         <TimerBadge display={display} warn={timeLeft < 600} />
@@ -680,15 +571,15 @@ function ReadingScreen({ onComplete }) {
             Reading Passage
           </h3>
           <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-            {readingPassage}
+            {passage?.content?.passage ?? "Passage not available."}
           </div>
         </div>
         <div className="flex flex-col gap-5">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Questions 1–5
+            Questions 1–{questions.length}
           </h3>
           <MCQBlock
-            questions={readingQuestions}
+            questions={questions}
             answers={answers}
             onChange={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
           />
@@ -696,7 +587,7 @@ function ReadingScreen({ onComplete }) {
       </div>
       <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
         <p className="text-sm text-slate-400">
-          {answered} of {readingQuestions.length} answered
+          {answered} of {questions.length} answered
         </p>
         <button
           onClick={() => onComplete("reading", answers)}
@@ -710,13 +601,14 @@ function ReadingScreen({ onComplete }) {
   );
 }
 
-function WritingScreen({ onComplete }) {
-  const [answers, setAnswers] = useState({ task1: "", task2: "" });
+function WritingScreen({ onComplete, tasks }) {
+  const [answers, setAnswers] = useState({});
   const [activeTask, setActiveTask] = useState(0);
   const { display, timeLeft } = useTimer(60 * 60, true);
-  const task = writingTasks[activeTask];
-  const wc = wordCount(answers[task.id]);
-  const meetsMin = wc >= task.minWords;
+  const task = tasks[activeTask];
+  const taskId = task?.id;
+  const wc = wordCount(answers[taskId] ?? "");
+  const meetsMin = wc >= (task?.content?.minWords ?? 0);
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -731,55 +623,59 @@ function WritingScreen({ onComplete }) {
         <TimerBadge display={display} warn={timeLeft < 600} />
       </div>
       <div className="flex gap-2">
-        {writingTasks.map((t, i) => (
+        {tasks.map((t, i) => (
           <button
             key={t.id}
             onClick={() => setActiveTask(i)}
             className={`text-sm font-bold px-5 py-2.5 rounded-xl border-2 transition-all duration-200 flex items-center gap-2 ${activeTask === i ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"}`}
           >
-            {t.label}
-            {answers[t.id].trim() !== "" && (
+            {t.content.label}
+            {answers[t.id]?.trim() && (
               <i className="ti ti-circle-check-filled text-emerald-400 text-xs" />
             )}
           </button>
         ))}
       </div>
-      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
-        <div className="flex items-center gap-2 text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">
-          <i className="ti ti-clock" />
-          {task.timeLabel}
-        </div>
-        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-          {task.prompt}
-        </p>
-      </div>
-      <div className="flex flex-col gap-2">
-        <textarea
-          rows={12}
-          placeholder="Write your response here..."
-          value={answers[task.id]}
-          onChange={(e) =>
-            setAnswers((a) => ({ ...a, [task.id]: e.target.value }))
-          }
-          className="w-full bg-white text-slate-700 text-sm placeholder-slate-400 p-5 rounded-2xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none leading-relaxed"
-        />
-        <div className="flex items-center justify-between text-xs px-1">
-          <span
-            className={`font-bold ${meetsMin ? "text-emerald-500" : "text-slate-400"}`}
-          >
-            {wc} words {!meetsMin && `(minimum ${task.minWords})`}
-          </span>
-          {!meetsMin && (
-            <span className="text-slate-400">
-              {task.minWords - wc} more words needed
-            </span>
-          )}
-        </div>
-      </div>
+      {task && (
+        <>
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">
+              <i className="ti ti-clock" />
+              {task.content.timeLabel}
+            </div>
+            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+              {task.content.prompt}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <textarea
+              rows={12}
+              placeholder="Write your response here..."
+              value={answers[taskId] ?? ""}
+              onChange={(e) =>
+                setAnswers((a) => ({ ...a, [taskId]: e.target.value }))
+              }
+              className="w-full bg-white text-slate-700 text-sm placeholder-slate-400 p-5 rounded-2xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none leading-relaxed"
+            />
+            <div className="flex items-center justify-between text-xs px-1">
+              <span
+                className={`font-bold ${meetsMin ? "text-emerald-500" : "text-slate-400"}`}
+              >
+                {wc} words {!meetsMin && `(minimum ${task.content.minWords})`}
+              </span>
+              {!meetsMin && (
+                <span className="text-slate-400">
+                  {task.content.minWords - wc} more words needed
+                </span>
+              )}
+            </div>
+          </div>
+        </>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
         <p className="text-sm text-slate-400">
-          {[answers.task1, answers.task2].filter((a) => a.trim() !== "").length}{" "}
-          of 2 tasks attempted
+          {tasks.filter((t) => answers[t.id]?.trim()).length} of {tasks.length}{" "}
+          tasks attempted
         </p>
         <button
           onClick={() => onComplete("writing", answers)}
@@ -793,11 +689,11 @@ function WritingScreen({ onComplete }) {
   );
 }
 
-function SpeakingScreen({ onComplete }) {
+function SpeakingScreen({ onComplete, parts }) {
   const [answers, setAnswers] = useState({});
   const [activePart, setActivePart] = useState(0);
   const { display, timeLeft } = useTimer(15 * 60, true);
-  const part = speakingParts[activePart];
+  const part = parts[activePart];
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -817,7 +713,7 @@ function SpeakingScreen({ onComplete }) {
         audio responses.
       </div>
       <div className="flex gap-2 flex-wrap">
-        {speakingParts.map((p, i) => (
+        {parts.map((p, i) => (
           <button
             key={i}
             onClick={() => setActivePart(i)}
@@ -827,35 +723,39 @@ function SpeakingScreen({ onComplete }) {
           </button>
         ))}
       </div>
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col gap-5">
-        <div>
-          <h3 className="text-sm font-extrabold text-slate-800 mb-1">
-            {part.part}
-          </h3>
-          <p className="text-xs text-slate-400">{part.instruction}</p>
+      {part && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col gap-5">
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-800 mb-1">
+              {part.content.part}
+            </h3>
+            <p className="text-xs text-slate-400">{part.content.instruction}</p>
+          </div>
+          <div className="w-full h-px bg-slate-100" />
+          {part.content.questions.map((q, qi) => {
+            const key = `${activePart}-${qi}`;
+            return (
+              <div key={qi} className="flex flex-col gap-3">
+                <p className="text-sm font-semibold text-slate-700 whitespace-pre-line">
+                  <span className="text-blue-600 font-bold mr-1">
+                    Q{qi + 1}.
+                  </span>
+                  {q}
+                </p>
+                <textarea
+                  rows={4}
+                  placeholder="Type your spoken response here..."
+                  value={answers[key] || ""}
+                  onChange={(e) =>
+                    setAnswers((a) => ({ ...a, [key]: e.target.value }))
+                  }
+                  className="w-full bg-slate-50 text-slate-700 text-sm placeholder-slate-400 p-4 rounded-xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
+                />
+              </div>
+            );
+          })}
         </div>
-        <div className="w-full h-px bg-slate-100" />
-        {part.questions.map((q, qi) => {
-          const key = `${activePart}-${qi}`;
-          return (
-            <div key={qi} className="flex flex-col gap-3">
-              <p className="text-sm font-semibold text-slate-700 whitespace-pre-line">
-                <span className="text-blue-600 font-bold mr-1">Q{qi + 1}.</span>
-                {q}
-              </p>
-              <textarea
-                rows={4}
-                placeholder="Type your spoken response here..."
-                value={answers[key] || ""}
-                onChange={(e) =>
-                  setAnswers((a) => ({ ...a, [key]: e.target.value }))
-                }
-                className="w-full bg-slate-50 text-slate-700 text-sm placeholder-slate-400 p-4 rounded-xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
-              />
-            </div>
-          );
-        })}
-      </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
         <div className="flex gap-2">
           {activePart > 0 && (
@@ -867,7 +767,7 @@ function SpeakingScreen({ onComplete }) {
               Previous
             </button>
           )}
-          {activePart < speakingParts.length - 1 && (
+          {activePart < parts.length - 1 && (
             <button
               onClick={() => setActivePart((p) => p + 1)}
               className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-sm font-bold px-5 py-3 rounded-xl hover:bg-slate-200 transition-all duration-200"
@@ -890,6 +790,12 @@ function SpeakingScreen({ onComplete }) {
 }
 
 function SubmitScreen({ student, completed }) {
+  const modules = [
+    { id: "listening", label: "Listening", icon: "ti ti-headphones" },
+    { id: "reading", label: "Reading", icon: "ti ti-book" },
+    { id: "writing", label: "Writing", icon: "ti ti-pencil" },
+    { id: "speaking", label: "Speaking", icon: "ti ti-microphone" },
+  ];
   return (
     <div className="max-w-xl mx-auto mt-12 text-center flex flex-col items-center gap-6">
       <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center text-5xl text-emerald-500">
@@ -962,8 +868,6 @@ function SubmitScreen({ student, completed }) {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
 const STEPS = ["Overview", "Registration", "Modules", "Test", "Submit"];
 
 export default function MockTestPage() {
@@ -973,6 +877,35 @@ export default function MockTestPage() {
   const [completed, setCompleted] = useState([]);
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [questions, setQuestions] = useState(null);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+  useEffect(() => {
+    if (step === 2 && !questions) {
+      setLoadingQuestions(true);
+      fetch("/api/mock-test-questions")
+        .then((res) => res.json())
+        .then((data) => {
+          setQuestions(data);
+          setLoadingQuestions(false);
+        })
+        .catch(() => setLoadingQuestions(false));
+    }
+  }, [step, questions]);
+
+  const listeningQuestions =
+    questions?.filter((q) => q.module === "listening" && q.type === "mcq") ??
+    [];
+  const readingPassage =
+    questions?.find((q) => q.module === "reading" && q.type === "passage") ??
+    null;
+  const readingQuestions =
+    questions?.filter((q) => q.module === "reading" && q.type === "mcq") ?? [];
+  const writingTasks =
+    questions?.filter((q) => q.module === "writing" && q.type === "task") ?? [];
+  const speakingParts =
+    questions?.filter((q) => q.module === "speaking" && q.type === "part") ??
+    [];
 
   const handleRegister = (data) => {
     setStudent(data);
@@ -988,7 +921,9 @@ export default function MockTestPage() {
     setActiveModule(null);
     setStep(2);
   };
+
   const handleSubmit = async () => {
+    setSubmitting(true);
     try {
       const res = await fetch("/api/mock-tests", {
         method: "POST",
@@ -1002,7 +937,6 @@ export default function MockTestPage() {
           answers: answers,
         }),
       });
-
       if (res.ok) {
         setStep(4);
       } else {
@@ -1010,6 +944,8 @@ export default function MockTestPage() {
       }
     } catch (error) {
       alert("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -1019,48 +955,64 @@ export default function MockTestPage() {
       {step > 0 && step < 4 && <ProgressBar steps={STEPS} current={step} />}
       <div className="container mx-auto px-5 py-12">
         {step === 1 && <RegistrationScreen onSubmit={handleRegister} />}
-        {step === 2 && (
-          <div className="flex flex-col gap-8">
-            <ModuleSelectScreen
-              completed={completed}
-              onSelect={handleModuleSelect}
-              onSubmit={handleSubmit}
-              submitting={submitting}
-            />
-            {completed.length > 0 && (
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-70 transition-all duration-200"
-                >
-                  {submitting ? (
-                    <>
-                      <i className="ti ti-loader-2 animate-spin text-base" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <i className="ti ti-send text-base" />
-                      Submit All & Get Results
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        {step === 2 &&
+          (loadingQuestions ? (
+            <LoadingSpinner />
+          ) : (
+            <div className="flex flex-col gap-8">
+              <ModuleSelectScreen
+                completed={completed}
+                onSelect={handleModuleSelect}
+                onSubmit={handleSubmit}
+                submitting={submitting}
+              />
+              {completed.length > 0 && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-70 transition-all duration-200"
+                  >
+                    {submitting ? (
+                      <>
+                        <i className="ti ti-loader-2 animate-spin text-base" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <i className="ti ti-send text-base" />
+                        Submit All & Get Results
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         {step === 3 && activeModule === "listening" && (
-          <ListeningScreen onComplete={handleModuleComplete} />
+          <ListeningScreen
+            onComplete={handleModuleComplete}
+            questions={listeningQuestions}
+          />
         )}
         {step === 3 && activeModule === "reading" && (
-          <ReadingScreen onComplete={handleModuleComplete} />
+          <ReadingScreen
+            onComplete={handleModuleComplete}
+            passage={readingPassage}
+            questions={readingQuestions}
+          />
         )}
         {step === 3 && activeModule === "writing" && (
-          <WritingScreen onComplete={handleModuleComplete} />
+          <WritingScreen
+            onComplete={handleModuleComplete}
+            tasks={writingTasks}
+          />
         )}
         {step === 3 && activeModule === "speaking" && (
-          <SpeakingScreen onComplete={handleModuleComplete} />
+          <SpeakingScreen
+            onComplete={handleModuleComplete}
+            parts={speakingParts}
+          />
         )}
         {step === 4 && <SubmitScreen student={student} completed={completed} />}
       </div>

@@ -278,7 +278,7 @@ export default function FAQPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
-                href="https://wa.me/8801700000000"
+                href="https://wa.me/8801711153678"
                 className="inline-flex items-center gap-2 bg-white text-blue-600 text-sm font-bold px-7 py-3.5 rounded-xl shadow-lg hover:bg-blue-50 hover:-translate-y-0.5 transition-all duration-200"
               >
                 <i className="ti ti-brand-whatsapp text-base" />

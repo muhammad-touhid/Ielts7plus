@@ -13,6 +13,7 @@ export async function POST(req) {
         batchId: body.batchId,
         paymentMethod: body.paymentMethod || null,
         transactionId: body.transactionId || null,
+        userId: body.userId || null, // ← add this line
         status: "pending",
       },
     });

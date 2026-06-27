@@ -8,8 +8,8 @@ const navItems = [
   {
     label: "Courses",
     dropdown: [
+      { label: "All Courses", desc: "", href: "/courses" },
       { label: "Batch Schedule", desc: "", href: "/batch-schedule" },
-      { label: "Course Fees", desc: "", href: "/course-fee" },
       { label: "IELTS", desc: "", href: "/courses/ielts-preparation" },
       { label: "Spoken English", desc: "", href: "/courses/spoken-english" },
       { label: "Advance Writing", desc: "", href: "/courses/advanced-writing" },

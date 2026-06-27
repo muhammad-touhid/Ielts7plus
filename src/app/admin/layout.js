@@ -13,6 +13,11 @@ const navItems = [
     exact: true,
   },
   {
+    label: "Users",
+    icon: "ti ti-user-circle",
+    href: "/admin/users",
+  },
+  {
     label: "Courses",
     icon: "ti ti-books",
     href: "/admin/courses",

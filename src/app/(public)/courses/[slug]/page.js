@@ -1,16 +1,18 @@
-import { getCourse, getAllSlugs } from "@/lib/coursesData";
+import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-// Generate static pages at build time
-export function generateStaticParams() {
-  return getAllSlugs();
+export async function generateStaticParams() {
+  const courses = await prisma.course.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return courses.map((c) => ({ slug: c.slug }));
 }
 
-// Dynamic page metadata
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const course = getCourse(params.slug);
+  const course = await prisma.course.findUnique({ where: { slug } });
   if (!course) return {};
   return {
     title: `${course.name} — IELTS7+`,
@@ -20,7 +22,9 @@ export async function generateMetadata({ params }) {
 
 export default async function CoursePage({ params }) {
   const { slug } = await params;
-  const course = getCourse(slug);
+  const course = await prisma.course.findUnique({
+    where: { slug, published: true },
+  });
 
   if (!course) notFound();
 
@@ -32,11 +36,15 @@ export default async function CoursePage({ params }) {
     { icon: "ti ti-tag", label: "Course Fee", value: course.price },
   ];
 
+  const whatYouWillLearn = Array.isArray(course.whatYouWillLearn)
+    ? course.whatYouWillLearn
+    : [];
+  const highlights = Array.isArray(course.highlights) ? course.highlights : [];
+
   return (
     <main className="bg-slate-50 min-h-screen">
       {/* Hero */}
       <section className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] overflow-hidden py-24 px-5">
-        {/* Grid pattern */}
         <div
           className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{
@@ -49,7 +57,6 @@ export default async function CoursePage({ params }) {
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-5xl mx-auto">
-          {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-blue-200 text-sm mb-8">
             <Link href="/" className="hover:text-white transition-colors">
               Home
@@ -66,11 +73,9 @@ export default async function CoursePage({ params }) {
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center gap-6">
-            {/* Icon */}
             <div className="w-20 h-20 rounded-3xl bg-white/15 border border-white/20 flex items-center justify-center text-4xl text-white flex-shrink-0">
               <i className={course.icon} />
             </div>
-
             <div>
               <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-2">
                 {course.name}
@@ -82,9 +87,8 @@ export default async function CoursePage({ params }) {
       </section>
 
       <div className="max-w-5xl mx-auto px-5 py-16 flex flex-col gap-14">
-        {/* Description + Details grid */}
+        {/* Description + Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Description */}
           <div className="lg:col-span-2 flex flex-col gap-5">
             <div>
               <h2 className="text-2xl font-extrabold text-slate-800 mb-3">
@@ -95,7 +99,6 @@ export default async function CoursePage({ params }) {
               </p>
             </div>
 
-            {/* Features */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
               <h3 className="text-lg font-extrabold text-slate-800 mb-5 flex items-center gap-2">
                 <i className="ti ti-list-check text-blue-600 text-xl" />
@@ -115,7 +118,6 @@ export default async function CoursePage({ params }) {
             </div>
           </div>
 
-          {/* Course Details Card */}
           <div className="flex flex-col gap-5">
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-7 sticky top-24">
               <h3 className="text-lg font-extrabold text-slate-800 mb-6 flex items-center gap-2">
@@ -140,17 +142,13 @@ export default async function CoursePage({ params }) {
                   </li>
                 ))}
               </ul>
-
-              {/* CTA */}
-              <a
-                href="#enroll"
-                className="mt-7 w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-4 rounded-xl
-                  shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 hover:shadow-blue-300
-                  transition-all duration-200"
+              <Link
+                href="/batch-schedule"
+                className="mt-7 w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200"
               >
                 <i className="ti ti-calendar-event" />
                 Enroll Now
-              </a>
+              </Link>
               <p className="text-center text-xs text-slate-400 mt-3">
                 No hidden fees. Seats are limited.
               </p>
@@ -167,7 +165,7 @@ export default async function CoursePage({ params }) {
             Key skills and outcomes you will gain from this course.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {course.whatYouWillLearn.map((item, i) => (
+            {whatYouWillLearn.map((item, i) => (
               <div
                 key={i}
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
@@ -188,7 +186,7 @@ export default async function CoursePage({ params }) {
           </div>
         </div>
 
-        {/* Course Highlights */}
+        {/* Highlights */}
         <div className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] rounded-3xl overflow-hidden p-10">
           <div
             className="absolute inset-0 opacity-[0.06] pointer-events-none"
@@ -203,7 +201,7 @@ export default async function CoursePage({ params }) {
               Course Highlights
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {course.highlights.map((h, i) => (
+              {highlights.map((h, i) => (
                 <div
                   key={i}
                   className="flex flex-col items-center text-center gap-3"
@@ -238,13 +236,13 @@ export default async function CoursePage({ params }) {
               <i className="ti ti-calendar" />
               View Batches
             </Link>
-            <a
-              href="#enroll"
+            <Link
+              href="/batch-schedule"
               className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
             >
               <i className="ti ti-arrow-right" />
               Enroll Now
-            </a>
+            </Link>
           </div>
         </div>
       </div>

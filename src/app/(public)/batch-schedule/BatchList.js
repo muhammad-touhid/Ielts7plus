@@ -38,26 +38,37 @@ export default function BatchList({ batches }) {
   };
 
   return (
-    <section className="min-h-screen bg-slate-50 py-20 px-5">
-      <div className="max-w-5xl mx-auto">
-        {/* Page Header */}
-        <div className="mb-14">
-          <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-5 py-2 rounded-full mb-4">
-            Enroll Today
-          </span>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight mb-4">
-            Upcoming{" "}
-            <span className="relative inline-block text-sky-500">
-              Batches
-              <span className="absolute bottom-1 left-0 w-full h-2 bg-sky-200 rounded-full -z-10" />
+    <section className="min-h-screen bg-slate-50 py-20">
+      <section className="w-full bg-gradient-to-r from-[#354e98] to-[#4a71df] py-24 px-5 relative overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <div className="relative z-10 mx-auto max-w-3xl">
+          {/* Page Header */}
+          <div className="mb-14 text-center">
+            <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
+              Enroll Now
             </span>
-          </h1>
-          <p className="text-slate-500 text-base md:text-lg leading-relaxed max-w-xl">
-            Choose a batch that fits your schedule and start your journey to
-            Band 7+ with expert-led coaching and structured practice.
-          </p>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
+              Upcoming Batches
+            </h1>
+            <p className="text-blue-100 text-base md:text-lg leading-relaxed">
+              Choose a batch that fits your schedule and start your journey to
+              Band 7+ with expert-led coaching and structured practice.
+            </p>
+          </div>
         </div>
+      </section>
 
+      <div className="max-w-5xl mx-auto">
         {/* Success banner */}
         {successBatch && (
           <div className="mb-8 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-4">

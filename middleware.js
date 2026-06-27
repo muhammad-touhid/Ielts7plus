@@ -1,23 +1,40 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
-  const isLoginPage = req.nextUrl.pathname === "/admin/login";
+export const runtime = "nodejs";
 
-  if (isAdminRoute && !isLoginPage && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/admin/login", req.url));
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
+  const session = req.auth;
+  const role = session?.user?.role;
+
+  // Protect /admin routes
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (!session || role !== "admin") {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
+    }
   }
 
-  if (isLoginPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/admin", req.url));
+  // Protect /dashboard routes
+  if (pathname.startsWith("/dashboard")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    if (role === "admin") {
+      return NextResponse.redirect(new URL("/admin", req.url));
+    }
+  }
+
+  // Redirect logged-in users away from /login
+  if (pathname === "/login" && session) {
+    if (role === "admin")
+      return NextResponse.redirect(new URL("/admin", req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/login"],
 };
-export const runtime = "nodejs";

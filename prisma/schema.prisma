@@ -78,14 +78,16 @@ model MockTestSubmission {
 }
 
 model Enrollment {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String
-  batchId   String
-  batch     Batch    @relation(fields: [batchId], references: [id])
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  name            String
+  email           String
+  phone           String
+  batchId         String?
+  batch           Batch?   @relation(fields: [batchId], references: [id])
+  paymentMethod   String?
+  transactionId   String?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
 }
 
 model ContactSubmission {

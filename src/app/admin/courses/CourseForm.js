@@ -30,12 +30,15 @@ export default function CourseForm({ course }) {
       ? {
           ...course,
           features: course.features ?? [""],
+
           highlights: course.highlights ?? [{ icon: "ti ti-star", label: "" }],
           whatYouWillLearn: course.whatYouWillLearn ?? [
             { icon: "ti ti-book", title: "", desc: "" },
           ],
         }
       : defaultForm,
+
+    console.log(course.features),
   );
 
   const [loading, setLoading] = useState(false);

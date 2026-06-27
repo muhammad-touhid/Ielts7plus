@@ -110,6 +110,13 @@ export default async function AdminBatchesPage() {
                           <i className="ti ti-edit text-sm" />
                           Edit
                         </Link>
+                        <Link
+                          href={`/admin/batches/${batch.id}/students`}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-600 hover:text-white transition-all duration-200"
+                        >
+                          <i className="ti ti-users text-sm" />
+                          Students
+                        </Link>
                         <DeleteBatchButton id={batch.id} name={batch.name} />
                       </div>
                     </td>

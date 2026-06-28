@@ -65,10 +65,16 @@ const navItems = [
 ];
 
 function NavItem({ item, onClick }) {
+  // Render only the page content for the login route
+
   const pathname = usePathname();
   const isActive = item.exact
     ? pathname === item.href
     : pathname.startsWith(item.href);
+
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   return (
     <Link
@@ -89,6 +95,12 @@ function NavItem({ item, onClick }) {
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Render only the page content for the login route
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -203,7 +215,6 @@ export default function AdminLayout({ children }) {
         {/* Top bar */}
         <header className="bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            {/* Hamburger — mobile only */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all"

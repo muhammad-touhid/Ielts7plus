@@ -39,9 +39,9 @@ export default async function EventsPage() {
       </div>
 
       {/* Events List */}
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="container mx-auto px-6 py-12">
         {events.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {events.map((event) => (
               <Link
                 key={event.id}

@@ -89,11 +89,7 @@ export default function AboutPage() {
             Our Story
           </span>
           <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-5">
-            Built for One Purpose —{" "}
-            <span className="relative inline-block">
-              Your Band 7+
-              <span className="absolute bottom-1 left-0 w-full h-2 bg-white/20 rounded-full -z-10" />
-            </span>
+            Built for One Purpose — Your Band 7+
           </h1>
           <p className="text-blue-100 text-base md:text-lg leading-relaxed">
             IELTS7+ was founded in Dhaka with a simple belief — every student

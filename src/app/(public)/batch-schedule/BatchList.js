@@ -38,21 +38,21 @@ export default function BatchList({ batches }) {
   };
 
   return (
-    <section className="min-h-screen bg-slate-50 py-20">
-      <section className="w-full bg-gradient-to-r from-[#354e98] to-[#4a71df] py-24 px-5 relative overflow-hidden">
-        {/* Decorative blobs */}
-        <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+    <section className="min-h-screen bg-slate-50">
+      {/* Page Header */}
+      <div className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] overflow-hidden py-24 px-5">
         <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{
             backgroundImage:
               "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
             backgroundSize: "48px 48px",
           }}
         />
-        <div className="relative z-10 mx-auto max-w-3xl">
-          {/* Page Header */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
           <div className="mb-14 text-center">
             <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
               Enroll Now
@@ -66,9 +66,9 @@ export default function BatchList({ batches }) {
             </p>
           </div>
         </div>
-      </section>
+      </div>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="container mx-auto py-20">
         {/* Success banner */}
         {successBatch && (
           <div className="mb-8 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-4">

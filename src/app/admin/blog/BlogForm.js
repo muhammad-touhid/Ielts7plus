@@ -148,7 +148,7 @@ export default function BlogForm({ post }) {
             </label>
             <ImageUpload
               value={form.image}
-              onChange={(url) => setForm({ ...form, image: url })}
+              onChange={(url) => setForm((f) => ({ ...f, image: url }))}
             />
           </div>
         </div>

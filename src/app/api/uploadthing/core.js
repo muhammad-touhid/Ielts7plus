@@ -1,19 +1,14 @@
-import { createUploadthing, createRouteHandler } from "uploadthing/next";
-import { auth } from "@/lib/auth";
+import { createUploadthing } from "uploadthing/next";
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
   imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
-    .middleware(async () => {
-      const session = await auth();
-      if (!session || session.user.role !== "admin")
-        throw new Error("Unauthorized");
-      return { userId: session.user.id };
+    .middleware(async ({ req }) => {
+      console.log("Middleware called");
+      return {};
     })
     .onUploadComplete(async ({ file }) => {
-      return { url: file.url };
+      return { url: file.ufsUrl };
     }),
 };
-
-export const { GET, POST } = createRouteHandler({ router: ourFileRouter });

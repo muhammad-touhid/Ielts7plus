@@ -21,8 +21,17 @@ const navItems = [
     ],
   },
   {
-    label: "Instructor",
+    label: "Mock Test",
     dropdown: [
+      { label: "Mock Test", desc: "", href: "/mock-test" },
+      { label: "IELTS Calculator", desc: "", href: "/calculator" },
+      { label: "IELTS Result", desc: "", href: "/result" },
+    ],
+  },
+  {
+    label: "About Us",
+    dropdown: [
+      { label: "About Us", desc: "", href: "/about" },
       {
         label: "Success Stories",
         desc: "",
@@ -30,12 +39,8 @@ const navItems = [
       },
       { label: "Guides", desc: "", href: "/guides" },
       { label: "FAQ", desc: "", href: "/faq" },
-      { label: "Mock Test", desc: "", href: "/mock-test" },
-      { label: "IELTS Calculator", desc: "", href: "/calculator" },
-      { label: "IELTS Result", desc: "", href: "/result" },
     ],
   },
-  { label: "About Us", href: "/about" },
   { label: "Events", href: "/events" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },

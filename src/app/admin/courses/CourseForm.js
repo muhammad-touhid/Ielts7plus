@@ -37,8 +37,6 @@ export default function CourseForm({ course }) {
           ],
         }
       : defaultForm,
-
-    console.log(course.features),
   );
 
   const [loading, setLoading] = useState(false);

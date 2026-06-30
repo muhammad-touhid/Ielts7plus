@@ -49,8 +49,10 @@ export default function BatchForm({ batch, courses }) {
       });
 
       if (res.ok) {
-        router.push("/admin/batches");
+        // Invalidate the cached route tree first, then navigate,
+        // so the listing page re-fetches fresh data from the DB.
         router.refresh();
+        router.push("/admin/batches");
       } else {
         const data = await res.json();
         setError(data.error || "Something went wrong.");

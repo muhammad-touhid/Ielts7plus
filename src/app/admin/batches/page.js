@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import DeleteBatchButton from "./DeleteBatchButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminBatchesPage() {
   const batches = await prisma.batch.findMany({
     orderBy: { createdAt: "desc" },

@@ -24,8 +24,7 @@ const navItems = [
     label: "Mock Test",
     dropdown: [
       { label: "Mock Test", desc: "", href: "/mock-test" },
-      { label: "IELTS Calculator", desc: "", href: "/calculator" },
-      { label: "IELTS Result", desc: "", href: "/result" },
+      { label: "IELTS Calculator", desc: "", href: "/band-calculator" },
     ],
   },
   {
@@ -95,7 +94,7 @@ export default function Header() {
                 onMouseLeave={() => setOpenDropdown(null)}
               >
                 <button
-                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-m transition-colors ${
+                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-m transition-colors cursor-pointer ${
                     scrolled
                       ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       : "text-white/90 hover:text-white"
@@ -120,7 +119,7 @@ export default function Header() {
                 </button>
 
                 {openDropdown === item.label && (
-                  <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                  <div className="absolute left-0 top-full z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
                     {item.dropdown.map((drop, i) => (
                       <div key={drop.label}>
                         <Link

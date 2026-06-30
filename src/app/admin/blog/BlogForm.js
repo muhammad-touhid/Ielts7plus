@@ -59,8 +59,8 @@ export default function BlogForm({ post }) {
 
     setLoading(false);
     if (res.ok) {
-      router.push("/admin/blog");
       router.refresh();
+      router.push("/admin/blog");
     } else {
       const data = await res.json();
       setError(data.error || "Something went wrong.");

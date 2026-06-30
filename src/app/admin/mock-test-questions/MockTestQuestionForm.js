@@ -61,8 +61,8 @@ export default function MockTestQuestionForm({ question }) {
       });
 
       if (res.ok) {
-        router.push("/admin/mock-test-questions");
         router.refresh();
+        router.push("/admin/mock-test-questions");
       } else {
         const data = await res.json();
         setError(data.error || "Something went wrong.");

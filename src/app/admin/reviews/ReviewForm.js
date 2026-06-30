@@ -35,8 +35,8 @@ export default function ReviewForm({ review }) {
       });
 
       if (res.ok) {
-        router.push("/admin/reviews");
         router.refresh();
+        router.push("/admin/reviews");
       } else {
         const data = await res.json();
         setError(data.error || "Something went wrong.");

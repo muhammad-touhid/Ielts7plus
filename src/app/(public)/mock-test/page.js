@@ -50,7 +50,7 @@ function ProgressBar({ steps, current }) {
           </p>
         </div>
       </section>
-      <div className="container m-auto flex items-center gap-1 mt-10 mb-8">
+      <div className="container m-auto flex justify-center items-center gap-1 mt-10 mb-8 ml-5 ">
         {steps.map((s, i) => (
           <div key={i} className="flex items-center gap-1 flex-1">
             <div
@@ -204,7 +204,7 @@ function LandingScreen({ onStart }) {
           </button>
         </div>
       </div>
-      <div className="container m-auto">
+      <div className="container m-auto px-5">
         <h2 className="text-3xl font-bold text-gray-700 mb-5">
           What is Included
         </h2>

@@ -1,45 +1,19 @@
 import Link from "next/link";
+import prisma from "@/lib/prisma";
 
-const courses = [
-  {
-    icon: "ti-book",
-    title: "IELTS Regular Batch",
-    desc: "Offline classes with intensive practice sessions, mock tests, and performance tracking.",
-    href: "#",
-  },
-  {
-    icon: "ti-brand-parsinta",
-    title: "IELTS Online Batch",
-    desc: "Interactive online classes for students across Bangladesh with live Q&A support.",
-    href: "/courses/general",
-  },
-  {
-    icon: "ti-bolt",
-    title: "IELTS Crash Course",
-    desc: "Perfect for last-minute prep. Covers all modules with tips & tricks in just 3 weeks.",
-    href: "/courses/writing",
-  },
-  {
-    icon: "ti-microphone",
-    title: "Spoken English",
-    desc: "Expert guidance for enhancing your spoken English through interactive sessions.",
-    href: "/courses/spokenEnglish",
-  },
-  {
-    icon: "ti-pencil",
-    title: "Grammar & Writing",
-    desc: "Special sessions aimed at enhancing English grammar and writing skills.",
-    href: "/courses/mock-tests",
-  },
-  {
-    icon: "ti-abc",
-    title: "Mock Test",
-    desc: "Prepare for the real test with our comprehensive mock tests and assessments.",
-    href: "/courses/grammar",
-  },
-];
+export default async function OurCourses() {
+  const courses = await prisma.course.findMany({
+    where: { published: true },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+    select: {
+      slug: true,
+      name: true,
+      tagline: true,
+      icon: true,
+    },
+  });
 
-export default function OurCourses() {
   return (
     <section className="bg-white py-16">
       <div className="mx-auto container px-6">
@@ -55,36 +29,55 @@ export default function OurCourses() {
         </div>
 
         {/* Cards Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <Link
-              key={course.title}
-              href={course.href}
-              className="group flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-blue-300 hover:shadow-sm"
-            >
-              {/* Icon */}
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+        {courses.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <Link
+                key={course.slug}
+                href={`/courses/${course.slug}`}
+                className="group flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-blue-300 hover:shadow-sm"
+              >
+                {/* Icon */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                  <i
+                    className={`ti ${course.icon} text-xl text-blue-600`}
+                    aria-hidden="true"
+                  />
+                </div>
+
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="mb-1 font-semibold text-gray-700">
+                    {course.name}
+                  </h3>
+                  <p className="leading-relaxed text-gray-500 text-sm line-clamp-2">
+                    {course.tagline}
+                  </p>
+                </div>
+
+                {/* Arrow */}
                 <i
-                  className={`ti ${course.icon} text-xl text-blue-600`}
+                  className="ti ti-arrow-right mt-0.5 shrink-0 text-base text-gray-300 transition-colors group-hover:text-blue-500"
                   aria-hidden="true"
                 />
-              </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-sm text-gray-400">No courses available yet.</p>
+          </div>
+        )}
 
-              {/* Text */}
-              <div className="flex-1 min-w-0">
-                <h3 className="mb-1  font-semibold text-gray-700">
-                  {course.title}
-                </h3>
-                <p className=" leading-relaxed text-gray-500">{course.desc}</p>
-              </div>
-
-              {/* Arrow */}
-              <i
-                className="ti ti-arrow-right mt-0.5 shrink-0 text-base text-gray-300 transition-colors group-hover:text-blue-500"
-                aria-hidden="true"
-              />
-            </Link>
-          ))}
+        {/* See More button */}
+        <div className="mt-10 text-center">
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-7 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
+          >
+            See All Courses
+            <i className="ti ti-arrow-right text-sm" />
+          </Link>
         </div>
       </div>
     </section>

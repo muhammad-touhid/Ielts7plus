@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const steps = [
@@ -153,15 +154,17 @@ export default function HowItWorks() {
 
         {/* CTA */}
         <div className="text-center mt-14">
-          <a
-            href="#courses"
-            className="inline-flex items-center gap-3 bg-slate-900 text-white text-sm font-semibold px-9 py-4 rounded-full
-              shadow-lg shadow-slate-300 hover:bg-blue-600 hover:shadow-sky-200 hover:-translate-y-1
-              transition-all duration-300"
-          >
-            <i className="ti ti-rocket text-lg" />
-            Start Your Journey
-          </a>
+          <Link href="/courses">
+            <div
+              href="#"
+              className="inline-flex items-center gap-3 bg-slate-900 text-white text-sm font-semibold px-9 py-4 rounded-full
+                shadow-lg shadow-slate-300 hover:bg-blue-600 hover:shadow-sky-200 hover:-translate-y-1
+                transition-all duration-300"
+            >
+              <i className="ti ti-rocket text-lg" />
+              Start Your Journey
+            </div>
+          </Link>
         </div>
       </div>
     </section>

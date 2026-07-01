@@ -214,7 +214,7 @@ export default function BlogPage() {
           </div>
 
           {/* Sidebar */}
-          <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col flex-1 gap-6 px-10 mt-11">
+          <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col flex-1 gap-6 lg:px-10 mt-11">
             {/* Search */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
               <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">

@@ -1,18 +1,25 @@
 import prisma from "@/lib/prisma";
-import { notFound } from "next/navigation";
-import Link from "next/link";
+import EventRegistrationForm from "../EventRegistrationForm";
 
-export default async function EventDetailPage({ params }) {
+export default async function SingleEventPage({ params }) {
   const { id } = await params;
+
   const event = await prisma.event.findUnique({
-    where: { id, published: true },
+    where: { id },
   });
-  if (!event) notFound();
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-400">Event not found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero — same pattern as batch schedule */}
-      <div className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] overflow-hidden py-24 px-5">
+      {/* Hero */}
+      <div className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] overflow-hidden py-20 px-5">
         <div
           className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{
@@ -21,93 +28,101 @@ export default async function EventDetailPage({ params }) {
             backgroundSize: "48px 48px",
           }}
         />
-        <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-2xl mx-auto text-center">
-          <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
-            {event.badge}
-          </span>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+          {event.badge && (
+            <span className="inline-block text-xs font-bold tracking-widest uppercase text-white/80 bg-white/15 border border-white/20 px-5 py-2 rounded-full mb-5">
+              {event.badge}
+            </span>
+          )}
+          <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-7">
             {event.title}
           </h1>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <span className="flex items-center gap-1.5 text-sm text-blue-200">
-              <i className="ti ti-calendar" /> {event.date}
-            </span>
-            <span className="flex items-center gap-1.5 text-sm text-blue-200">
-              <i className="ti ti-clock" /> {event.time}
-            </span>
-            <span className="flex items-center gap-1.5 text-sm text-blue-200">
-              <i className="ti ti-map-pin" /> {event.campus}
-            </span>
+
+          {/* Date / Time / Campus */}
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+            <div className="flex items-center gap-2.5">
+              <i className="ti ti-calendar text-white/70" />
+              <div className="text-left">
+                <p className="text-xs text-blue-100/70">Date</p>
+                <p className="text-sm font-bold text-white">{event.date}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <i className="ti ti-clock text-white/70" />
+              <div className="text-left">
+                <p className="text-xs text-blue-100/70">Time</p>
+                <p className="text-sm font-bold text-white">{event.time}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <i className="ti ti-map-pin text-white/70" />
+              <div className="text-left">
+                <p className="text-xs text-blue-100/70">Campus</p>
+                <p className="text-sm font-bold text-white">{event.campus}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-10 flex flex-col gap-6">
-        <Link
-          href="/events"
-          className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors self-start"
-        >
-          <i className="ti ti-arrow-left text-base" />
-          Back to Events
-        </Link>
+      {/* 2:1 layout */}
+      <div className="container mx-auto px-6 py-12">
+        <div className="flex flex-col lg:flex-row gap-10 items-start">
+          {/* Left — event details */}
+          <div className="w-full lg:w-2/3 flex flex-col gap-6">
+            {event.image && (
+              <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+                <img
+                  src={event.image}
+                  alt={event.title}
+                  className="w-full aspect-video object-cover"
+                />
+              </div>
+            )}
 
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {/* Image inside content block */}
-          {event.image && (
-            <div className="h-64 sm:h-80 overflow-hidden">
-              <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          <div className="p-7 flex flex-col gap-5">
-            {/* Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { icon: "ti ti-calendar", label: "Date", value: event.date },
-                { icon: "ti ti-clock", label: "Time", value: event.time },
-                { icon: "ti ti-map-pin", label: "Campus", value: event.campus },
-              ].map((d, i) => (
-                <div
-                  key={i}
-                  className="bg-slate-50 rounded-xl px-4 py-3 flex items-center gap-3"
-                >
-                  <i className={`${d.icon} text-blue-500 text-lg`} />
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-5 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <i className="ti ti-calendar text-blue-500" />
                   <div>
-                    <p className="text-xs text-slate-400">{d.label}</p>
+                    <p className="text-xs text-slate-400">Date</p>
                     <p className="text-sm font-bold text-slate-700">
-                      {d.value}
+                      {event.date}
                     </p>
                   </div>
                 </div>
-              ))}
+                <div className="flex items-center gap-2.5">
+                  <i className="ti ti-clock text-blue-500" />
+                  <div>
+                    <p className="text-xs text-slate-400">Time</p>
+                    <p className="text-sm font-bold text-slate-700">
+                      {event.time}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <i className="ti ti-map-pin text-blue-500" />
+                  <div>
+                    <p className="text-xs text-slate-400">Campus</p>
+                    <p className="text-sm font-bold text-slate-700">
+                      {event.campus}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="text-slate-600 text-sm leading-relaxed prose prose-slate max-w-none"
+                dangerouslySetInnerHTML={{ __html: event.para }}
+              />
             </div>
+          </div>
 
-            <div className="w-full h-px bg-slate-100" />
-
-            <div>
-              <h2 className="text-sm font-extrabold text-slate-700 mb-2">
-                About this Event
-              </h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                {event.para}
-              </p>
-            </div>
-
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition-all text-sm"
-            >
-              <i className="ti ti-phone" />
-              Contact Us to Register
-            </Link>
+          {/* Right — registration form */}
+          <div className="w-full lg:w-1/3">
+            <EventRegistrationForm
+              eventId={event.id}
+              eventTitle={event.title}
+            />
           </div>
         </div>
       </div>

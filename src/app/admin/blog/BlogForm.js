@@ -207,7 +207,7 @@ export default function BlogForm({ post }) {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 cursor-pointer"
         >
           <i
             className={`${loading ? "ti ti-loader-2 animate-spin" : "ti ti-check"} text-sm`}
@@ -260,6 +260,17 @@ function QuillEditor({ value, onChange }) {
         placeholder="Write your blog post content here..."
         style={{ minHeight: "300px" }}
       />
+      <style>{`
+      .quill-wrapper .ql-editor {
+        min-height: 200px;
+        color: #1e293b !important;
+        line-height: 1.7;
+      }
+      .quill-wrapper .ql-editor.ql-blank::before {
+        color: #94a3b8;
+        font-style: normal;
+      }
+    `}</style>
     </div>
   );
 }

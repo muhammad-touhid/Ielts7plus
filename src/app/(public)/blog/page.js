@@ -91,10 +91,10 @@ export default function BlogPage() {
       </div>
 
       {/* Main layout: posts + sidebar */}
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="container mx-auto px-6 py-12">
         <div className="flex flex-col lg:flex-row gap-10">
           {/* Posts grid */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-2 min-w-0">
             {/* Active filter label */}
             <div className="flex items-center justify-between mb-6">
               <p className="text-sm text-slate-500">
@@ -214,7 +214,7 @@ export default function BlogPage() {
           </div>
 
           {/* Sidebar */}
-          <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-6">
+          <aside className="w-full lg:w-72 flex-shrink-0 flex flex-col flex-1 gap-6 px-10 mt-11">
             {/* Search */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
               <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">

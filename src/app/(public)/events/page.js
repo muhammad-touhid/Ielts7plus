@@ -65,7 +65,10 @@ export default async function EventsPage() {
                     {event.title}
                   </h2>
                   <p className="text-sm text-slate-500 line-clamp-2">
-                    {event.para}
+                    {event.para
+                      .replace(/<[^>]*>/g, "")
+                      .replace(/&[a-z]+;/g, " ")
+                      .trim()}
                   </p>
                   <div className="flex flex-wrap gap-3 mt-1">
                     <span className="flex items-center gap-1.5 text-xs text-slate-400">

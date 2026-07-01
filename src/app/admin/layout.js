@@ -53,6 +53,11 @@ const navItems = [
     href: "/admin/events",
   },
   {
+    label: "Event Registrations",
+    icon: "ti ti-calendar-stats",
+    href: "/admin/event-registrations",
+  },
+  {
     label: "Blog Posts",
     icon: "ti ti-news",
     href: "/admin/blog",

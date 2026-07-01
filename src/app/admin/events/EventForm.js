@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import "react-quill-new/dist/quill.snow.css";
 import ImageUpload from "../ImageUpload";
 
 export default function EventForm({ event }) {
@@ -120,15 +121,12 @@ export default function EventForm({ event }) {
           />
         </div>
 
+        {/* Description — Quill editor */}
         <div className="sm:col-span-2">
           <label className={labelClass}>Description *</label>
-          <textarea
+          <QuillEditor
             value={form.para}
-            required
-            rows={4}
-            onChange={(e) => setForm({ ...form, para: e.target.value })}
-            placeholder="Brief description of the event..."
-            className={`${inputClass} resize-none`}
+            onChange={(val) => setForm((f) => ({ ...f, para: val }))}
           />
         </div>
 
@@ -136,7 +134,7 @@ export default function EventForm({ event }) {
           <label className={labelClass}>
             Image{" "}
             <span className="text-slate-400 normal-case font-normal">
-              (optional)
+              (896px × 504px) (optional)
             </span>
           </label>
           <ImageUpload
@@ -176,7 +174,7 @@ export default function EventForm({ event }) {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 cursor-pointer"
         >
           <i
             className={`${loading ? "ti ti-loader-2 animate-spin" : "ti ti-check"} text-sm`}
@@ -185,5 +183,60 @@ export default function EventForm({ event }) {
         </button>
       </div>
     </form>
+  );
+}
+
+// Same Quill pattern as BlogForm
+function QuillEditor({ value, onChange }) {
+  const [mounted, setMounted] = useState(false);
+  const [ReactQuill, setReactQuill] = useState(null);
+
+  useEffect(() => {
+    import("react-quill-new").then((mod) => {
+      setReactQuill(() => mod.default);
+      setMounted(true);
+    });
+  }, []);
+
+  if (!mounted || !ReactQuill) {
+    return (
+      <div className="h-48 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center">
+        <p className="text-xs text-slate-400">Loading editor...</p>
+      </div>
+    );
+  }
+
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["blockquote", "link"],
+      ["clean"],
+    ],
+  };
+
+  return (
+    <div className="quill-wrapper">
+      <ReactQuill
+        theme="snow"
+        value={value}
+        onChange={onChange}
+        modules={modules}
+        placeholder="Write a description of the event..."
+        style={{ minHeight: "200px" }}
+      />
+      <style>{`
+      .quill-wrapper .ql-editor {
+        min-height: 200px;
+        color: #1e293b !important;
+        line-height: 1.7;
+      }
+      .quill-wrapper .ql-editor.ql-blank::before {
+        color: #94a3b8;
+        font-style: normal;
+      }
+    `}</style>
+    </div>
   );
 }

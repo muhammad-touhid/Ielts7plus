@@ -113,6 +113,18 @@ model Event {
   image     String?
   published Boolean  @default(false)
   createdAt DateTime @default(now())
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  phone     String
+  message   String?
+  createdAt DateTime @default(now())
 }
 
 model BlogPost {

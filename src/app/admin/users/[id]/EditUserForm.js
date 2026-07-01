@@ -105,7 +105,7 @@ export default function EditUserForm({ user }) {
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 cursor-pointer"
           >
             <i
               className={`${loading ? "ti ti-loader-2 animate-spin" : "ti ti-check"} text-sm`}

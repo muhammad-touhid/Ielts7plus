@@ -23,6 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        // Check Admin table first (admin + teacher both live here)
         const admin = await prisma.admin.findUnique({
           where: { email: credentials.email },
         });
@@ -37,10 +38,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             id: admin.id,
             email: admin.email,
             name: admin.name,
-            role: "admin",
+            role: admin.role || "admin", // "admin" | "teacher"
           };
         }
 
+        // Check User table (students)
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
@@ -64,10 +66,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Allow credentials always
       if (account?.provider === "credentials") return true;
 
-      // For Google — auto create user in our User table if not exists
       if (account?.provider === "google") {
         try {
           const existing = await prisma.user.findUnique({
@@ -103,7 +103,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email: token.email },
         });
         token.id = dbUser?.id || token.id;
-        token.role = admin ? "admin" : "student";
+        // Google users: check if they're also an admin/teacher
+        token.role = admin ? admin.role || "admin" : "student";
       }
       return token;
     },

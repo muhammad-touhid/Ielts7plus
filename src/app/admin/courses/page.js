@@ -62,9 +62,20 @@ export default async function AdminCoursesPage() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-                          <i className={course.icon} />
-                        </div>
+                        {/* Cover image or icon fallback */}
+                        {course.coverImage ? (
+                          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-slate-100">
+                            <img
+                              src={course.coverImage}
+                              alt={course.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                            <i className={course.icon} />
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-slate-800">
                             {course.name}
@@ -84,7 +95,11 @@ export default async function AdminCoursesPage() {
                     <td className="px-6 py-4 text-slate-500">{course.level}</td>
                     <td className="px-6 py-4">
                       <span
-                        className={`text-xs font-bold px-3 py-1 rounded-full ${course.published ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
+                        className={`text-xs font-bold px-3 py-1 rounded-full ${
+                          course.published
+                            ? "bg-emerald-100 text-emerald-600"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
                       >
                         {course.published ? "Published" : "Draft"}
                       </span>

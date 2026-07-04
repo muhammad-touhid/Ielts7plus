@@ -28,6 +28,12 @@ export default async function CoursePage({ params }) {
 
   if (!course) notFound();
 
+  // Fetch upcoming published batches for this course
+  const batches = await prisma.batch.findMany({
+    where: { courseId: course.id, published: true },
+    orderBy: { createdAt: "desc" },
+  });
+
   const details = [
     { icon: "ti ti-clock", label: "Duration", value: course.duration },
     { icon: "ti ti-users", label: "Batch Size", value: course.batchSize },
@@ -40,6 +46,12 @@ export default async function CoursePage({ params }) {
     ? course.whatYouWillLearn
     : [];
   const highlights = Array.isArray(course.highlights) ? course.highlights : [];
+
+  const scrollToBatch = () => {
+    document.getElementById("batches")?.scrollIntoView({
+      behavior: "smooth",
+    });
+  };
 
   return (
     <main className="bg-slate-50 min-h-screen">
@@ -86,10 +98,20 @@ export default async function CoursePage({ params }) {
         </div>
       </section>
 
-      <div className="max-w-5xl mx-auto px-5 py-16 flex flex-col gap-14">
+      <div className="max-w-6xl mx-auto px-5 py-16 flex flex-col gap-14">
         {/* Description + Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 flex flex-col gap-5">
+            {/* Cover Image */}
+            {course.coverImage && (
+              <div className="w-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm mb-5">
+                <img
+                  src={course.coverImage}
+                  alt={course.name}
+                  className="w-full aspect-video object-cover"
+                />
+              </div>
+            )}
             <div>
               <h2 className="text-2xl font-extrabold text-slate-800 mb-3">
                 About This Course
@@ -143,7 +165,7 @@ export default async function CoursePage({ params }) {
                 ))}
               </ul>
               <Link
-                href="/batch-schedule"
+                href="#batches"
                 className="mt-7 w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200"
               >
                 <i className="ti ti-calendar-event" />
@@ -155,6 +177,159 @@ export default async function CoursePage({ params }) {
             </div>
           </div>
         </div>
+
+        {/* Upcoming Batches */}
+        {batches.length > 0 && (
+          <div id="batches">
+            <div className="mb-8">
+              <h2 className="text-2xl font-extrabold text-slate-800 mb-2">
+                Upcoming Batches
+              </h2>
+              <p className="text-slate-500 text-sm">
+                Choose a batch that fits your schedule and enroll today.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {batches.map((batch) => (
+                <div
+                  key={batch.id}
+                  className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col"
+                >
+                  {/* Gradient header */}
+                  <div className="relative bg-gradient-to-br from-[#354e98] to-[#4a71df] p-5 pb-8">
+                    <div
+                      className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+                        backgroundSize: "32px 32px",
+                      }}
+                    />
+                    <div className="relative z-10 flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-white font-extrabold text-base leading-snug">
+                          {batch.name}
+                        </p>
+                      </div>
+                      {batch.badge && (
+                        <span
+                          className={`text-xs font-bold text-white px-2.5 py-1 rounded-full flex-shrink-0 ${
+                            batch.badge === "Open"
+                              ? "bg-emerald-500"
+                              : batch.badge === "Filling Fast"
+                                ? "bg-amber-500"
+                                : batch.badge === "New"
+                                  ? "bg-blue-500"
+                                  : "bg-slate-400"
+                          }`}
+                        >
+                          {batch.badge}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Module badge overlap */}
+                  <div className="mt-4 px-5">
+                    <span
+                      className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${
+                        batch.module === "Academic"
+                          ? "bg-blue-50 text-blue-600"
+                          : batch.module === "General"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : batch.module === "Spoken English"
+                              ? "bg-violet-50 text-violet-600"
+                              : batch.module === "Writing"
+                                ? "bg-amber-50 text-amber-600"
+                                : "bg-rose-50 text-rose-600"
+                      }`}
+                    >
+                      {batch.module}
+                    </span>
+                  </div>
+
+                  {/* Card body */}
+                  <div className="px-5 py-4 flex flex-col gap-3 flex-1">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <i className="ti ti-calendar text-blue-500 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Start Date</p>
+                          <p className="text-xs font-bold text-slate-700">
+                            {batch.startDate}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <i className="ti ti-clock text-blue-500 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Time</p>
+                          <p className="text-xs font-bold text-slate-700">
+                            {batch.time}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <i className="ti ti-calendar-week text-blue-500 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Schedule</p>
+                          <p className="text-xs font-bold text-slate-700">
+                            {batch.schedule}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                          <i className="ti ti-hourglass text-blue-500 text-sm" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Duration</p>
+                          <p className="text-xs font-bold text-slate-700">
+                            {batch.duration}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Seats */}
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs text-slate-400">
+                        Available Seats
+                      </span>
+                      <span
+                        className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                          batch.seats <= 5
+                            ? "bg-rose-50 text-rose-600"
+                            : batch.seats <= 10
+                              ? "bg-amber-50 text-amber-600"
+                              : "bg-emerald-50 text-emerald-600"
+                        }`}
+                      >
+                        {batch.seats} seats left
+                      </span>
+                    </div>
+
+                    {/* Enroll button */}
+                    <Link
+                      href="/batch-schedule"
+                      className="mt-auto w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md shadow-blue-100"
+                    >
+                      <i className="ti ti-pencil-plus text-sm" />
+                      Enroll Now
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* What You Will Learn */}
         <div>
@@ -230,14 +405,14 @@ export default async function CoursePage({ params }) {
           </div>
           <div className="flex items-center gap-4 flex-shrink-0">
             <Link
-              href="/batch-schedule"
+              href="#batches"
               className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-700 text-sm font-bold px-6 py-3 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-all duration-200"
             >
               <i className="ti ti-calendar" />
               View Batches
             </Link>
             <Link
-              href="/batch-schedule"
+              href="#batches"
               className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
             >
               <i className="ti ti-arrow-right" />

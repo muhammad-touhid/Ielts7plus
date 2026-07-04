@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function CTASection() {
   return (
     <section className="relative w-full overflow-hidden py-28 px-5">
@@ -56,30 +58,27 @@ export default function CTASection() {
           expert-led coaching, structured practice, and personalised feedback —
           all designed to get you to Band 7+ faster.
         </p>
+
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
           {/* Primary */}
-          <a
-            href="#consultation"
-            className="inline-flex items-center gap-2.5 bg-white text-blue-600 font-bold text-sm px-8 py-4 rounded-full
-              shadow-xl shadow-blue-900/30 hover:bg-sky-50 hover:scale-105 hover:shadow-2xl
-              transition-all duration-300"
+          <Link
+            href="/contact"
+            className="inline-flex items-center gap-2.5 bg-white text-blue-600 font-bold text-sm px-8 py-4 rounded-full shadow-xl shadow-blue-900/30 hover:bg-sky-50 hover:scale-105 hover:shadow-2xl transition-all duration-300"
           >
             <i className="ti ti-calendar-event text-base" />
             Book a Free Consultation
-          </a>
+          </Link>
 
           {/* Secondary */}
-          <a
-            href="#courses"
-            className="inline-flex items-center gap-2.5 bg-transparent text-white font-bold text-sm px-8 py-4 rounded-full
-              border-2 border-white/40 hover:border-white hover:bg-white/10
-              transition-all duration-300"
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-2.5 bg-transparent text-white font-bold text-sm px-8 py-4 rounded-full border-2 border-white/40 hover:border-white hover:bg-white/10 transition-all duration-300"
           >
             <i className="ti ti-books text-base" />
             Explore Courses
             <i className="ti ti-arrow-right text-sm" />
-          </a>
+          </Link>
         </div>
 
         {/* Social proof */}

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import SessionWrapper from "@/components/common/SessionWrapper";
 
 const navItems = [
   {
@@ -11,6 +12,12 @@ const navItems = [
     icon: "ti ti-layout-dashboard",
     href: "/admin",
     exact: true,
+  },
+  {
+    label: "Staff",
+    icon: "ti ti-users-group",
+    href: "/admin/staff",
+    adminOnly: true, // ← only visible to admin role
   },
   {
     label: "Users",
@@ -69,17 +76,14 @@ const navItems = [
   },
 ];
 
-function NavItem({ item, onClick }) {
-  // Render only the page content for the login route
-
+function NavItem({ item, role, onClick }) {
   const pathname = usePathname();
   const isActive = item.exact
     ? pathname === item.href
     : pathname.startsWith(item.href);
 
-  if (pathname === "/admin/login") {
-    return <>{children}</>;
-  }
+  // Hide admin-only items from non-admins
+  if (item.adminOnly && role !== "admin") return null;
 
   return (
     <Link
@@ -99,13 +103,23 @@ function NavItem({ item, onClick }) {
 }
 
 export default function AdminLayout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  // Render only the page content for the login route
   if (pathname === "/admin/login") {
     return <>{children}</>;
   }
+
+  return (
+    <SessionWrapper>
+      <AdminPanel>{children}</AdminPanel>
+    </SessionWrapper>
+  );
+}
+
+function AdminPanel({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { data: session } = useSession();
+  const role = session?.user?.role;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -129,12 +143,36 @@ export default function AdminLayout({ children }) {
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
           {navItems.map((item) => (
-            <NavItem key={item.href} item={item} />
+            <NavItem key={item.href} item={item} role={role} />
           ))}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom — show role badge + sign out */}
         <div className="px-3 py-4 border-t border-slate-100 flex flex-col gap-2">
+          {session?.user && (
+            <div className="px-4 py-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0">
+                {session.user.name?.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-800 truncate">
+                  {session.user.name}
+                </p>
+                <span
+                  className={`text-xs font-bold capitalize px-2 py-0.5 rounded-full
+                  ${
+                    role === "admin"
+                      ? "bg-blue-50 text-blue-600"
+                      : role === "teacher"
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-amber-50 text-amber-600"
+                  }`}
+                >
+                  {role}
+                </span>
+              </div>
+            </div>
+          )}
           <Link
             href="/"
             target="_blank"
@@ -191,6 +229,7 @@ export default function AdminLayout({ children }) {
             <NavItem
               key={item.href}
               item={item}
+              role={role}
               onClick={() => setSidebarOpen(false)}
             />
           ))}

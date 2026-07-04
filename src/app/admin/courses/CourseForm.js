@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ImageUpload from "../ImageUpload";
 
 const defaultForm = {
   name: "",
@@ -9,6 +10,7 @@ const defaultForm = {
   tagline: "",
   description: "",
   icon: "ti ti-certificate",
+  coverImage: "",
   price: "",
   duration: "",
   batchSize: "",
@@ -29,8 +31,8 @@ export default function CourseForm({ course }) {
     course
       ? {
           ...course,
+          coverImage: course.coverImage ?? "",
           features: course.features ?? [""],
-
           highlights: course.highlights ?? [{ icon: "ti ti-star", label: "" }],
           whatYouWillLearn: course.whatYouWillLearn ?? [
             { icon: "ti ti-book", title: "", desc: "" },
@@ -42,7 +44,6 @@ export default function CourseForm({ course }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Auto generate slug from name
   const handleNameChange = (val) => {
     const slug = val
       .toLowerCase()
@@ -51,7 +52,6 @@ export default function CourseForm({ course }) {
     setForm((f) => ({ ...f, name: val, slug }));
   };
 
-  // Features
   const updateFeature = (i, val) => {
     const updated = [...form.features];
     updated[i] = val;
@@ -65,7 +65,6 @@ export default function CourseForm({ course }) {
       features: f.features.filter((_, idx) => idx !== i),
     }));
 
-  // Highlights
   const updateHighlight = (i, key, val) => {
     const updated = [...form.highlights];
     updated[i] = { ...updated[i], [key]: val };
@@ -82,7 +81,6 @@ export default function CourseForm({ course }) {
       highlights: f.highlights.filter((_, idx) => idx !== i),
     }));
 
-  // What You Will Learn
   const updateLearn = (i, key, val) => {
     const updated = [...form.whatYouWillLearn];
     updated[i] = { ...updated[i], [key]: val };
@@ -106,17 +104,14 @@ export default function CourseForm({ course }) {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       const url = isEdit ? `/api/courses/${course.id}` : "/api/courses";
       const method = isEdit ? "PUT" : "POST";
-
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-
       if (res.ok) {
         router.refresh();
         router.push("/admin/courses");
@@ -230,6 +225,20 @@ export default function CourseForm({ course }) {
             />
           </div>
         </div>
+
+        {/* Cover Image */}
+        <div>
+          <label className={labelClass}>
+            Cover Image{" "}
+            <span className="text-slate-400 normal-case font-normal">
+              (1200×630px recommended) (optional)
+            </span>
+          </label>
+          <ImageUpload
+            value={form.coverImage}
+            onChange={(url) => setForm((f) => ({ ...f, coverImage: url }))}
+          />
+        </div>
       </div>
 
       {/* Course Details */}
@@ -238,7 +247,6 @@ export default function CourseForm({ course }) {
           <i className="ti ti-list text-blue-600" />
           Course Details
         </h2>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
           <div>
             <label className={labelClass}>Price *</label>
@@ -320,8 +328,7 @@ export default function CourseForm({ course }) {
             onClick={addFeature}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-all"
           >
-            <i className="ti ti-plus text-sm" />
-            Add Feature
+            <i className="ti ti-plus text-sm" /> Add Feature
           </button>
         </div>
         <div className="flex flex-col gap-2">
@@ -358,8 +365,7 @@ export default function CourseForm({ course }) {
             onClick={addLearn}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-all"
           >
-            <i className="ti ti-plus text-sm" />
-            Add Item
+            <i className="ti ti-plus text-sm" /> Add Item
           </button>
         </div>
         <div className="flex flex-col gap-4">
@@ -420,8 +426,7 @@ export default function CourseForm({ course }) {
             onClick={addHighlight}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-all"
           >
-            <i className="ti ti-plus text-sm" />
-            Add Highlight
+            <i className="ti ti-plus text-sm" /> Add Highlight
           </button>
         </div>
         <div className="flex flex-col gap-3">

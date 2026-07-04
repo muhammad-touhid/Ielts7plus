@@ -36,6 +36,7 @@ export async function PUT(req, { params }) {
         tagline: body.tagline,
         description: body.description,
         icon: body.icon,
+        coverImage: body.coverImage || null,
         price: body.price,
         duration: body.duration,
         batchSize: body.batchSize,

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import SignInModal from "@/components/common/SignInModal";
 
 const navItems = [
   {
@@ -31,11 +33,7 @@ const navItems = [
     label: "About Us",
     dropdown: [
       { label: "About Us", desc: "", href: "/about" },
-      {
-        label: "Success Stories",
-        desc: "",
-        href: "/success-stories",
-      },
+      { label: "Success Stories", desc: "", href: "/success-stories" },
       { label: "Guides", desc: "", href: "/guides" },
       { label: "FAQ", desc: "", href: "/faq" },
     ],
@@ -46,12 +44,14 @@ const navItems = [
 ];
 
 export default function Header() {
+  const { data: session } = useSession();
   const [scrolled, setScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMobileSub, setOpenMobileSub] = useState(null);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // ✅ Scroll listener
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -62,67 +62,78 @@ export default function Header() {
     setOpenMobileSub(openMobileSub === label ? null : label);
   };
 
+  const role = session?.user?.role;
+  const isLoggedIn = !!session;
+  const dashboardHref =
+    role === "admin" || role === "teacher" ? "/admin" : "/dashboard";
+
+  const handleSignOut = () => {
+    setShowUserMenu(false);
+    signOut({ callbackUrl: "/" });
+  };
+
   return (
-    <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white border-b border-gray-200"
-          : "bg-transparent border-b border-transparent"
-      }`}
-    >
-      <div className="mx-auto flex h-16 container items-center justify-between px-6">
-        {/* Logo */}
-        <Link href="/">
-          <Image
-            src="/images/IELTS7.jpeg"
-            alt="logo"
-            width={80}
-            height={0}
-            style={{ width: "auto", height: "auto" }}
-            className="rounded-xl"
-          />
-        </Link>
+    <>
+      <header
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white border-b border-gray-200"
+            : "bg-transparent border-b border-transparent"
+        }`}
+      >
+        <div className="mx-auto flex h-16 container items-center justify-between px-6">
+          {/* Logo */}
+          <Link href="/">
+            <Image
+              src="/images/IELTS7.jpeg"
+              alt="logo"
+              width={80}
+              height={0}
+              style={{ width: "auto", height: "auto" }}
+              className="rounded-xl"
+            />
+          </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden items-center gap-1 md:flex">
-          {navItems.map((item) =>
-            item.dropdown ? (
-              <div
-                key={item.label}
-                className="relative"
-                onMouseEnter={() => setOpenDropdown(item.label)}
-                onMouseLeave={() => setOpenDropdown(null)}
-              >
-                <button
-                  className={`flex items-center gap-1 rounded-lg px-3 py-2 text-m transition-colors cursor-pointer ${
-                    scrolled
-                      ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      : "text-white/90 hover:text-white"
-                  }`}
+          {/* Desktop Nav */}
+          <nav className="hidden items-center gap-1 md:flex">
+            {navItems.map((item) =>
+              item.dropdown ? (
+                <div
+                  key={item.label}
+                  className="relative"
+                  onMouseEnter={() => setOpenDropdown(item.label)}
+                  onMouseLeave={() => setOpenDropdown(null)}
                 >
-                  {item.label}
-                  <svg
-                    className={`h-4 w-4 transition-transform ${
-                      openDropdown === item.label ? "rotate-180" : ""
+                  <button
+                    className={`flex items-center gap-1 rounded-lg px-3 py-2 text-m transition-colors cursor-pointer ${
+                      scrolled
+                        ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        : "text-white/90 hover:text-white"
                     }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
+                    {item.label}
+                    <svg
+                      className={`h-4 w-4 transition-transform ${
+                        openDropdown === item.label ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
 
-                {openDropdown === item.label && (
-                  <div className="absolute left-0 top-full z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
-                    {item.dropdown.map((drop, i) => (
-                      <div key={drop.label}>
+                  {openDropdown === item.label && (
+                    <div className="absolute left-0 top-full z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                      {item.dropdown.map((drop) => (
                         <Link
+                          key={drop.label}
                           href={drop.href}
                           onClick={() => setOpenDropdown(null)}
                           className="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50"
@@ -131,134 +142,268 @@ export default function Header() {
                             <p className="text-m font-medium text-gray-900">
                               {drop.label}
                             </p>
-                            <p className="text-xs text-gray-500">{drop.desc}</p>
+                            {drop.desc && (
+                              <p className="text-xs text-gray-500">
+                                {drop.desc}
+                              </p>
+                            )}
                           </div>
                         </Link>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`rounded-lg px-3 py-2 text-m transition-colors ${
-                  scrolled
-                    ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    : "text-white/90 hover:text-white"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ),
-          )}
-        </nav>
-
-        {/* CTA + Hamburger */}
-        <div className="flex items-center gap-3">
-          <button className="hidden rounded-lg bg-blue-600 hover:bg-blue-700 cursor-pointer px-4 py-2 text-m font-medium text-white hover:bg-blue-700 md:block">
-            Get Started
-          </button>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className={`rounded-lg border p-2 md:hidden ${
-              scrolled
-                ? "border-gray-200 text-gray-600"
-                : "border-white/30 text-white"
-            }`}
-          >
-            {mobileOpen ? (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="border-t border-gray-200 bg-white px-6 pb-4 md:hidden">
-          {navItems.map((item) =>
-            item.dropdown ? (
-              <div key={item.label}>
-                <button
-                  onClick={() => toggleMobileSub(item.label)}
-                  className="flex w-full items-center justify-between border-b border-gray-100 py-3 text-m text-gray-600"
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`rounded-lg px-3 py-2 text-m transition-colors ${
+                    scrolled
+                      ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      : "text-white/90 hover:text-white"
+                  }`}
                 >
                   {item.label}
-                  <svg
-                    className={`h-4 w-4 transition-transform ${
-                      openMobileSub === item.label ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
+                </Link>
+              ),
+            )}
+          </nav>
+
+          {/* CTA + Hamburger */}
+          <div className="flex items-center gap-3">
+            {isLoggedIn ? (
+              /* User avatar + dropdown */
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-white/10 transition-all"
+                >
+                  {session.user?.image ? (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name}
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-blue-200"
                     />
-                  </svg>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-extrabold">
+                      {session.user?.name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="text-left hidden lg:block">
+                    <p
+                      className={`text-xs font-bold leading-none ${scrolled ? "text-slate-800" : "text-white"}`}
+                    >
+                      {session.user?.name?.split(" ")[0]}
+                    </p>
+                  </div>
+                  <i
+                    className={`ti ti-chevron-down text-xs ${scrolled ? "text-slate-400" : "text-white/60"}`}
+                  />
                 </button>
-                {openMobileSub === item.label && (
-                  <div className="pl-3 pb-2">
-                    {item.dropdown.map((drop) => (
-                      <Link
-                        key={drop.label}
-                        href={drop.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="block py-2 text-m text-gray-500 hover:text-gray-900"
+
+                {showUserMenu && (
+                  <div
+                    className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border border-slate-100 shadow-lg p-1.5 z-50"
+                    onMouseLeave={() => setShowUserMenu(false)}
+                  >
+                    <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                      <p className="text-xs font-bold text-slate-800 truncate">
+                        {session.user?.name}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate">
+                        {session.user?.email}
+                      </p>
+                      <span
+                        className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full mt-1 capitalize
+                        ${
+                          role === "admin"
+                            ? "bg-blue-50 text-blue-600"
+                            : role === "teacher"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-slate-100 text-slate-500"
+                        }`}
                       >
-                        {drop.label}
-                      </Link>
-                    ))}
+                        {role}
+                      </span>
+                    </div>
+                    <Link
+                      href={dashboardHref}
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-all"
+                    >
+                      <i className="ti ti-layout-dashboard text-slate-400" />
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-rose-500 hover:bg-rose-50 transition-all"
+                    >
+                      <i className="ti ti-logout text-rose-400" />
+                      Sign Out
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="block border-b border-gray-100 py-3 text-m text-gray-600"
+              /* Sign In button */
+              <button
+                onClick={() => setShowSignIn(true)}
+                className="hidden md:flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-bold text-white transition-all duration-200"
               >
-                {item.label}
-              </Link>
-            ),
-          )}
-          <button className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 text-m font-medium text-white">
-            Get Started
-          </button>
+                <i className="ti ti-login text-sm" />
+                Sign In
+              </button>
+            )}
+
+            {/* Hamburger */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className={`rounded-lg border p-2 md:hidden ${
+                scrolled
+                  ? "border-gray-200 text-gray-600"
+                  : "border-white/30 text-white"
+              }`}
+            >
+              {mobileOpen ? (
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
-      )}
-    </header>
+
+        {/* Mobile Menu */}
+        {mobileOpen && (
+          <div className="border-t border-gray-200 bg-white px-6 pb-4 md:hidden">
+            {navItems.map((item) =>
+              item.dropdown ? (
+                <div key={item.label}>
+                  <button
+                    onClick={() => toggleMobileSub(item.label)}
+                    className="flex w-full items-center justify-between border-b border-gray-100 py-3 text-m text-gray-600"
+                  >
+                    {item.label}
+                    <svg
+                      className={`h-4 w-4 transition-transform ${
+                        openMobileSub === item.label ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {openMobileSub === item.label && (
+                    <div className="pl-3 pb-2">
+                      {item.dropdown.map((drop) => (
+                        <Link
+                          key={drop.label}
+                          href={drop.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="block py-2 text-m text-gray-500 hover:text-gray-900"
+                        >
+                          {drop.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block border-b border-gray-100 py-3 text-m text-gray-600"
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
+
+            {/* Mobile auth */}
+            {isLoggedIn ? (
+              <div className="mt-4 flex flex-col gap-2">
+                <div className="flex items-center gap-3 py-2">
+                  {session.user?.image ? (
+                    <img
+                      src={session.user.image}
+                      className="w-9 h-9 rounded-full object-cover"
+                      alt=""
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-extrabold">
+                      {session.user?.name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">
+                      {session.user?.name}
+                    </p>
+                    <p className="text-xs text-slate-400 capitalize">{role}</p>
+                  </div>
+                </div>
+                <Link
+                  href={dashboardHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full text-center rounded-lg bg-blue-600 py-2.5 text-sm font-bold text-white"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="w-full rounded-lg border border-rose-200 py-2.5 text-sm font-bold text-rose-500"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  setShowSignIn(true);
+                }}
+                className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-bold text-white"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        )}
+      </header>
+
+      {/* Sign In Modal */}
+      {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
+    </>
   );
 }

@@ -12,16 +12,17 @@ model Admin {
   email     String   @unique
   password  String
   name      String
+  role      String   @default("admin")  // "admin" | "teacher" | "moderator"
   createdAt DateTime @default(now())
 }
-
 model Course {
   id               String   @id @default(cuid())
-  slug             String   @unique
+  slug             String   @unique 
   name             String
   tagline          String
   description      String
   icon             String
+  coverImage String?
   price            String
   duration         String
   batchSize        String

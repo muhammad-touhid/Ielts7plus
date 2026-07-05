@@ -10,6 +10,9 @@ const moduleTypes = {
   speaking: ["part"],
 };
 
+// Listening and Speaking are same for both — only Reading and Writing differ
+const supportsTestType = ["reading", "writing"];
+
 const defaultContent = {
   mcq: { text: "", options: ["", "", "", ""], correctAnswer: "" },
   passage: { title: "", passage: "" },
@@ -17,7 +20,10 @@ const defaultContent = {
   part: { part: "", instruction: "", questions: [""] },
 };
 
-export default function MockTestQuestionForm({ question }) {
+export default function MockTestQuestionForm({
+  question,
+  backModule = "listening",
+}) {
   const router = useRouter();
   const isEdit = !!question;
 
@@ -28,6 +34,7 @@ export default function MockTestQuestionForm({ question }) {
   const [content, setContent] = useState(
     question?.content ?? defaultContent["mcq"],
   );
+  const [testType, setTestType] = useState(question?.testType ?? "both");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,6 +43,10 @@ export default function MockTestQuestionForm({ question }) {
     const firstType = moduleTypes[val][0];
     setType(firstType);
     setContent(defaultContent[firstType]);
+    // Auto-set testType for modules that don't differ
+    if (!supportsTestType.includes(val)) {
+      setTestType("both");
+    }
   };
 
   const handleTypeChange = (val) => {
@@ -57,12 +68,21 @@ export default function MockTestQuestionForm({ question }) {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ module, type, order, content, published }),
+        body: JSON.stringify({
+          module,
+          type,
+          order,
+          content,
+          published,
+          testType,
+        }),
       });
 
       if (res.ok) {
         router.refresh();
-        router.push("/admin/mock-test-questions");
+        if (!isEdit) {
+          router.push("/admin/mock-test-questions");
+        }
       } else {
         const data = await res.json();
         setError(data.error || "Something went wrong.");
@@ -88,7 +108,7 @@ export default function MockTestQuestionForm({ question }) {
         </div>
       )}
 
-      {/* Module, Type, Order */}
+      {/* Module, Type, Order, TestType */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col gap-5">
         <h2 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
           <i className="ti ti-settings text-blue-600" />
@@ -146,6 +166,63 @@ export default function MockTestQuestionForm({ question }) {
             />
           </div>
         </div>
+
+        {/* Test Type — only for Reading and Writing */}
+        {supportsTestType.includes(module) ? (
+          <div>
+            <label className={labelClass}>Test Type *</label>
+            <p className="text-xs text-slate-400 mb-3">
+              {module === "reading"
+                ? "Academic and General Training have different Reading passages and questions."
+                : "Task 2 (essay) is the same for both. Task 1 differs — Academic describes a graph/chart, General writes a letter."}
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                {
+                  value: "academic",
+                  label: "Academic Only",
+                  icon: "ti-school",
+                  color: "border-blue-600 bg-blue-50 text-blue-700",
+                },
+                {
+                  value: "general",
+                  label: "General Only",
+                  icon: "ti-briefcase",
+                  color: "border-emerald-600 bg-emerald-50 text-emerald-700",
+                },
+                {
+                  value: "both",
+                  label: "Both Types",
+                  icon: "ti-circles-relation",
+                  color: "border-violet-600 bg-violet-50 text-violet-700",
+                },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTestType(opt.value)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${
+                    testType === opt.value
+                      ? opt.color
+                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  <i className={`ti ${opt.icon} text-xl`} />
+                  <span className="text-xs font-bold">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-slate-50 rounded-xl px-5 py-3 flex items-center gap-3 border border-slate-100">
+            <i className="ti ti-info-circle text-slate-400" />
+            <p className="text-xs text-slate-500">
+              <span className="font-bold capitalize">{module}</span> is the same
+              for both Academic and General Training — this question will appear
+              for all students.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Dynamic content fields */}
@@ -361,8 +438,7 @@ export default function MockTestQuestionForm({ question }) {
                   }
                   className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all"
                 >
-                  <i className="ti ti-plus text-xs" />
-                  Add Question
+                  <i className="ti ti-plus text-xs" /> Add Question
                 </button>
               </div>
               <div className="flex flex-col gap-2">
@@ -432,7 +508,9 @@ export default function MockTestQuestionForm({ question }) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push("/admin/mock-test-questions")}
+            onClick={() =>
+              router.push(`/admin/mock-test-questions?module=${backModule}`)
+            }
             className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-6 py-3 rounded-xl hover:border-slate-300 transition-all duration-200"
           >
             Cancel

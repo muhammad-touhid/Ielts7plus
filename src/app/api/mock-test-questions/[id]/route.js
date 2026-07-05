@@ -35,6 +35,7 @@ export async function PUT(req, { params }) {
         type: body.type,
         order: parseInt(body.order) || 0,
         content: body.content,
+        testType: body.testType || "both",
         published: body.published ?? false,
       },
     });

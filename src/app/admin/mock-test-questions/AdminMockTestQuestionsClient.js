@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import DeleteQuestionButton from "./DeleteQuestionButton";
+import { useSearchParams } from "next/navigation";
 
 const moduleConfig = {
   listening: {
@@ -47,7 +48,10 @@ const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 export default function AdminMockTestQuestionsClient({ questions }) {
   const modules = ["listening", "reading", "writing", "speaking"];
 
-  const [activeModule, setActiveModule] = useState("listening");
+  const searchParams = useSearchParams();
+  const [activeModule, setActiveModule] = useState(
+    searchParams.get("module") || "listening",
+  );
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -220,6 +224,9 @@ export default function AdminMockTestQuestionsClient({ questions }) {
                     Type
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Test Type
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
                     Preview
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -260,6 +267,19 @@ export default function AdminMockTestQuestionsClient({ questions }) {
                         </span>
                       </td>
                       <td className="px-6 py-4">
+                        <span
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${
+                            q.testType === "academic"
+                              ? "bg-blue-50 text-blue-600"
+                              : q.testType === "general"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : "bg-violet-50 text-violet-600"
+                          }`}
+                        >
+                          {q.testType === "both" ? "Both" : q.testType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
                         <p className="text-sm text-slate-600 max-w-md truncate">
                           {preview}
                         </p>
@@ -274,7 +294,7 @@ export default function AdminMockTestQuestionsClient({ questions }) {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Link
-                            href={`/admin/mock-test-questions/${q.id}`}
+                            href={`/admin/mock-test-questions/${q.id}?module=${activeModule}`}
                             className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-all duration-200"
                           >
                             <i className="ti ti-edit text-sm" />

@@ -4,16 +4,21 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import MockTestQuestionForm from "../MockTestQuestionForm";
 
-export default async function EditMockTestQuestionPage({ params }) {
+export default async function EditMockTestQuestionPage({
+  params,
+  searchParams,
+}) {
   const { id } = await params;
   const question = await prisma.mockTestQuestion.findUnique({ where: { id } });
   if (!question) notFound();
+  const { module } = await searchParams;
+  const getModule = module ?? "listening";
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <Link
-          href="/admin/mock-test-questions"
+          href={`/admin/mock-test-questions?module=${getModule}`}
           className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all"
         >
           <i className="ti ti-arrow-left text-base" />
@@ -27,7 +32,7 @@ export default async function EditMockTestQuestionPage({ params }) {
           </p>
         </div>
       </div>
-      <MockTestQuestionForm question={question} />
+      <MockTestQuestionForm question={question} backModule={getModule} />
     </div>
   );
 }

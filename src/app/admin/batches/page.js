@@ -93,7 +93,7 @@ export default async function AdminBatchesPage() {
                       <span
                         className={`text-xs font-bold px-2 py-1 rounded-full ${batch.seats <= 5 ? "bg-rose-100 text-rose-600" : batch.seats <= 10 ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"}`}
                       >
-                        {batch.seats} left
+                        {batch.seats}
                       </span>
                     </td>
                     <td className="px-6 py-4">

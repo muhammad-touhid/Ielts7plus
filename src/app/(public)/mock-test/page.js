@@ -22,7 +22,7 @@ function useTimer(seconds, active) {
   return { timeLeft, display: `${mm}:${ss}` };
 }
 
-function ProgressBar({ steps, current }) {
+function ProgressBar({ steps, current, onBack }) {
   return (
     <div>
       <section className="relative bg-gradient-to-r from-[#354e98] to-[#4a71df] overflow-hidden py-16 px-5">
@@ -50,26 +50,51 @@ function ProgressBar({ steps, current }) {
           </p>
         </div>
       </section>
-      <div className="container m-auto flex justify-center items-center gap-1 mt-10 mb-8 ml-5">
-        {steps.map((s, i) => (
-          <div key={i} className="flex items-center gap-1 flex-1">
-            <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold flex-shrink-0 transition-all ${i < current ? "bg-emerald-500 text-white" : i === current ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"}`}
-            >
-              {i < current ? <i className="ti ti-check text-sm" /> : i + 1}
+
+      {/* Steps bar */}
+      <div className="bg-white border-b border-slate-100 shadow-sm px-6 py-5">
+        <div className="max-w-2xl mx-auto flex items-center justify-center gap-0">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-center">
+              {/* Step circle + label */}
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={() => i < current && i > 0 && onBack(i)}
+                  disabled={i >= current}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
+                    i < current
+                      ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
+                      : i === current
+                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                        : "bg-slate-100 text-slate-400 cursor-default"
+                  }`}
+                >
+                  {i < current ? <i className="ti ti-check text-sm" /> : i + 1}
+                </button>
+                <span
+                  className={`hidden sm:block text-xs font-semibold whitespace-nowrap ${
+                    i === current
+                      ? "text-blue-600"
+                      : i < current
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                  }`}
+                >
+                  {s}
+                </span>
+              </div>
+
+              {/* Connector line */}
+              {i < steps.length - 1 && (
+                <div
+                  className={`w-10 sm:w-16 h-0.5 mx-1 mb-5 rounded-full transition-all duration-300 ${
+                    i < current ? "bg-emerald-400" : "bg-slate-200"
+                  }`}
+                />
+              )}
             </div>
-            <span
-              className={`hidden md:block text-xs font-semibold whitespace-nowrap ${i === current ? "text-blue-600" : "text-slate-400"}`}
-            >
-              {s}
-            </span>
-            {i < steps.length - 1 && (
-              <div
-                className={`flex-1 h-0.5 mx-1 rounded-full ${i < current ? "bg-emerald-400" : "bg-slate-200"}`}
-              />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -132,6 +157,18 @@ function LoadingSpinner() {
         <p className="text-slate-400 text-sm">Loading questions...</p>
       </div>
     </div>
+  );
+}
+
+function BackButton({ onClick, label = "Back" }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors"
+    >
+      <i className="ti ti-arrow-left text-base" />
+      {label}
+    </button>
   );
 }
 
@@ -199,8 +236,7 @@ function LandingScreen({ onStart }) {
             onClick={onStart}
             className="inline-flex items-center gap-2 bg-white text-blue-600 text-sm font-bold px-10 py-4 rounded-xl shadow-lg shadow-blue-900/30 hover:bg-sky-50 hover:-translate-y-0.5 transition-all duration-200"
           >
-            <i className="ti ti-player-play text-base" />
-            Start Mock Test
+            <i className="ti ti-player-play text-base" /> Start Mock Test
           </button>
         </div>
       </div>
@@ -267,7 +303,7 @@ function LandingScreen({ onStart }) {
   );
 }
 
-function RegistrationScreen({ onSubmit }) {
+function RegistrationScreen({ onSubmit, onBack }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -284,6 +320,9 @@ function RegistrationScreen({ onSubmit }) {
 
   return (
     <div className="max-w-xl mx-auto">
+      <div className="mb-4">
+        <BackButton onClick={onBack} label="Back to Overview" />
+      </div>
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 md:p-10">
         <div className="mb-8">
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
@@ -308,11 +347,7 @@ function RegistrationScreen({ onSubmit }) {
                   key={type}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, testType: type }))}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${
-                    form.testType === type
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-slate-200 bg-white hover:border-blue-300"
-                  }`}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${form.testType === type ? "border-blue-600 bg-blue-50" : "border-slate-200 bg-white hover:border-blue-300"}`}
                 >
                   <i
                     className={`ti ${type === "academic" ? "ti-school" : "ti-briefcase"} text-2xl ${form.testType === type ? "text-blue-600" : "text-slate-400"}`}
@@ -337,8 +372,6 @@ function RegistrationScreen({ onSubmit }) {
                 </button>
               ))}
             </div>
-
-            {/* Difference explanation */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mt-1">
               <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
                 <i className="ti ti-info-circle text-blue-500" />
@@ -454,7 +487,7 @@ function RegistrationScreen({ onSubmit }) {
             type="submit"
             className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200 mt-2"
           >
-            Continue to Module Selection
+            Continue to Module Selection{" "}
             <i className="ti ti-arrow-right text-sm" />
           </button>
         </form>
@@ -463,7 +496,7 @@ function RegistrationScreen({ onSubmit }) {
   );
 }
 
-function ModuleSelectScreen({ completed, onSelect, testType }) {
+function ModuleSelectScreen({ completed, onSelect, testType, onBack }) {
   const modules = [
     {
       id: "listening",
@@ -507,26 +540,33 @@ function ModuleSelectScreen({ completed, onSelect, testType }) {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
-          Step 2
-        </span>
-        <div className="flex items-center gap-3 flex-wrap">
-          <h2 className="text-2xl font-extrabold text-slate-800">
-            Select a Module
-          </h2>
-          <span
-            className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
-          >
-            <i
-              className={`ti ${testType === "academic" ? "ti-school" : "ti-briefcase"} mr-1`}
-            />
-            {testType}
-          </span>
+        <div className="mb-4">
+          <BackButton onClick={onBack} label="Back to Registration" />
         </div>
-        <p className="text-slate-400 text-sm mt-1">
-          Complete the modules in any order. Completed modules are marked in
-          green.
-        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div>
+            <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+              Step 2
+            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-2xl font-extrabold text-slate-800">
+                Select a Module
+              </h2>
+              <span
+                className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
+              >
+                <i
+                  className={`ti ${testType === "academic" ? "ti-school" : "ti-briefcase"} mr-1`}
+                />
+                {testType}
+              </span>
+            </div>
+            <p className="text-slate-400 text-sm mt-1">
+              Complete the modules in any order. Completed modules are marked in
+              green.
+            </p>
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {modules.map((m) => {
@@ -590,7 +630,7 @@ function ModuleSelectScreen({ completed, onSelect, testType }) {
   );
 }
 
-function ListeningScreen({ onComplete, questions }) {
+function ListeningScreen({ onComplete, onBack, questions }) {
   const [answers, setAnswers] = useState({});
   const { display, timeLeft } = useTimer(30 * 60, true);
   const answered = Object.keys(answers).length;
@@ -598,6 +638,9 @@ function ListeningScreen({ onComplete, questions }) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="mb-2">
+            <BackButton onClick={onBack} label="Back to Modules" />
+          </div>
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Listening Module
           </span>
@@ -653,7 +696,7 @@ function ListeningScreen({ onComplete, questions }) {
   );
 }
 
-function ReadingScreen({ onComplete, passage, questions, testType }) {
+function ReadingScreen({ onComplete, onBack, passage, questions, testType }) {
   const [answers, setAnswers] = useState({});
   const { display, timeLeft } = useTimer(60 * 60, true);
   const answered = Object.keys(answers).length;
@@ -661,6 +704,9 @@ function ReadingScreen({ onComplete, passage, questions, testType }) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="mb-2">
+            <BackButton onClick={onBack} label="Back to Modules" />
+          </div>
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Reading Module
           </span>
@@ -712,7 +758,7 @@ function ReadingScreen({ onComplete, passage, questions, testType }) {
   );
 }
 
-function WritingScreen({ onComplete, tasks, testType }) {
+function WritingScreen({ onComplete, onBack, tasks, testType }) {
   const [answers, setAnswers] = useState({});
   const [activeTask, setActiveTask] = useState(0);
   const { display, timeLeft } = useTimer(60 * 60, true);
@@ -720,11 +766,13 @@ function WritingScreen({ onComplete, tasks, testType }) {
   const taskId = task?.id;
   const wc = wordCount(answers[taskId] ?? "");
   const meetsMin = wc >= (task?.content?.minWords ?? 0);
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="mb-2">
+            <BackButton onClick={onBack} label="Back to Modules" />
+          </div>
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Writing Module
           </span>
@@ -743,8 +791,6 @@ function WritingScreen({ onComplete, tasks, testType }) {
         </div>
         <TimerBadge display={display} warn={timeLeft < 600} />
       </div>
-
-      {/* Task 1 type info */}
       <div
         className={`rounded-xl px-5 py-3 flex items-center gap-3 text-sm ${testType === "academic" ? "bg-blue-50 border border-blue-100 text-blue-700" : "bg-emerald-50 border border-emerald-100 text-emerald-700"}`}
       >
@@ -753,7 +799,6 @@ function WritingScreen({ onComplete, tasks, testType }) {
           ? "Task 1: Describe a graph, chart, table or diagram (150+ words). Task 2: Write an essay (250+ words)."
           : "Task 1: Write a letter — formal, semi-formal or informal (150+ words). Task 2: Write an essay (250+ words)."}
       </div>
-
       <div className="flex gap-2">
         {tasks.map((t, i) => (
           <button
@@ -820,7 +865,7 @@ function WritingScreen({ onComplete, tasks, testType }) {
   );
 }
 
-function SpeakingScreen({ onComplete, parts }) {
+function SpeakingScreen({ onComplete, onBack, parts }) {
   const [answers, setAnswers] = useState({});
   const [activePart, setActivePart] = useState(0);
   const { display, timeLeft } = useTimer(15 * 60, true);
@@ -829,6 +874,9 @@ function SpeakingScreen({ onComplete, parts }) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          <div className="mb-2">
+            <BackButton onClick={onBack} label="Back to Modules" />
+          </div>
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Speaking Module
           </span>
@@ -1004,7 +1052,7 @@ function SubmitScreen({ student, completed }) {
   );
 }
 
-const STEPS = ["Overview", "Registration", "Modules", "Test", "Submit"];
+const STEPS = ["Overview", "Register", "Modules", "Test", "Submit"];
 
 export default function MockTestPage() {
   const [step, setStep] = useState(0);
@@ -1088,12 +1136,35 @@ export default function MockTestPage() {
     }
   };
 
+  // Back navigation handler
+  const handleBack = (targetStep) => {
+    if (targetStep !== undefined) {
+      setStep(targetStep);
+      return;
+    }
+    if (step === 3) {
+      setActiveModule(null);
+      setStep(2);
+    } else if (step === 2) {
+      setStep(1);
+    } else if (step === 1) {
+      setStep(0);
+    }
+  };
+
   return (
     <main className="bg-slate-50 min-h-screen">
       {step === 0 && <LandingScreen onStart={() => setStep(1)} />}
-      {step > 0 && step < 4 && <ProgressBar steps={STEPS} current={step} />}
+      {step > 0 && step < 4 && (
+        <ProgressBar steps={STEPS} current={step} onBack={handleBack} />
+      )}
       <div className="container mx-auto px-5 py-12">
-        {step === 1 && <RegistrationScreen onSubmit={handleRegister} />}
+        {step === 1 && (
+          <RegistrationScreen
+            onSubmit={handleRegister}
+            onBack={() => handleBack()}
+          />
+        )}
         {step === 2 &&
           (loadingQuestions ? (
             <LoadingSpinner />
@@ -1103,6 +1174,7 @@ export default function MockTestPage() {
                 completed={completed}
                 onSelect={handleModuleSelect}
                 testType={testType}
+                onBack={() => handleBack()}
               />
               {completed.length > 0 && (
                 <div className="flex justify-end">
@@ -1130,12 +1202,14 @@ export default function MockTestPage() {
         {step === 3 && activeModule === "listening" && (
           <ListeningScreen
             onComplete={handleModuleComplete}
+            onBack={() => handleBack()}
             questions={listeningQuestions}
           />
         )}
         {step === 3 && activeModule === "reading" && (
           <ReadingScreen
             onComplete={handleModuleComplete}
+            onBack={() => handleBack()}
             passage={readingPassage}
             questions={readingQuestions}
             testType={testType}
@@ -1144,6 +1218,7 @@ export default function MockTestPage() {
         {step === 3 && activeModule === "writing" && (
           <WritingScreen
             onComplete={handleModuleComplete}
+            onBack={() => handleBack()}
             tasks={writingTasks}
             testType={testType}
           />
@@ -1151,6 +1226,7 @@ export default function MockTestPage() {
         {step === 3 && activeModule === "speaking" && (
           <SpeakingScreen
             onComplete={handleModuleComplete}
+            onBack={() => handleBack()}
             parts={speakingParts}
           />
         )}

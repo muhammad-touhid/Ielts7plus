@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log("Received body:", JSON.stringify(body, null, 2));
 
     const submission = await prisma.mockTestSubmission.create({
       data: {
@@ -12,6 +11,7 @@ export async function POST(req) {
         email: body.email,
         phone: body.phone,
         targetBand: body.targetBand || null,
+        testType: body.testType || "academic",
         completedModules: body.completedModules,
         answers: body.answers,
         status: "pending",

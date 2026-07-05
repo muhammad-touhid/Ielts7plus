@@ -65,7 +65,9 @@ export default function Header() {
   const role = session?.user?.role;
   const isLoggedIn = !!session;
   const dashboardHref =
-    role === "admin" || role === "teacher" ? "/admin" : "/dashboard";
+    role === "admin" || role === "teacher" || role === "moderator"
+      ? "/admin"
+      : "/dashboard";
 
   const handleSignOut = () => {
     setShowUserMenu(false);

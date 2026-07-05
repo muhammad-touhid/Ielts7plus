@@ -50,7 +50,7 @@ function ProgressBar({ steps, current }) {
           </p>
         </div>
       </section>
-      <div className="container m-auto flex justify-center items-center gap-1 mt-10 mb-8 ml-5 ">
+      <div className="container m-auto flex justify-center items-center gap-1 mt-10 mb-8 ml-5">
         {steps.map((s, i) => (
           <div key={i} className="flex items-center gap-1 flex-1">
             <div
@@ -159,7 +159,7 @@ function LandingScreen({ onStart }) {
       icon: "ti ti-pencil",
       duration: "60 min",
       questions: 2,
-      desc: "Complete Task 1 (report) and Task 2 (essay).",
+      desc: "Complete Task 1 and Task 2 writing tasks.",
     },
     {
       id: "speaking",
@@ -197,7 +197,7 @@ function LandingScreen({ onStart }) {
           </p>
           <button
             onClick={onStart}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-10 py-4 rounded-xl shadow-lg shadow-blue-900/30 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200"
+            className="inline-flex items-center gap-2 bg-white text-blue-600 text-sm font-bold px-10 py-4 rounded-xl shadow-lg shadow-blue-900/30 hover:bg-sky-50 hover:-translate-y-0.5 transition-all duration-200"
           >
             <i className="ti ti-player-play text-base" />
             Start Mock Test
@@ -241,8 +241,8 @@ function LandingScreen({ onStart }) {
       </div>
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 container m-auto">
         <h2 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
-          <i className="ti ti-info-circle text-blue-600 text-lg" />
-          Instructions & Rules
+          <i className="ti ti-info-circle text-blue-600 text-lg" /> Instructions
+          & Rules
         </h2>
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
@@ -273,6 +273,7 @@ function RegistrationScreen({ onSubmit }) {
     email: "",
     phone: "",
     targetBand: "",
+    testType: "academic",
   });
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -280,6 +281,7 @@ function RegistrationScreen({ onSubmit }) {
     e.preventDefault();
     onSubmit(form);
   };
+
   return (
     <div className="max-w-xl mx-auto">
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 md:p-10">
@@ -295,6 +297,92 @@ function RegistrationScreen({ onSubmit }) {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* Test Type Toggle */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+              Test Type <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {["academic", "general"].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, testType: type }))}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${
+                    form.testType === type
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-slate-200 bg-white hover:border-blue-300"
+                  }`}
+                >
+                  <i
+                    className={`ti ${type === "academic" ? "ti-school" : "ti-briefcase"} text-2xl ${form.testType === type ? "text-blue-600" : "text-slate-400"}`}
+                  />
+                  <div className="text-center">
+                    <p
+                      className={`text-sm font-extrabold capitalize ${form.testType === type ? "text-blue-700" : "text-slate-600"}`}
+                    >
+                      {type}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {type === "academic"
+                        ? "University / immigration"
+                        : "Work / secondary education"}
+                    </p>
+                  </div>
+                  {form.testType === type && (
+                    <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                      Selected
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Difference explanation */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mt-1">
+              <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+                <i className="ti ti-info-circle text-blue-500" />
+                {form.testType === "academic"
+                  ? "Academic"
+                  : "General Training"}{" "}
+                — What's different:
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {form.testType === "academic" ? (
+                  <>
+                    <li className="text-xs text-slate-500 flex items-start gap-1.5">
+                      <i className="ti ti-circle-check-filled text-blue-400 mt-0.5 flex-shrink-0" />
+                      Reading: Complex academic texts from journals & books
+                    </li>
+                    <li className="text-xs text-slate-500 flex items-start gap-1.5">
+                      <i className="ti ti-circle-check-filled text-blue-400 mt-0.5 flex-shrink-0" />
+                      Writing Task 1: Describe a graph, chart, or diagram
+                    </li>
+                    <li className="text-xs text-slate-500 flex items-start gap-1.5">
+                      <i className="ti ti-circle-check text-slate-300 mt-0.5 flex-shrink-0" />
+                      Listening & Speaking: Same as General
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li className="text-xs text-slate-500 flex items-start gap-1.5">
+                      <i className="ti ti-circle-check-filled text-emerald-400 mt-0.5 flex-shrink-0" />
+                      Reading: Practical texts — notices, ads, workplace docs
+                    </li>
+                    <li className="text-xs text-slate-500 flex items-start gap-1.5">
+                      <i className="ti ti-circle-check-filled text-emerald-400 mt-0.5 flex-shrink-0" />
+                      Writing Task 1: Write a formal or informal letter
+                    </li>
+                    <li className="text-xs text-slate-500 flex items-start gap-1.5">
+                      <i className="ti ti-circle-check text-slate-300 mt-0.5 flex-shrink-0" />
+                      Listening & Speaking: Same as Academic
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+          </div>
+
           {[
             {
               name: "name",
@@ -338,6 +426,7 @@ function RegistrationScreen({ onSubmit }) {
               </div>
             </div>
           ))}
+
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
               Target Band Score
@@ -360,6 +449,7 @@ function RegistrationScreen({ onSubmit }) {
               <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
             </div>
           </div>
+
           <button
             type="submit"
             className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200 mt-2"
@@ -373,7 +463,7 @@ function RegistrationScreen({ onSubmit }) {
   );
 }
 
-function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
+function ModuleSelectScreen({ completed, onSelect, testType }) {
   const modules = [
     {
       id: "listening",
@@ -381,7 +471,7 @@ function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
       icon: "ti ti-headphones",
       duration: "30 min",
       questions: 40,
-      desc: "Listen to four recordings and answer 40 questions.",
+      desc: "Listen to recordings and answer 40 questions. Same for both test types.",
     },
     {
       id: "reading",
@@ -389,7 +479,10 @@ function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
       icon: "ti ti-book",
       duration: "60 min",
       questions: 40,
-      desc: "Read three passages and answer 40 questions.",
+      desc:
+        testType === "academic"
+          ? "Read academic texts and answer 40 questions."
+          : "Read practical texts and answer 40 questions.",
     },
     {
       id: "writing",
@@ -397,7 +490,10 @@ function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
       icon: "ti ti-pencil",
       duration: "60 min",
       questions: 2,
-      desc: "Complete Task 1 (report) and Task 2 (essay).",
+      desc:
+        testType === "academic"
+          ? "Task 1: Describe a graph/chart. Task 2: Essay."
+          : "Task 1: Write a letter. Task 2: Essay.",
     },
     {
       id: "speaking",
@@ -405,7 +501,7 @@ function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
       icon: "ti ti-microphone",
       duration: "15 min",
       questions: 3,
-      desc: "Answer questions across three parts.",
+      desc: "Answer questions across three parts. Same for both test types.",
     },
   ];
   return (
@@ -414,10 +510,20 @@ function ModuleSelectScreen({ completed, onSelect, onSubmit, submitting }) {
         <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
           Step 2
         </span>
-        <h2 className="text-2xl font-extrabold text-slate-800 mb-2">
-          Select a Module
-        </h2>
-        <p className="text-slate-400 text-sm">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h2 className="text-2xl font-extrabold text-slate-800">
+            Select a Module
+          </h2>
+          <span
+            className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
+          >
+            <i
+              className={`ti ${testType === "academic" ? "ti-school" : "ti-briefcase"} mr-1`}
+            />
+            {testType}
+          </span>
+        </div>
+        <p className="text-slate-400 text-sm mt-1">
           Complete the modules in any order. Completed modules are marked in
           green.
         </p>
@@ -540,15 +646,14 @@ function ListeningScreen({ onComplete, questions }) {
           onClick={() => onComplete("listening", answers)}
           className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
         >
-          Submit Listening
-          <i className="ti ti-arrow-right text-sm" />
+          Submit Listening <i className="ti ti-arrow-right text-sm" />
         </button>
       </div>
     </div>
   );
 }
 
-function ReadingScreen({ onComplete, passage, questions }) {
+function ReadingScreen({ onComplete, passage, questions, testType }) {
   const [answers, setAnswers] = useState({});
   const { display, timeLeft } = useTimer(60 * 60, true);
   const answered = Object.keys(answers).length;
@@ -559,9 +664,16 @@ function ReadingScreen({ onComplete, passage, questions }) {
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Reading Module
           </span>
-          <h2 className="text-xl font-extrabold text-slate-800">
-            Passage 1 — {passage?.content?.title ?? "Reading Passage"}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-800">
+              Passage 1 — {passage?.content?.title ?? "Reading Passage"}
+            </h2>
+            <span
+              className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
+            >
+              {testType}
+            </span>
+          </div>
         </div>
         <TimerBadge display={display} warn={timeLeft < 600} />
       </div>
@@ -593,15 +705,14 @@ function ReadingScreen({ onComplete, passage, questions }) {
           onClick={() => onComplete("reading", answers)}
           className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
         >
-          Submit Reading
-          <i className="ti ti-arrow-right text-sm" />
+          Submit Reading <i className="ti ti-arrow-right text-sm" />
         </button>
       </div>
     </div>
   );
 }
 
-function WritingScreen({ onComplete, tasks }) {
+function WritingScreen({ onComplete, tasks, testType }) {
   const [answers, setAnswers] = useState({});
   const [activeTask, setActiveTask] = useState(0);
   const { display, timeLeft } = useTimer(60 * 60, true);
@@ -609,6 +720,7 @@ function WritingScreen({ onComplete, tasks }) {
   const taskId = task?.id;
   const wc = wordCount(answers[taskId] ?? "");
   const meetsMin = wc >= (task?.content?.minWords ?? 0);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -616,12 +728,32 @@ function WritingScreen({ onComplete, tasks }) {
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Writing Module
           </span>
-          <h2 className="text-xl font-extrabold text-slate-800">
-            Academic Writing
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-slate-800">
+              {testType === "academic"
+                ? "Academic Writing"
+                : "General Training Writing"}
+            </h2>
+            <span
+              className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
+            >
+              {testType}
+            </span>
+          </div>
         </div>
         <TimerBadge display={display} warn={timeLeft < 600} />
       </div>
+
+      {/* Task 1 type info */}
+      <div
+        className={`rounded-xl px-5 py-3 flex items-center gap-3 text-sm ${testType === "academic" ? "bg-blue-50 border border-blue-100 text-blue-700" : "bg-emerald-50 border border-emerald-100 text-emerald-700"}`}
+      >
+        <i className="ti ti-info-circle flex-shrink-0" />
+        {testType === "academic"
+          ? "Task 1: Describe a graph, chart, table or diagram (150+ words). Task 2: Write an essay (250+ words)."
+          : "Task 1: Write a letter — formal, semi-formal or informal (150+ words). Task 2: Write an essay (250+ words)."}
+      </div>
+
       <div className="flex gap-2">
         {tasks.map((t, i) => (
           <button
@@ -681,8 +813,7 @@ function WritingScreen({ onComplete, tasks }) {
           onClick={() => onComplete("writing", answers)}
           className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
         >
-          Submit Writing
-          <i className="ti ti-arrow-right text-sm" />
+          Submit Writing <i className="ti ti-arrow-right text-sm" />
         </button>
       </div>
     </div>
@@ -763,8 +894,7 @@ function SpeakingScreen({ onComplete, parts }) {
               onClick={() => setActivePart((p) => p - 1)}
               className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-5 py-3 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
             >
-              <i className="ti ti-arrow-left text-sm" />
-              Previous
+              <i className="ti ti-arrow-left text-sm" /> Previous
             </button>
           )}
           {activePart < parts.length - 1 && (
@@ -772,8 +902,7 @@ function SpeakingScreen({ onComplete, parts }) {
               onClick={() => setActivePart((p) => p + 1)}
               className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-sm font-bold px-5 py-3 rounded-xl hover:bg-slate-200 transition-all duration-200"
             >
-              Next Part
-              <i className="ti ti-arrow-right text-sm" />
+              Next Part <i className="ti ti-arrow-right text-sm" />
             </button>
           )}
         </div>
@@ -781,8 +910,7 @@ function SpeakingScreen({ onComplete, parts }) {
           onClick={() => onComplete("speaking", answers)}
           className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
         >
-          Submit Speaking
-          <i className="ti ti-arrow-right text-sm" />
+          Submit Speaking <i className="ti ti-arrow-right text-sm" />
         </button>
       </div>
     </div>
@@ -817,10 +945,19 @@ function SubmitScreen({ student, completed }) {
         </div>
       </div>
       <div className="w-full bg-white rounded-2xl border border-slate-100 shadow-sm p-6 text-left">
-        <h3 className="text-sm font-extrabold text-slate-700 mb-4 flex items-center gap-2">
-          <i className="ti ti-list-check text-blue-600" />
-          Modules Submitted
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
+            <i className="ti ti-list-check text-blue-600" /> Modules Submitted
+          </h3>
+          <span
+            className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${student?.testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
+          >
+            <i
+              className={`ti ${student?.testType === "academic" ? "ti-school" : "ti-briefcase"} mr-1`}
+            />
+            {student?.testType}
+          </span>
+        </div>
         <ul className="flex flex-col gap-3">
           {modules.map((m) => {
             const done = completed.includes(m.id);
@@ -861,8 +998,7 @@ function SubmitScreen({ student, completed }) {
         href="/"
         className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
       >
-        <i className="ti ti-home text-base" />
-        Back to Home
+        <i className="ti ti-home text-base" /> Back to Home
       </a>
     </div>
   );
@@ -880,10 +1016,12 @@ export default function MockTestPage() {
   const [questions, setQuestions] = useState(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
 
+  const testType = student?.testType || "academic";
+
   useEffect(() => {
-    if (step === 2 && !questions) {
+    if (step === 2 && !questions && student) {
       setLoadingQuestions(true);
-      fetch("/api/mock-test-questions")
+      fetch(`/api/mock-test-questions?testType=${testType}`)
         .then((res) => res.json())
         .then((data) => {
           setQuestions(data);
@@ -891,7 +1029,7 @@ export default function MockTestPage() {
         })
         .catch(() => setLoadingQuestions(false));
     }
-  }, [step, questions]);
+  }, [step, questions, student, testType]);
 
   const listeningQuestions =
     questions?.filter((q) => q.module === "listening" && q.type === "mcq") ??
@@ -933,6 +1071,7 @@ export default function MockTestPage() {
           email: student.email,
           phone: student.phone,
           targetBand: student.targetBand,
+          testType: student.testType,
           completedModules: completed,
           answers: answers,
         }),
@@ -963,8 +1102,7 @@ export default function MockTestPage() {
               <ModuleSelectScreen
                 completed={completed}
                 onSelect={handleModuleSelect}
-                onSubmit={handleSubmit}
-                submitting={submitting}
+                testType={testType}
               />
               {completed.length > 0 && (
                 <div className="flex justify-end">
@@ -1000,12 +1138,14 @@ export default function MockTestPage() {
             onComplete={handleModuleComplete}
             passage={readingPassage}
             questions={readingQuestions}
+            testType={testType}
           />
         )}
         {step === 3 && activeModule === "writing" && (
           <WritingScreen
             onComplete={handleModuleComplete}
             tasks={writingTasks}
+            testType={testType}
           />
         )}
         {step === 3 && activeModule === "speaking" && (

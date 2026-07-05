@@ -118,7 +118,7 @@ export default async function SingleEventPage({ params }) {
           </div>
 
           {/* Right — registration form */}
-          <div className="w-full lg:w-1/3">
+          <div className="w-full lg:w-1/3 sticky top-24">
             <EventRegistrationForm
               eventId={event.id}
               eventTitle={event.title}

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 
@@ -6,6 +7,8 @@ export default async function CoursesPage() {
     where: { published: true },
     orderBy: { createdAt: "asc" },
   });
+
+  console.log(courses);
 
   return (
     <main className="bg-slate-50 min-h-screen">

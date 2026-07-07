@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import ListeningScreen from "./ListeningScreen";
 
 function wordCount(text) {
   return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
@@ -56,7 +57,6 @@ function ProgressBar({ steps, current, onBack }) {
         <div className="max-w-2xl mx-auto flex items-center justify-center gap-0">
           {steps.map((s, i) => (
             <div key={i} className="flex items-center">
-              {/* Step circle + label */}
               <div className="flex flex-col items-center gap-1.5">
                 <button
                   onClick={() => i < current && i > 0 && onBack(i)}
@@ -83,8 +83,6 @@ function ProgressBar({ steps, current, onBack }) {
                   {s}
                 </span>
               </div>
-
-              {/* Connector line */}
               {i < steps.length - 1 && (
                 <div
                   className={`w-10 sm:w-16 h-0.5 mx-1 mb-5 rounded-full transition-all duration-300 ${
@@ -120,10 +118,18 @@ function MCQBlock({ questions, answers, onChange }) {
                 <button
                   key={oi}
                   onClick={() => onChange(q.id, opt)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-all duration-200 ${selected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"}`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-all duration-200 ${
+                    selected
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"
+                  }`}
                 >
                   <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${selected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
+                      selected
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
                   >
                     {letter}
                   </span>
@@ -141,7 +147,9 @@ function MCQBlock({ questions, answers, onChange }) {
 function TimerBadge({ display, warn }) {
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${warn ? "bg-rose-100 text-rose-600" : "bg-blue-50 text-blue-600"}`}
+      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+        warn ? "bg-rose-100 text-rose-600" : "bg-blue-50 text-blue-600"
+      }`}
     >
       <i className={`ti ti-clock text-base ${warn ? "animate-pulse" : ""}`} />
       {display}
@@ -336,7 +344,6 @@ function RegistrationScreen({ onSubmit, onBack }) {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Test Type Toggle */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
               Test Type <span className="text-rose-500">*</span>
@@ -543,30 +550,26 @@ function ModuleSelectScreen({ completed, onSelect, testType, onBack }) {
         <div className="mb-4">
           <BackButton onClick={onBack} label="Back to Registration" />
         </div>
+        <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+          Step 2
+        </span>
         <div className="flex items-center gap-3 flex-wrap">
-          <div>
-            <span className="inline-block text-xs font-bold tracking-widest uppercase text-sky-500 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
-              Step 2
-            </span>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-2xl font-extrabold text-slate-800">
-                Select a Module
-              </h2>
-              <span
-                className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
-              >
-                <i
-                  className={`ti ${testType === "academic" ? "ti-school" : "ti-briefcase"} mr-1`}
-                />
-                {testType}
-              </span>
-            </div>
-            <p className="text-slate-400 text-sm mt-1">
-              Complete the modules in any order. Completed modules are marked in
-              green.
-            </p>
-          </div>
+          <h2 className="text-2xl font-extrabold text-slate-800">
+            Select a Module
+          </h2>
+          <span
+            className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
+          >
+            <i
+              className={`ti ${testType === "academic" ? "ti-school" : "ti-briefcase"} mr-1`}
+            />
+            {testType}
+          </span>
         </div>
+        <p className="text-slate-400 text-sm mt-1">
+          Complete the modules in any order. Completed modules are marked in
+          green.
+        </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {modules.map((m) => {
@@ -626,72 +629,6 @@ function ModuleSelectScreen({ completed, onSelect, testType, onBack }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function ListeningScreen({ onComplete, onBack, questions }) {
-  const [answers, setAnswers] = useState({});
-  const { display, timeLeft } = useTimer(30 * 60, true);
-  const answered = Object.keys(answers).length;
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="mb-2">
-            <BackButton onClick={onBack} label="Back to Modules" />
-          </div>
-          <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
-            Listening Module
-          </span>
-          <h2 className="text-xl font-extrabold text-slate-800">
-            Section 1 — Conversation
-          </h2>
-        </div>
-        <TimerBadge display={display} warn={timeLeft < 300} />
-      </div>
-      <div className="bg-slate-900 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-5">
-        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-          <i className="ti ti-player-play text-white text-xl" />
-        </div>
-        <div className="flex-1 w-full">
-          <p className="text-white text-sm font-bold mb-2">
-            Recording 1 — Accommodation Office Call
-          </p>
-          <div className="w-full h-2 bg-white/20 rounded-full">
-            <div className="h-full bg-blue-500 rounded-full w-0" />
-          </div>
-          <div className="flex justify-between text-xs text-white/50 mt-1">
-            <span>0:00</span>
-            <span>4:30</span>
-          </div>
-        </div>
-        <p className="text-xs text-white/50 text-center">
-          Audio will be connected
-          <br />
-          in next phase
-        </p>
-      </div>
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center gap-3 text-sm text-amber-700">
-        <i className="ti ti-info-circle flex-shrink-0" />
-        Read the questions before listening. You will hear the recording once.
-      </div>
-      <MCQBlock
-        questions={questions}
-        answers={answers}
-        onChange={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
-      />
-      <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
-        <p className="text-sm text-slate-400">
-          {answered} of {questions.length} answered
-        </p>
-        <button
-          onClick={() => onComplete("listening", answers)}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-        >
-          Submit Listening <i className="ti ti-arrow-right text-sm" />
-        </button>
-      </div>
     </div>
   );
 }
@@ -1079,9 +1016,9 @@ export default function MockTestPage() {
     }
   }, [step, questions, student, testType]);
 
+  // ✅ All listening question types (not just mcq)
   const listeningQuestions =
-    questions?.filter((q) => q.module === "listening" && q.type === "mcq") ??
-    [];
+    questions?.filter((q) => q.module === "listening") ?? [];
   const readingPassage =
     questions?.find((q) => q.module === "reading" && q.type === "passage") ??
     null;
@@ -1136,7 +1073,6 @@ export default function MockTestPage() {
     }
   };
 
-  // Back navigation handler
   const handleBack = (targetStep) => {
     if (targetStep !== undefined) {
       setStep(targetStep);
@@ -1199,6 +1135,8 @@ export default function MockTestPage() {
               )}
             </div>
           ))}
+
+        {/* ✅ ListeningScreen now handles all 6 question types, no timer props needed */}
         {step === 3 && activeModule === "listening" && (
           <ListeningScreen
             onComplete={handleModuleComplete}

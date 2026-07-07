@@ -51,7 +51,7 @@ export default async function BatchStudentsPage({ params }) {
             icon: "ti ti-circle-check",
           },
           {
-            label: "Seats Remaining",
+            label: "Total Seats",
             value: batch.seats,
             color: "bg-blue-50 text-blue-600",
             icon: "ti ti-armchair",

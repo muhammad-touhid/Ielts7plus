@@ -41,6 +41,11 @@ const typeColors = {
   passage: "bg-violet-50 text-violet-600",
   task: "bg-rose-50 text-rose-600",
   part: "bg-orange-50 text-orange-600",
+  "form-completion": "bg-teal-50 text-teal-600",
+  "sentence-completion": "bg-emerald-50 text-emerald-600",
+  "short-answer": "bg-amber-50 text-amber-600",
+  matching: "bg-pink-50 text-pink-600",
+  "map-labelling": "bg-indigo-50 text-indigo-600",
 };
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
@@ -73,7 +78,19 @@ export default function AdminMockTestQuestionsClient({ questions }) {
           ? content.title
           : q.type === "task"
             ? content.label
-            : content.part;
+            : q.type === "part"
+              ? content.part
+              : q.type === "matching"
+                ? content.instruction
+                : q.type === "form-completion"
+                  ? content.instruction
+                  : q.type === "sentence-completion"
+                    ? content.instruction
+                    : q.type === "short-answer"
+                      ? content.instruction
+                      : q.type === "map-labelling"
+                        ? content.instruction
+                        : "";
     const matchSearch = searchText
       ?.toLowerCase()
       .includes(search.toLowerCase());
@@ -247,7 +264,19 @@ export default function AdminMockTestQuestionsClient({ questions }) {
                         ? content.title
                         : q.type === "task"
                           ? content.label
-                          : content.part;
+                          : q.type === "part"
+                            ? content.part
+                            : q.type === "matching"
+                              ? content.instruction
+                              : q.type === "form-completion"
+                                ? content.instruction
+                                : q.type === "sentence-completion"
+                                  ? content.instruction
+                                  : q.type === "short-answer"
+                                    ? content.instruction
+                                    : q.type === "map-labelling"
+                                      ? content.instruction
+                                      : "";
 
                   return (
                     <tr

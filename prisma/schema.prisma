@@ -79,6 +79,24 @@ model MockTestSubmission {
   testType  String  @default("academic")
 }
 
+model MockTestQuestion {
+  id        String   @id @default(cuid())
+  module    String
+  type      String
+  order     Int
+  content   Json
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  testType  String  @default("both")
+  section Int @default(1)
+}
+
+model MockTestSettings {
+  id               String  @id @default(cuid())
+  sectionLocked    Boolean @default(false)  // lock sections in order
+  audioLocked      Boolean @default(false)  // lock after audio plays
+}
+
 model Enrollment {
   id              String   @id @default(cuid())
   name            String
@@ -143,16 +161,6 @@ model BlogPost {
   createdAt DateTime @default(now())
 }
 
-model MockTestQuestion {
-  id        String   @id @default(cuid())
-  module    String
-  type      String
-  order     Int
-  content   Json
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  testType  String  @default("both")
-}
 
 model User {
   id          String    @id @default(cuid())

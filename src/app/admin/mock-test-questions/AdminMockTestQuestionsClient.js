@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import DeleteQuestionButton from "./DeleteQuestionButton";
 import { useSearchParams } from "next/navigation";
+import AudioUpload from "../AudioUpload";
 
 const moduleConfig = {
   listening: {
@@ -49,6 +50,32 @@ const typeColors = {
 };
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
+const LISTENING_SECTIONS = [1, 2, 3, 4];
+
+function LockToggle({ label, checked, onChange, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      disabled={disabled}
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${
+        checked
+          ? "border-blue-600 bg-blue-50 text-blue-700"
+          : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      <div
+        className={`w-8 h-4.5 rounded-full relative transition-all ${checked ? "bg-blue-600" : "bg-slate-200"}`}
+        style={{ height: "18px" }}
+      >
+        <div
+          className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-all ${checked ? "translate-x-3.5" : "translate-x-0"}`}
+        />
+      </div>
+      {label}
+    </button>
+  );
+}
 
 export default function AdminMockTestQuestionsClient({ questions }) {
   const modules = ["listening", "reading", "writing", "speaking"];
@@ -57,9 +84,44 @@ export default function AdminMockTestQuestionsClient({ questions }) {
   const [activeModule, setActiveModule] = useState(
     searchParams.get("module") || "listening",
   );
+  const [activeSection, setActiveSection] = useState(1);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Mock test settings (section lock, audio lock, per-section audio URLs)
+  const [settings, setSettings] = useState(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/mock-test-settings")
+      .then((res) => res.json())
+      .then(setSettings)
+      .catch(() => setSettingsError("Failed to load listening settings."));
+  }, []);
+
+  const saveSettings = async (patch) => {
+    if (!settings) return;
+    const previous = settings;
+    const updated = { ...settings, ...patch };
+    setSettings(updated);
+    setSavingSettings(true);
+    setSettingsError("");
+    try {
+      const res = await fetch("/api/mock-test-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setSettingsError("Failed to save. Please try again.");
+      setSettings(previous);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // Count per module
   const counts = modules.reduce((acc, m) => {
@@ -67,9 +129,19 @@ export default function AdminMockTestQuestionsClient({ questions }) {
     return acc;
   }, {});
 
-  // Filter by module + search
+  // Count per listening section
+  const sectionCounts = LISTENING_SECTIONS.reduce((acc, n) => {
+    acc[n] = questions.filter(
+      (q) => q.module === "listening" && (q.section || 1) === n,
+    ).length;
+    return acc;
+  }, {});
+
+  // Filter by module (+ section, when listening) + search
   const filtered = questions.filter((q) => {
     const matchModule = q.module === activeModule;
+    const matchSection =
+      activeModule === "listening" ? (q.section || 1) === activeSection : true;
     const content = q.content;
     const searchText =
       q.type === "mcq"
@@ -94,7 +166,7 @@ export default function AdminMockTestQuestionsClient({ questions }) {
     const matchSearch = searchText
       ?.toLowerCase()
       .includes(search.toLowerCase());
-    return matchModule && matchSearch;
+    return matchModule && matchSection && matchSearch;
   });
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -103,14 +175,15 @@ export default function AdminMockTestQuestionsClient({ questions }) {
     currentPage * itemsPerPage,
   );
 
-  // Reset page when module or search changes
+  // Reset page when module, section, or search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeModule, search]);
+  }, [activeModule, activeSection, search]);
 
   const handleModuleSelect = (m) => {
     setActiveModule(m);
     setSearch("");
+    if (m === "listening") setActiveSection(1);
   };
 
   return (
@@ -169,6 +242,148 @@ export default function AdminMockTestQuestionsClient({ questions }) {
         })}
       </div>
 
+      {/* Listening: section tabs + lock toggles + per-section audio upload */}
+      {activeModule === "listening" && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-5">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {LISTENING_SECTIONS.map((n) => {
+                const isActive = activeSection === n;
+                return (
+                  <button
+                    key={n}
+                    onClick={() => setActiveSection(n)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
+                      isActive
+                        ? "border-sky-500 bg-sky-50 text-sky-700"
+                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                    }`}
+                  >
+                    <i className="ti ti-headphones text-sm" />
+                    Section {n}
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isActive
+                          ? "bg-sky-500 text-white"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {sectionCounts[n]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {settings && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {savingSettings && (
+                  <i className="ti ti-loader-2 animate-spin text-slate-300 text-sm" />
+                )}
+                <LockToggle
+                  label="Lock Section Order"
+                  checked={settings.sectionLocked}
+                  onChange={() =>
+                    saveSettings({ sectionLocked: !settings.sectionLocked })
+                  }
+                />
+                <LockToggle
+                  label="Lock Audio After Play"
+                  checked={settings.audioLocked}
+                  onChange={() =>
+                    saveSettings({ audioLocked: !settings.audioLocked })
+                  }
+                />
+                <LockToggle
+                  label="Auto-Play Audio"
+                  checked={settings.autoPlayAudio}
+                  onChange={() =>
+                    saveSettings({ autoPlayAudio: !settings.autoPlayAudio })
+                  }
+                />
+                <LockToggle
+                  label="No Pause / Rewind"
+                  checked={settings.noPauseRewind}
+                  onChange={() =>
+                    saveSettings({ noPauseRewind: !settings.noPauseRewind })
+                  }
+                />
+                <LockToggle
+                  label="Auto-Advance Sections"
+                  checked={settings.autoAdvanceSection}
+                  onChange={() =>
+                    saveSettings({
+                      autoAdvanceSection: !settings.autoAdvanceSection,
+                    })
+                  }
+                />
+                <LockToggle
+                  label="Reading Time Before Audio"
+                  checked={settings.previewTimeEnabled}
+                  onChange={() =>
+                    saveSettings({
+                      previewTimeEnabled: !settings.previewTimeEnabled,
+                    })
+                  }
+                />
+                {settings.previewTimeEnabled && (
+                  <div className="flex items-center gap-1.5 bg-white border-2 border-slate-200 rounded-xl px-3 py-2">
+                    <span className="text-xs font-bold text-slate-500">
+                      Seconds:
+                    </span>
+                    <input
+                      type="number"
+                      min={5}
+                      max={120}
+                      value={settings.previewSeconds ?? 30}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 30;
+                        setSettings((s) => ({ ...s, previewSeconds: val }));
+                      }}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value) || 30;
+                        saveSettings({ previewSeconds: val });
+                      }}
+                      className="w-14 text-xs font-bold text-slate-700 outline-none bg-transparent"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-400 -mt-2">
+            These control how strictly the Listening test matches the real IELTS
+            exam — toggle any of them off for a more flexible practice mode.
+          </p>
+
+          {settingsError && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
+              <i className="ti ti-alert-circle flex-shrink-0" />
+              {settingsError}
+            </div>
+          )}
+
+          {/* Audio upload scoped to the active section only */}
+          <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
+            {settings ? (
+              <AudioUpload
+                label={`Section ${activeSection} Audio`}
+                value={settings[`audioSection${activeSection}`] || ""}
+                onChange={(url) =>
+                  saveSettings({ [`audioSection${activeSection}`]: url })
+                }
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-slate-400 py-6 justify-center">
+                <i className="ti ti-loader-2 animate-spin" />
+                Loading audio settings...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Questions Table */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {/* Table header with search + per page */}
@@ -179,6 +394,7 @@ export default function AdminMockTestQuestionsClient({ questions }) {
               ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
             >
               {activeModule}
+              {activeModule === "listening" && ` — Section ${activeSection}`}
             </span>
             <span className="text-xs text-slate-400">
               {filtered.length} question{filtered.length !== 1 ? "s" : ""}
@@ -346,7 +562,9 @@ export default function AdminMockTestQuestionsClient({ questions }) {
             <p className="text-sm font-bold text-slate-600 mb-1">
               {search
                 ? "No questions match your search"
-                : `No ${activeModule} questions yet`}
+                : activeModule === "listening"
+                  ? `No questions in Section ${activeSection} yet`
+                  : `No ${activeModule} questions yet`}
             </p>
             <p className="text-xs text-slate-400 mb-5">
               {search

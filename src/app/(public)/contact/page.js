@@ -6,7 +6,18 @@ const contactDetails = [
   {
     icon: "ti ti-map-pin",
     label: "Our Address",
-    value: "Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh",
+    value: [
+      {
+        branch: "Sylhet",
+        address:
+          "Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh",
+      },
+      {
+        branch: "Dhaka",
+        address:
+          "6th Floor Sunrise Plaza, Mirpur Road, 3/1 & 3/2, Lalmatia, Dhaka-1207",
+      },
+    ],
     link: null,
   },
   {
@@ -41,7 +52,11 @@ const socials = [
     label: "Instagram",
   },
   { icon: "ti ti-brand-youtube", href: "#", label: "YouTube" },
-  { icon: "ti ti-brand-whatsapp", href: "#", label: "WhatsApp" },
+  {
+    icon: "ti ti-brand-whatsapp",
+    href: "https://wa.me/8801711153678",
+    label: "WhatsApp",
+  },
 ];
 
 export default function ContactPage() {
@@ -100,11 +115,26 @@ export default function ContactPage() {
                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 text-lg flex-shrink-0 mt-0.5">
                       <i className={d.icon} />
                     </div>
+
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                         {d.label}
                       </p>
-                      {d.link ? (
+
+                      {Array.isArray(d.value) ? (
+                        <div className="space-y-3">
+                          {d.value.map((office, index) => (
+                            <div key={index}>
+                              <p className="text-sm font-semibold text-slate-700">
+                                {office.branch}
+                              </p>
+                              <p className="text-sm text-slate-600">
+                                {office.address}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : d.link ? (
                         <a
                           href={d.link}
                           className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors"
@@ -164,7 +194,7 @@ export default function ContactPage() {
                   reply within minutes.
                 </p>
                 <a
-                  href="https://wa.me/8801700000000"
+                  href="https://wa.me/8801711153678"
                   className="inline-flex items-center gap-2 bg-blue-600 text-white text-xs font-bold px-5 py-3 rounded-xl w-full justify-center hover:bg-blue-700 shadow-lg shadow-blue-900/30 transition-all duration-200"
                 >
                   <i className="ti ti-brand-whatsapp" />
@@ -193,28 +223,47 @@ export default function ContactPage() {
 
         {/* Map */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-8 pt-8 pb-5">
+          <div className="p-8 pb-5">
             <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
               Our Location
             </span>
             <h2 className="text-xl font-extrabold text-slate-800">
               Find Us on the Map
             </h2>
-            <p className="text-slate-400 text-sm mt-1">
-              Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh
-            </p>
           </div>
-          <div className="w-full h-80 md:h-96">
-            <iframe
-              title="IELTS7+ Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7237.781051812657!2d91.86177224549796!3d24.90171554302532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x37505521ef38d845%3A0x73a5b1a7fba07536!2sCentre%20For%20Education%20-%20Sylhet!5e0!3m2!1sen!2sbd!4v1781699565395!5m2!1sen!2sbd"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+          <div className="grid md:grid-cols-2 gap-5 ">
+            <div className="w-full h-80 md:h-96">
+              <p className="text-slate-400 text-sm mt-1">
+                <span className="font-bold text-black">Sylhet: </span>Level 4,
+                Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh
+              </p>
+              <iframe
+                title="IELTS7+ Location"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.764330190329!2d91.86309627592311!3d24.906019143432086!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375055395ada7b71%3A0xbf847c7898d7b55c!2sIELTS7%2B!5e0!3m2!1sen!2sbd!4v1783754360826!5m2!1sen!2sbd"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <div className="w-full h-80 md:h-96">
+              <p className="text-slate-400 text-sm mt-1">
+                <span className="font-bold text-black">Dhaka: </span> 6th Floor
+                Sunrise Plaza, Mirpur Road, 3/1 & 3/2, Lalmatia, Dhaka-1207
+              </p>
+              <iframe
+                title="IELTS7+ Location"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.72428031542!2d90.37195117589722!3d23.75720968851376!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755bf54ae903b63%3A0x88446c4385841857!2sSunrise%20Plaza!5e0!3m2!1sen!2sbd!4v1783850408611!5m2!1sen!2sbd"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
           </div>
         </div>
       </div>

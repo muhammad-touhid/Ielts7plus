@@ -1,6 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+// Self-contained 30-minute timer — the parent page doesn't pass timer props
+// to ListeningScreen (same pattern as Reading/Writing/Speaking screens).
+function useTimer(seconds, active) {
+  const [timeLeft, setTimeLeft] = useState(seconds);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!active) return;
+    ref.current = setInterval(
+      () => setTimeLeft((t) => (t > 0 ? t - 1 : 0)),
+      1000,
+    );
+    return () => clearInterval(ref.current);
+  }, [active]);
+  const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+  const ss = String(timeLeft % 60).padStart(2, "0");
+  return { timeLeft, display: `${mm}:${ss}` };
+}
 
 function TimerBadge({ display, warn }) {
   return (
@@ -335,16 +353,66 @@ function countAnswered(question, answers) {
   }
 }
 
+/**
+ * settings (optional prop): {
+ *   sectionLocked, audioLocked, autoPlayAudio, autoAdvanceSection,
+ *   noPauseRewind, previewTimeEnabled, previewSeconds,
+ *   audioSection1..4
+ * }
+ * Any omitted field defaults to "off" — fully unlocked practice mode.
+ */
 export default function ListeningScreen({
   onComplete,
   onBack,
   questions,
-  timerDisplay,
-  timeLeft,
+  timerDisplay: timerDisplayProp,
+  timeLeft: timeLeftProp,
+  settings,
 }) {
+  const sectionLocked = settings?.sectionLocked ?? false;
+  const audioLocked = settings?.audioLocked ?? false;
+  const autoPlayAudio = settings?.autoPlayAudio ?? false;
+  const autoAdvanceSection = settings?.autoAdvanceSection ?? false;
+  const noPauseRewind = settings?.noPauseRewind ?? false;
+  const previewTimeEnabled = settings?.previewTimeEnabled ?? false;
+  const previewSeconds = settings?.previewSeconds ?? 30;
+
+  // Use internally-managed 30 min timer unless the parent explicitly passes one.
+  const internalTimer = useTimer(30 * 60, timerDisplayProp === undefined);
+  const timerDisplay = timerDisplayProp ?? internalTimer.display;
+  const timeLeft = timeLeftProp ?? internalTimer.timeLeft;
+
   const [answers, setAnswers] = useState({});
+  const [activeSection, setActiveSection] = useState(1);
+  const [maxUnlocked, setMaxUnlocked] = useState(1);
+
+  // Per-section playback phase: "idle" | "preview" | "ready" | "playing" | "ended"
+  const [sectionPhase, setSectionPhase] = useState({});
+  const [previewCountdown, setPreviewCountdown] = useState(0);
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState(0);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+
+  const audioRef = useRef(null);
 
   const handleChange = (key, val) => setAnswers((a) => ({ ...a, [key]: val }));
+
+  const sections = [1, 2, 3, 4].map((num) => ({
+    num,
+    questions: questions
+      .filter((q) => (q.section || 1) === num)
+      .sort((a, b) => a.order - b.order),
+  }));
+
+  // Global question numbering: each section continues numbering from the previous one
+  let runningNumber = 1;
+  const sectionStartNumbers = {};
+  sections.forEach((s) => {
+    sectionStartNumbers[s.num] = runningNumber;
+    runningNumber += s.questions.reduce(
+      (acc, q) => acc + countAnswerSlots(q),
+      0,
+    );
+  });
 
   const totalSlots = questions.reduce((acc, q) => acc + countAnswerSlots(q), 0);
   const totalAnswered = questions.reduce(
@@ -352,8 +420,107 @@ export default function ListeningScreen({
     0,
   );
 
-  // Group questions by order for display
-  let questionNumber = 1;
+  const currentSection = sections.find((s) => s.num === activeSection);
+  const isLastSection = activeSection === 4;
+  const currentAudioUrl = settings?.[`audioSection${activeSection}`];
+  const phase = sectionPhase[activeSection] || "idle";
+
+  // Initialize this section's phase the first time it's visited
+  useEffect(() => {
+    setSectionPhase((prev) => {
+      if (prev[activeSection]) return prev;
+      let initial;
+      if (previewTimeEnabled) initial = "preview";
+      else if (autoPlayAudio) initial = "playing";
+      else initial = "ready";
+      return { ...prev, [activeSection]: initial };
+    });
+    setAutoplayBlocked(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
+
+  // Reading-time countdown before audio starts
+  useEffect(() => {
+    if (phase !== "preview") return;
+    setPreviewCountdown(previewSeconds);
+    const interval = setInterval(() => {
+      setPreviewCountdown((t) => {
+        if (t <= 1) {
+          clearInterval(interval);
+          setSectionPhase((prev) => ({
+            ...prev,
+            [activeSection]: autoPlayAudio ? "playing" : "ready",
+          }));
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, activeSection]);
+
+  // Attempt autoplay whenever phase becomes "playing"
+  useEffect(() => {
+    if (phase === "playing" && audioRef.current) {
+      const p = audioRef.current.play();
+      if (p?.catch) {
+        p.catch(() => setAutoplayBlocked(true));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, activeSection]);
+
+  // Auto-advance countdown once audio ends
+  useEffect(() => {
+    if (phase !== "ended" || !autoAdvanceSection || !currentAudioUrl) return;
+    setAutoAdvanceCountdown(3);
+    const interval = setInterval(() => {
+      setAutoAdvanceCountdown((t) => {
+        if (t <= 1) {
+          clearInterval(interval);
+          handleContinue();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, autoAdvanceSection, currentAudioUrl]);
+
+  const handleManualPlay = () => {
+    setSectionPhase((prev) => ({ ...prev, [activeSection]: "playing" }));
+    setAutoplayBlocked(false);
+  };
+
+  const handleAudioEnded = () => {
+    setSectionPhase((prev) => ({ ...prev, [activeSection]: "ended" }));
+  };
+
+  const goToSection = (num) => {
+    if (sectionLocked && num > maxUnlocked) return;
+    setActiveSection(num);
+  };
+
+  const handleContinue = () => {
+    if (isLastSection) {
+      onComplete("listening", answers);
+    } else {
+      const next = activeSection + 1;
+      setMaxUnlocked((m) => Math.max(m, next));
+      setActiveSection(next);
+    }
+  };
+
+  // If this section has audio and auto-advance is off, require the audio to
+  // have finished before letting the student move on manually — mirrors the
+  // real test's "you can't move on mid-recording" rule. No audio uploaded =
+  // nothing to wait for.
+  const continueDisabled = !!currentAudioUrl && phase !== "ended";
+  const showManualContinue = !autoAdvanceSection || !currentAudioUrl;
+
+  let qNum = sectionStartNumbers[activeSection];
 
   return (
     <div className="flex flex-col gap-6">
@@ -371,122 +538,251 @@ export default function ListeningScreen({
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
             Listening Module
           </span>
-          <h2 className="text-xl font-extrabold text-slate-800">Section 1</h2>
+          <h2 className="text-xl font-extrabold text-slate-800">
+            Section {activeSection}
+          </h2>
         </div>
         <TimerBadge display={timerDisplay} warn={timeLeft < 300} />
       </div>
 
-      {/* Audio player placeholder */}
-      <div className="bg-slate-900 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-5">
-        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-          <i className="ti ti-player-play text-white text-xl" />
-        </div>
-        <div className="flex-1 w-full">
-          <p className="text-white text-sm font-bold mb-2">
-            Recording — Accommodation Office Call
-          </p>
-          <div className="w-full h-2 bg-white/20 rounded-full">
-            <div className="h-full bg-blue-500 rounded-full w-0" />
-          </div>
-          <div className="flex justify-between text-xs text-white/50 mt-1">
-            <span>0:00</span>
-            <span>4:30</span>
-          </div>
-        </div>
-        <p className="text-xs text-white/50 text-center">
-          Audio will be connected
-          <br />
-          in next phase
-        </p>
-      </div>
-
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center gap-3 text-sm text-amber-700">
-        <i className="ti ti-info-circle flex-shrink-0" />
-        Read all questions carefully before listening. You hear the recording
-        once.
-      </div>
-
-      {/* Questions */}
-      <div className="flex flex-col gap-6">
-        {questions.map((question, qi) => {
-          const slots = countAnswerSlots(question);
-          const startNum = questionNumber;
-          questionNumber += slots;
-
+      {/* Section tabs */}
+      <div className="flex items-center gap-2">
+        {sections.map((s) => {
+          const locked = sectionLocked && s.num > maxUnlocked;
+          const active = s.num === activeSection;
           return (
-            <div key={question.id} className="flex flex-col gap-2">
-              {/* Question number badge */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500">
-                  {slots === 1
-                    ? `Question ${startNum}`
-                    : `Questions ${startNum}–${startNum + slots - 1}`}
-                </span>
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    question.type === "mcq"
-                      ? "bg-blue-50 text-blue-600"
-                      : question.type === "form-completion"
-                        ? "bg-violet-50 text-violet-600"
-                        : question.type === "sentence-completion"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : question.type === "short-answer"
-                            ? "bg-amber-50 text-amber-600"
-                            : question.type === "matching"
-                              ? "bg-rose-50 text-rose-600"
-                              : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  {question.type.replace("-", " ")}
-                </span>
-              </div>
-
-              {question.type === "mcq" && (
-                <MCQRenderer
-                  question={question}
-                  answers={answers}
-                  onChange={handleChange}
-                />
-              )}
-              {question.type === "form-completion" && (
-                <FormCompletionRenderer
-                  question={question}
-                  answers={answers}
-                  onChange={handleChange}
-                />
-              )}
-              {question.type === "sentence-completion" && (
-                <SentenceCompletionRenderer
-                  question={question}
-                  answers={answers}
-                  onChange={handleChange}
-                />
-              )}
-              {question.type === "short-answer" && (
-                <ShortAnswerRenderer
-                  question={question}
-                  answers={answers}
-                  onChange={handleChange}
-                />
-              )}
-              {question.type === "matching" && (
-                <MatchingRenderer
-                  question={question}
-                  answers={answers}
-                  onChange={handleChange}
-                />
-              )}
-              {question.type === "map-labelling" && (
-                <MapLabellingRenderer
-                  question={question}
-                  answers={answers}
-                  onChange={handleChange}
-                />
-              )}
-            </div>
+            <button
+              key={s.num}
+              type="button"
+              onClick={() => goToSection(s.num)}
+              disabled={locked}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${
+                active
+                  ? "border-blue-600 bg-blue-50 text-blue-700"
+                  : locked
+                    ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                    : "border-slate-200 bg-white text-slate-500 hover:border-blue-300"
+              }`}
+            >
+              {locked && <i className="ti ti-lock text-xs" />}
+              Section {s.num}
+            </button>
           );
         })}
       </div>
+
+      {currentSection && currentSection.questions.length > 0 ? (
+        <>
+          {/* Audio area — phase-driven */}
+          {!currentAudioUrl ? (
+            <div className="bg-slate-900 rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                <i className="ti ti-music-off text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold">
+                  No audio uploaded for Section {activeSection}
+                </p>
+                <p className="text-white/50 text-xs mt-1">
+                  The admin hasn't added a recording for this section yet.
+                </p>
+              </div>
+            </div>
+          ) : phase === "preview" ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <i className="ti ti-clock-hour-4 text-amber-600 text-xl" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-700">
+                  Reading time — Section {activeSection}
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  Look through the questions below. Audio starts automatically
+                  in {previewCountdown}s.
+                </p>
+              </div>
+              <span className="text-2xl font-extrabold text-amber-600 tabular-nums">
+                0:{String(previewCountdown).padStart(2, "0")}
+              </span>
+            </div>
+          ) : phase === "ended" && audioLocked ? (
+            <div className="bg-slate-900 rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
+                <i className="ti ti-lock text-white text-xl" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold">
+                  Section {activeSection} audio locked
+                </p>
+                <p className="text-white/50 text-xs mt-1">
+                  You've already listened to this recording.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-900 rounded-2xl p-6 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-white text-sm font-bold">
+                  Recording — Section {activeSection}
+                </p>
+                {phase === "playing" && (
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Playing
+                  </span>
+                )}
+              </div>
+
+              {phase === "ready" && (
+                <button
+                  type="button"
+                  onClick={handleManualPlay}
+                  className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-3 rounded-xl transition-all self-start"
+                >
+                  <i className="ti ti-player-play" /> Play Section Audio
+                </button>
+              )}
+
+              {(phase === "playing" || phase === "ended") && (
+                <>
+                  <audio
+                    key={`section-${activeSection}-audio`}
+                    ref={audioRef}
+                    src={currentAudioUrl}
+                    controls={!noPauseRewind}
+                    controlsList="nodownload noplaybackrate"
+                    onEnded={handleAudioEnded}
+                    autoPlay={phase === "playing"}
+                    className="w-full"
+                    style={{ colorScheme: "dark" }}
+                  />
+                  {noPauseRewind && phase === "playing" && (
+                    <p className="text-xs text-white/50">
+                      <i className="ti ti-info-circle mr-1" />
+                      Audio is playing — no pause or rewind, same as the real
+                      test.
+                    </p>
+                  )}
+                  {autoplayBlocked && phase === "playing" && (
+                    <button
+                      type="button"
+                      onClick={handleManualPlay}
+                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg self-start"
+                    >
+                      <i className="ti ti-player-play" /> Tap to start audio
+                      (autoplay was blocked by your browser)
+                    </button>
+                  )}
+                </>
+              )}
+
+              {phase === "ended" && autoAdvanceSection && (
+                <p className="text-xs text-white/50">
+                  Moving to{" "}
+                  {isLastSection
+                    ? "submission"
+                    : `Section ${activeSection + 1}`}{" "}
+                  in {autoAdvanceCountdown}s...
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center gap-3 text-sm text-amber-700">
+            <i className="ti ti-info-circle flex-shrink-0" />
+            Read all questions carefully before listening. You hear the
+            recording once.
+          </div>
+
+          {/* Questions */}
+          <div className="flex flex-col gap-6">
+            {currentSection.questions.map((question) => {
+              const slots = countAnswerSlots(question);
+              const startNum = qNum;
+              qNum += slots;
+
+              return (
+                <div key={question.id} className="flex flex-col gap-2">
+                  {/* Question number badge */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-500">
+                      {slots === 1
+                        ? `Question ${startNum}`
+                        : `Questions ${startNum}–${startNum + slots - 1}`}
+                    </span>
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        question.type === "mcq"
+                          ? "bg-blue-50 text-blue-600"
+                          : question.type === "form-completion"
+                            ? "bg-violet-50 text-violet-600"
+                            : question.type === "sentence-completion"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : question.type === "short-answer"
+                                ? "bg-amber-50 text-amber-600"
+                                : question.type === "matching"
+                                  ? "bg-rose-50 text-rose-600"
+                                  : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {question.type.replace("-", " ")}
+                    </span>
+                  </div>
+
+                  {question.type === "mcq" && (
+                    <MCQRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {question.type === "form-completion" && (
+                    <FormCompletionRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {question.type === "sentence-completion" && (
+                    <SentenceCompletionRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {question.type === "short-answer" && (
+                    <ShortAnswerRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {question.type === "matching" && (
+                    <MatchingRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
+                  {question.type === "map-labelling" && (
+                    <MapLabellingRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-10 text-center text-slate-400 text-sm">
+          <i className="ti ti-mood-empty text-3xl mb-2 block" />
+          No questions have been added for Section {activeSection} yet.
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-slate-100">
@@ -496,14 +792,30 @@ export default function ListeningScreen({
           >
             {totalAnswered}
           </span>{" "}
-          of {totalSlots} answered
+          of {totalSlots} answered (all sections)
         </p>
-        <button
-          onClick={() => onComplete("listening", answers)}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-        >
-          Submit Listening <i className="ti ti-arrow-right text-sm" />
-        </button>
+        {showManualContinue && (
+          <button
+            onClick={handleContinue}
+            disabled={continueDisabled}
+            className={`inline-flex items-center gap-2 text-white text-sm font-bold px-8 py-3.5 rounded-xl transition-all duration-200 ${
+              continueDisabled
+                ? "bg-slate-300 cursor-not-allowed"
+                : "bg-blue-600 shadow-md shadow-blue-200 hover:bg-blue-700"
+            }`}
+          >
+            {isLastSection ? (
+              <>
+                Submit Listening <i className="ti ti-arrow-right text-sm" />
+              </>
+            ) : (
+              <>
+                Continue to Section {activeSection + 1}{" "}
+                <i className="ti ti-arrow-right text-sm" />
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

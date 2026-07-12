@@ -11,4 +11,11 @@ export const ourFileRouter = {
     .onUploadComplete(async ({ file }) => {
       return { url: file.ufsUrl };
     }),
+  audioUploader: f({ audio: { maxFileSize: "16MB", maxFileCount: 1 } })
+    .middleware(async ({ req }) => {
+      return {};
+    })
+    .onUploadComplete(async ({ file }) => {
+      return { url: file.ufsUrl };
+    }),
 };

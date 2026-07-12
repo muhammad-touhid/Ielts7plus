@@ -36,6 +36,7 @@ export async function PUT(req, { params }) {
         order: parseInt(body.order) || 0,
         content: body.content,
         testType: body.testType || "both",
+        section: parseInt(body.section) || 1,
         published: body.published ?? false,
       },
     });

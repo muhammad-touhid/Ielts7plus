@@ -14,14 +14,14 @@ export async function GET(req) {
           published: true,
           OR: [{ testType: testType }, { testType: "both" }],
         },
-        orderBy: [{ module: "asc" }, { order: "asc" }],
+        orderBy: [{ module: "asc" }, { section: "asc" }, { order: "asc" }],
       });
       return NextResponse.json(questions);
     }
 
     // No filter — admin list, return all
     const questions = await prisma.mockTestQuestion.findMany({
-      orderBy: [{ module: "asc" }, { order: "asc" }],
+      orderBy: [{ module: "asc" }, { section: "asc" }, { order: "asc" }],
     });
     return NextResponse.json(questions);
   } catch (error) {
@@ -44,6 +44,7 @@ export async function POST(req) {
         order: parseInt(body.order) || 0,
         content: body.content,
         testType: body.testType || "both",
+        section: parseInt(body.section) || 1,
         published: body.published ?? false,
       },
     });

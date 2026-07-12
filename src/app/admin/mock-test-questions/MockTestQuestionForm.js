@@ -30,6 +30,7 @@ const typeLabels = {
 };
 
 const supportsTestType = ["reading", "writing"];
+const supportsSection = ["listening"];
 
 const defaultContent = {
   mcq: { text: "", options: ["", "", "", ""], correctAnswer: "" },
@@ -67,6 +68,7 @@ export default function MockTestQuestionForm({ question }) {
     question?.content ?? defaultContent["mcq"],
   );
   const [testType, setTestType] = useState(question?.testType ?? "both");
+  const [section, setSection] = useState(question?.section ?? 1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -76,6 +78,7 @@ export default function MockTestQuestionForm({ question }) {
     setType(firstType);
     setContent(defaultContent[firstType]);
     if (!supportsTestType.includes(val)) setTestType("both");
+    if (!supportsSection.includes(val)) setSection(1);
   };
 
   const handleTypeChange = (val) => {
@@ -102,6 +105,7 @@ export default function MockTestQuestionForm({ question }) {
           content,
           published,
           testType,
+          section: supportsSection.includes(module) ? section : 1,
         }),
       });
       if (res.ok) {
@@ -135,13 +139,11 @@ export default function MockTestQuestionForm({ question }) {
           {error}
         </div>
       )}
-
       {/* Settings */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col gap-5">
         <h2 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
           <i className="ti ti-settings text-blue-600" /> Question Settings
         </h2>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div>
             <label className={labelClass}>Module *</label>
@@ -188,7 +190,33 @@ export default function MockTestQuestionForm({ question }) {
             />
           </div>
         </div>
-
+        {/* Section selector — listening only */}
+        {supportsSection.includes(module) && (
+          <div>
+            <label className={labelClass}>Listening Section *</label>
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => setSection(num)}
+                  className={`flex flex-col items-center gap-1 p-3.5 rounded-xl border-2 transition-all text-center ${
+                    section === num
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  <i className="ti ti-headphones text-lg" />
+                  <span className="text-xs font-bold">Section {num}</span>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-2">
+              Determines which of the 4 listening sections this question appears
+              in, and its question numbering.
+            </p>
+          </div>
+        )}
         {/* Test Type for Reading/Writing */}
         {supportsTestType.includes(module) ? (
           <div>
@@ -236,7 +264,6 @@ export default function MockTestQuestionForm({ question }) {
           </div>
         )}
       </div>
-
       {/* Content */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col gap-5">
         <h2 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
@@ -245,7 +272,6 @@ export default function MockTestQuestionForm({ question }) {
             — {typeLabels[type]}
           </span>
         </h2>
-
         {/* MCQ */}
         {type === "mcq" && (
           <div className="flex flex-col gap-4">
@@ -293,7 +319,10 @@ export default function MockTestQuestionForm({ question }) {
                   required
                   value={content.correctAnswer}
                   onChange={(e) =>
-                    setContent((c) => ({ ...c, correctAnswer: e.target.value }))
+                    setContent((c) => ({
+                      ...c,
+                      correctAnswer: e.target.value,
+                    }))
                   }
                   className={`${inputClass} appearance-none cursor-pointer`}
                 >
@@ -312,7 +341,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Form Completion */}
         {type === "form-completion" && (
           <div className="flex flex-col gap-4">
@@ -404,7 +432,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Sentence Completion */}
         {type === "sentence-completion" && (
           <div className="flex flex-col gap-4">
@@ -527,7 +554,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Short Answer */}
         {type === "short-answer" && (
           <div className="flex flex-col gap-4">
@@ -624,7 +650,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Matching */}
         {type === "matching" && (
           <div className="flex flex-col gap-5">
@@ -640,7 +665,6 @@ export default function MockTestQuestionForm({ question }) {
                 className={inputClass}
               />
             </div>
-
             {/* Options box */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -696,7 +720,6 @@ export default function MockTestQuestionForm({ question }) {
                 ))}
               </div>
             </div>
-
             {/* Items to match */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -784,7 +807,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Map Labelling */}
         {type === "map-labelling" && (
           <div className="flex flex-col gap-4">
@@ -878,7 +900,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Reading Passage */}
         {type === "passage" && (
           <div className="flex flex-col gap-4">
@@ -910,7 +931,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Writing Task */}
         {type === "task" && (
           <div className="flex flex-col gap-4">
@@ -973,7 +993,6 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
-
         {/* Speaking Part */}
         {type === "part" && (
           <div className="flex flex-col gap-4">
@@ -1062,7 +1081,6 @@ export default function MockTestQuestionForm({ question }) {
           </div>
         )}
       </div>
-
       {/* Publish + Submit */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
         <label className="flex items-center gap-3 cursor-pointer">

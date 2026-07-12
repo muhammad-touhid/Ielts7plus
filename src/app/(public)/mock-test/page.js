@@ -1000,6 +1000,7 @@ export default function MockTestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [questions, setQuestions] = useState(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [mockTestSettings, setMockTestSettings] = useState(null);
 
   const testType = student?.testType || "academic";
 
@@ -1015,6 +1016,18 @@ export default function MockTestPage() {
         .catch(() => setLoadingQuestions(false));
     }
   }, [step, questions, student, testType]);
+
+  // Fetch listening section-lock / audio-lock behavior once, alongside questions.
+  useEffect(() => {
+    if (step === 2 && !mockTestSettings) {
+      fetch("/api/mock-test-settings")
+        .then((res) => res.json())
+        .then(setMockTestSettings)
+        .catch(() =>
+          setMockTestSettings({ sectionLocked: false, audioLocked: false }),
+        );
+    }
+  }, [step, mockTestSettings]);
 
   // ✅ All listening question types (not just mcq)
   const listeningQuestions =
@@ -1136,12 +1149,13 @@ export default function MockTestPage() {
             </div>
           ))}
 
-        {/* ✅ ListeningScreen now handles all 6 question types, no timer props needed */}
+        {/* ✅ ListeningScreen handles all 6 question types across 4 sections */}
         {step === 3 && activeModule === "listening" && (
           <ListeningScreen
             onComplete={handleModuleComplete}
             onBack={() => handleBack()}
             questions={listeningQuestions}
+            settings={mockTestSettings}
           />
         )}
         {step === 3 && activeModule === "reading" && (

@@ -92,9 +92,18 @@ model MockTestQuestion {
 }
 
 model MockTestSettings {
-  id               String  @id @default(cuid())
-  sectionLocked    Boolean @default(false)  // lock sections in order
-  audioLocked      Boolean @default(false)  // lock after audio plays
+  id                  String  @id @default(cuid())
+  sectionLocked       Boolean @default(false)
+  audioLocked         Boolean @default(false)
+  autoPlayAudio       Boolean @default(false)
+  autoAdvanceSection  Boolean @default(false)
+  noPauseRewind       Boolean @default(false)
+  previewTimeEnabled  Boolean @default(false)
+  previewSeconds      Int     @default(30)
+  audioSection1       String?
+  audioSection2       String?
+  audioSection3       String?
+  audioSection4       String?
 }
 
 model Enrollment {

@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+// Prevent Next.js from caching this route's response — without this, a GET
+// with no dynamic functions can be served from a stale cached snapshot,
+// which looks exactly like "settings revert after refresh."
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Single fixed row acting as the global settings singleton.
 const SETTINGS_ID = "global-settings";
 
@@ -41,11 +47,20 @@ export async function PUT(req) {
 
     const body = await req.json();
     const data = {};
-    if (typeof body.sectionLocked === "boolean") {
-      data.sectionLocked = body.sectionLocked;
+    for (const key of [
+      "sectionLocked",
+      "audioLocked",
+      "autoPlayAudio",
+      "autoAdvanceSection",
+      "noPauseRewind",
+      "previewTimeEnabled",
+    ]) {
+      if (typeof body[key] === "boolean") {
+        data[key] = body[key];
+      }
     }
-    if (typeof body.audioLocked === "boolean") {
-      data.audioLocked = body.audioLocked;
+    if (typeof body.previewSeconds === "number") {
+      data.previewSeconds = Math.max(5, Math.min(120, body.previewSeconds));
     }
     for (const key of [
       "audioSection1",
@@ -65,6 +80,11 @@ export async function PUT(req) {
         id: SETTINGS_ID,
         sectionLocked: body.sectionLocked ?? false,
         audioLocked: body.audioLocked ?? false,
+        autoPlayAudio: body.autoPlayAudio ?? false,
+        autoAdvanceSection: body.autoAdvanceSection ?? false,
+        noPauseRewind: body.noPauseRewind ?? false,
+        previewTimeEnabled: body.previewTimeEnabled ?? false,
+        previewSeconds: body.previewSeconds ?? 30,
         audioSection1: body.audioSection1 || null,
         audioSection2: body.audioSection2 || null,
         audioSection3: body.audioSection3 || null,

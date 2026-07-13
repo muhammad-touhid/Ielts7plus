@@ -1020,7 +1020,7 @@ export default function MockTestPage() {
   // Fetch listening section-lock / audio-lock behavior once, alongside questions.
   useEffect(() => {
     if (step === 2 && !mockTestSettings) {
-      fetch("/api/mock-test-settings")
+      fetch("/api/mock-test-settings", { cache: "no-store" })
         .then((res) => res.json())
         .then(setMockTestSettings)
         .catch(() =>

@@ -95,7 +95,7 @@ export default function AdminMockTestQuestionsClient({ questions }) {
   const [settingsError, setSettingsError] = useState("");
 
   useEffect(() => {
-    fetch("/api/mock-test-settings")
+    fetch("/api/mock-test-settings", { cache: "no-store" })
       .then((res) => res.json())
       .then(setSettings)
       .catch(() => setSettingsError("Failed to load listening settings."));

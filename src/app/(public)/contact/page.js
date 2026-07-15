@@ -2,41 +2,27 @@
 
 import ContactForm from "@/components/shared/ContactForm";
 
-const contactDetails = [
+const officeDetails = [
   {
+    branch: "Sylhet Office",
     icon: "ti ti-map-pin",
-    label: "Our Address",
-    value: [
-      {
-        branch: "Sylhet",
-        address:
-          "Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh",
-      },
-      {
-        branch: "Dhaka",
-        address:
-          "6th Floor Sunrise Plaza, Mirpur Road, 3/1 & 3/2, Lalmatia, Dhaka-1207",
-      },
-    ],
-    link: null,
+    address: "Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh",
+    phone: "+880 1711-153678",
+    phoneLink: "tel:+8801711153678",
+    email: "info@ielts7plus.co.uk",
+    emailLink: "mailto:sylhet@ielts7plus.co.uk",
+    officeHours: "Saturday – Thursday, 10:00 AM – 7:00 PM",
   },
   {
-    icon: "ti ti-phone-call",
-    label: "Phone Number",
-    value: "+880 1711-153678",
-    link: "tel:+8801711153678",
-  },
-  {
-    icon: "ti ti-mail",
-    label: "Email Address",
-    value: "info@ielts7plus.co.uk",
-    link: "mailto:info@ielts7plus.co.uk",
-  },
-  {
-    icon: "ti ti-clock",
-    label: "Office Hours",
-    value: "Saturday – Thursday, 10:00 AM – 7:00 PM",
-    link: null,
+    branch: "Dhaka Office",
+    icon: "ti ti-map-pin",
+    address:
+      "6th Floor Sunrise Plaza, Mirpur Road, 3/1 & 3/2, Lalmatia, Dhaka-1207",
+    phone: "+880 1335-254382",
+    phoneLink: "tel:+8801335254382",
+    email: "info@ielts7plus.co.uk",
+    emailLink: "mailto:dhaka@ielts7plus.co.uk",
+    officeHours: "Saturday – Thursday, 10:00 AM – 7:00 PM",
   },
 ];
 
@@ -109,47 +95,74 @@ export default function ContactPage() {
                 </h2>
               </div>
 
-              <ul className="flex flex-col gap-5">
-                {contactDetails.map((d, i) => (
-                  <li key={i} className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 text-lg flex-shrink-0 mt-0.5">
-                      <i className={d.icon} />
+              <div className="flex flex-col gap-5">
+                {officeDetails.map((office, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm"
+                  >
+                    {/* Office Title */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 text-lg">
+                        <i className={office.icon} />
+                      </div>
+
+                      <h3 className="text-lg font-bold text-slate-800">
+                        {office.branch}
+                      </h3>
                     </div>
 
-                    <div>
+                    {/* Address */}
+                    <div className="mb-4">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        {d.label}
+                        Address
+                      </p>
+                      <p className="text-sm font-semibold text-slate-700 leading-5">
+                        {office.address}
+                      </p>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="mb-4">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Phone
                       </p>
 
-                      {Array.isArray(d.value) ? (
-                        <div className="space-y-3">
-                          {d.value.map((office, index) => (
-                            <div key={index}>
-                              <p className="text-sm font-semibold text-slate-700">
-                                {office.branch}
-                              </p>
-                              <p className="text-sm text-slate-600">
-                                {office.address}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : d.link ? (
-                        <a
-                          href={d.link}
-                          className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors"
-                        >
-                          {d.value}
-                        </a>
-                      ) : (
-                        <p className="text-sm font-semibold text-slate-700">
-                          {d.value}
-                        </p>
-                      )}
+                      <a
+                        href={office.phoneLink}
+                        className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                      >
+                        {office.phone}
+                      </a>
                     </div>
-                  </li>
+
+                    {/* Email */}
+                    <div className="mb-4">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Email
+                      </p>
+
+                      <a
+                        href={office.emailLink}
+                        className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors"
+                      >
+                        {office.email}
+                      </a>
+                    </div>
+
+                    {/* Office Hours */}
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Office Hours
+                      </p>
+
+                      <p className="text-sm font-semibold text-slate-700">
+                        {office.officeHours}
+                      </p>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
 
               <div className="w-full h-px bg-slate-100" />
 
@@ -206,63 +219,64 @@ export default function ContactPage() {
 
           {/* Right — Contact Form */}
           <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8 md:p-10">
-            <div className="mb-8">
-              <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
-                Send a Message
-              </span>
-              <h2 className="text-xl font-extrabold text-slate-800">
-                Fill Out the Form Below
-              </h2>
-              <p className="text-slate-400 text-sm mt-1">
-                We'll get back to you within 24 hours.
-              </p>
+            <div>
+              <div className="mb-8">
+                <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+                  Send a Message
+                </span>
+                <h2 className="text-xl font-extrabold text-slate-800">
+                  Fill Out the Form Below
+                </h2>
+                <p className="text-slate-400 text-sm mt-1">
+                  We'll get back to you within 24 hours.
+                </p>
+              </div>
+              <ContactForm />
             </div>
-            <ContactForm />
-          </div>
-        </div>
-
-        {/* Map */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-8 pb-5">
-            <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
-              Our Location
-            </span>
-            <h2 className="text-xl font-extrabold text-slate-800">
-              Find Us on the Map
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-5 ">
-            <div className="w-full h-80 md:h-96">
-              <p className="text-slate-400 text-sm mt-1">
-                <span className="font-bold text-black">Sylhet: </span>Level 4,
-                Arcadia, Dorshon Deuri, Amberkhana, Sylhet, Bangladesh
-              </p>
-              <iframe
-                title="IELTS7+ Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.764330190329!2d91.86309627592311!3d24.906019143432086!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375055395ada7b71%3A0xbf847c7898d7b55c!2sIELTS7%2B!5e0!3m2!1sen!2sbd!4v1783754360826!5m2!1sen!2sbd"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-            <div className="w-full h-80 md:h-96">
-              <p className="text-slate-400 text-sm mt-1">
-                <span className="font-bold text-black">Dhaka: </span> 6th Floor
-                Sunrise Plaza, Mirpur Road, 3/1 & 3/2, Lalmatia, Dhaka-1207
-              </p>
-              <iframe
-                title="IELTS7+ Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.72428031542!2d90.37195117589722!3d23.75720968851376!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755bf54ae903b63%3A0x88446c4385841857!2sSunrise%20Plaza!5e0!3m2!1sen!2sbd!4v1783850408611!5m2!1sen!2sbd"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+            {/* Map */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mt-10">
+              <div className="p-8 pb-5">
+                <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-3">
+                  Our Location
+                </span>
+                <h2 className="text-xl font-extrabold text-slate-800">
+                  Find Us on the Map
+                </h2>
+              </div>
+              <div className="w-full h-80 md:h-96 p-8">
+                <p className="text-slate-400 text-md mt-1 mb-3">
+                  <span className="font-bold text-slate-700">Dhaka: </span> 6th
+                  Floor Sunrise Plaza, Mirpur Road, 3/1 & 3/2, Lalmatia,
+                  Dhaka-1207
+                </p>
+                <iframe
+                  title="IELTS7+ Location"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.72428031542!2d90.37195117589722!3d23.75720968851376!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755bf54ae903b63%3A0x88446c4385841857!2sSunrise%20Plaza!5e0!3m2!1sen!2sbd!4v1783850408611!5m2!1sen!2sbd"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, borderRadius: 10 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <div className="w-full h-80 md:h-96 p-8 mb-8">
+                <p className="text-slate-400 text-md mt-1 mb-3">
+                  <span className="font-bold text-slate-700">Sylhet: </span>
+                  Level 4, Arcadia, Dorshon Deuri, Amberkhana, Sylhet,
+                  Bangladesh
+                </p>
+                <iframe
+                  title="IELTS7+ Location"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3618.764330190329!2d91.86309627592311!3d24.906019143432086!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375055395ada7b71%3A0xbf847c7898d7b55c!2sIELTS7%2B!5e0!3m2!1sen!2sbd!4v1783754360826!5m2!1sen!2sbd"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, borderRadius: 10 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
             </div>
           </div>
         </div>

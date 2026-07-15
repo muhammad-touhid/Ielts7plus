@@ -3,8 +3,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import DeleteQuestionButton from "./DeleteQuestionButton";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import AudioUpload from "../AudioUpload";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const moduleConfig = {
   listening: {
@@ -39,18 +53,57 @@ const moduleConfig = {
 
 const typeColors = {
   mcq: "bg-blue-50 text-blue-600",
+  "multi-select": "bg-blue-100 text-blue-700",
   passage: "bg-violet-50 text-violet-600",
   task: "bg-rose-50 text-rose-600",
   part: "bg-orange-50 text-orange-600",
   "form-completion": "bg-teal-50 text-teal-600",
+  "table-completion": "bg-stone-100 text-stone-600",
   "sentence-completion": "bg-emerald-50 text-emerald-600",
   "short-answer": "bg-amber-50 text-amber-600",
   matching: "bg-pink-50 text-pink-600",
   "map-labelling": "bg-indigo-50 text-indigo-600",
+  "true-false-ng": "bg-cyan-50 text-cyan-600",
+  "yes-no-ng": "bg-sky-50 text-sky-600",
+  "matching-headings": "bg-fuchsia-50 text-fuchsia-600",
+  "matching-information": "bg-lime-50 text-lime-600",
+  "matching-features": "bg-purple-50 text-purple-600",
+  "summary-completion": "bg-yellow-50 text-yellow-700",
+  "text-block": "bg-slate-100 text-slate-500",
 };
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
-const LISTENING_SECTIONS = [1, 2, 3, 4];
+const SECTION_COUNT = { listening: 4, reading: 3 };
+const SECTION_LABEL = { listening: "Section", reading: "Passage" };
+const SECTION_ICON = { listening: "ti-headphones", reading: "ti-book" };
+
+// Types whose preview text is content.instruction — everything else has its
+// own dedicated field (text/title/label/part).
+const INSTRUCTION_PREVIEW_TYPES = [
+  "matching",
+  "form-completion",
+  "table-completion",
+  "sentence-completion",
+  "short-answer",
+  "map-labelling",
+  "true-false-ng",
+  "yes-no-ng",
+  "matching-headings",
+  "matching-information",
+  "matching-features",
+  "summary-completion",
+];
+
+function getPreviewText(type, content) {
+  if (type === "mcq") return content.text;
+  if (type === "multi-select") return content.questionText;
+  if (type === "passage") return content.title;
+  if (type === "task") return content.label;
+  if (type === "part") return content.part;
+  if (type === "text-block") return content.text;
+  if (INSTRUCTION_PREVIEW_TYPES.includes(type)) return content.instruction;
+  return "";
+}
 
 function LockToggle({ label, checked, onChange, disabled }) {
   return (
@@ -77,8 +130,326 @@ function LockToggle({ label, checked, onChange, disabled }) {
   );
 }
 
-export default function AdminMockTestQuestionsClient({ questions }) {
+// Quick-add popup for Text Block — skips the full question form entirely.
+function QuickTextBlockModal({
+  activeModule,
+  activeSection,
+  nextOrder,
+  testType,
+  onClose,
+  onCreated,
+}) {
+  const [text, setText] = useState("");
+  const [tag, setTag] = useState("h3");
+  const [align, setAlign] = useState("left");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSave = async () => {
+    if (!text.trim()) {
+      setError("Text is required.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/mock-test-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          module: activeModule,
+          type: "text-block",
+          order: nextOrder,
+          content: { text, tag, align },
+          published: true,
+          testType: testType || "both",
+          section: activeSection,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      onCreated(created);
+      onClose();
+    } catch {
+      setError("Failed to create. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+            <i className="ti ti-typography text-blue-600" /> Add Text Block
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-all"
+          >
+            <i className="ti ti-x text-lg" />
+          </button>
+        </div>
+
+        <p className="text-xs text-slate-400 -mt-2">
+          Adding to{" "}
+          <span className="font-bold text-slate-600 capitalize">
+            {activeModule}
+          </span>{" "}
+          — {SECTION_LABEL[activeModule]} {activeSection}. Drag it into position
+          afterward.
+        </p>
+
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs px-3 py-2 rounded-lg flex items-center gap-2">
+            <i className="ti ti-alert-circle flex-shrink-0" />
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+            Text *
+          </label>
+          <textarea
+            rows={3}
+            placeholder="e.g. Questions 1–6"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="w-full bg-slate-50 text-slate-700 text-sm px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+              Style
+            </label>
+            <div className="relative">
+              <select
+                value={tag}
+                onChange={(e) => setTag(e.target.value)}
+                className="w-full bg-slate-50 text-slate-700 text-sm px-3 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 appearance-none cursor-pointer"
+              >
+                <option value="h2">Heading 2</option>
+                <option value="h3">Heading 3</option>
+                <option value="h4">Heading 4</option>
+                <option value="h5">Heading 5</option>
+                <option value="h6">Heading 6</option>
+                <option value="p">Paragraph</option>
+              </select>
+              <i className="ti ti-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+              Alignment
+            </label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { v: "left", i: "ti-align-left" },
+                { v: "center", i: "ti-align-center" },
+                { v: "right", i: "ti-align-right" },
+              ].map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setAlign(opt.v)}
+                  className={`flex items-center justify-center py-2.5 rounded-lg border-2 transition-all ${
+                    align === opt.v
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-400 hover:border-slate-300"
+                  }`}
+                >
+                  <i className={`ti ${opt.i}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-70 transition-all mt-1"
+        >
+          {saving ? (
+            <>
+              <i className="ti ti-loader-2 animate-spin" /> Adding...
+            </>
+          ) : (
+            <>
+              <i className="ti ti-check" /> Add Text Block
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// One draggable compact preview card — key info only, not a full rendered
+// preview (type, order, test type, a preview line, status, actions).
+const MAX_INDENT_LEVEL = 4;
+
+function QuestionCard({ question, activeModule, onIndentChange, position }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const preview = getPreviewText(question.type, question.content);
+  const isTextBlock = question.type === "text-block";
+  const indentLevel = Math.min(
+    MAX_INDENT_LEVEL,
+    Math.max(0, question.content?.indent || 0),
+  );
+  const typeLabels = {
+    mcq: "MCQ",
+    "multi-select": "Multi-Select",
+    passage: "Reading Passage",
+    task: "Writing Task",
+    part: "Speaking Part",
+    "form-completion": "Form / Note Completion",
+    "table-completion": "Table Completion",
+    "sentence-completion": "Sentence Completion",
+    "short-answer": "Short Answer",
+    matching: "Matching",
+    "map-labelling": "Map / Diagram Labelling",
+    "true-false-ng": "True / False / Not Given",
+    "yes-no-ng": "Yes / No / Not Given",
+    "matching-headings": "Matching Headings",
+    "matching-information": "Matching Information",
+    "matching-features": "Matching Features",
+    "summary-completion": "Summary Completion",
+    "text-block": "Text Block",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ ...style, marginLeft: indentLevel * 36 }}
+      className="flex items-center gap-3 transition-all"
+    >
+      {indentLevel > 0 && (
+        <i className="ti ti-corner-down-right text-slate-300 text-base flex-shrink-0 -mr-1" />
+      )}
+      <div
+        className={`flex-1 min-w-0 bg-white rounded-xl border p-3.5 flex items-center gap-3 transition-shadow ${
+          isTextBlock ? "border-slate-200 bg-slate-50/50" : "border-slate-200"
+        } ${isDragging ? "shadow-lg" : "hover:shadow-sm"}`}
+      >
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 flex-shrink-0 touch-none p-1"
+          title="Drag to reorder"
+        >
+          <i className="ti ti-grip-vertical text-lg" />
+        </button>
+
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <button
+            onClick={() => onIndentChange(question, -1)}
+            disabled={indentLevel === 0}
+            title="Un-indent"
+            className="w-6 h-6 rounded-md flex items-center justify-center text-slate-300 hover:text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+          >
+            <i className="ti ti-indent-decrease text-sm" />
+          </button>
+          <button
+            onClick={() => onIndentChange(question, 1)}
+            disabled={indentLevel >= MAX_INDENT_LEVEL}
+            title="Indent one tab right"
+            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all disabled:opacity-30 disabled:hover:bg-transparent ${
+              indentLevel > 0
+                ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                : "text-slate-300 hover:text-slate-500 hover:bg-slate-100"
+            }`}
+          >
+            <i className="ti ti-indent-increase text-sm" />
+          </button>
+          {indentLevel > 0 && (
+            <span className="text-[10px] font-bold text-blue-500 w-3 text-center">
+              {indentLevel}
+            </span>
+          )}
+        </div>
+
+        {!isTextBlock && (
+          <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
+            {position}
+          </span>
+        )}
+
+        <span
+          className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize flex-shrink-0 ${typeColors[question.type] || "bg-slate-100 text-slate-600"}`}
+        >
+          {typeLabels[question.type] || question.type}
+        </span>
+
+        {!isTextBlock && (
+          <span
+            className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize flex-shrink-0 hidden sm:inline-block ${
+              question.testType === "academic"
+                ? "bg-blue-50 text-blue-600"
+                : question.testType === "general"
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-violet-50 text-violet-600"
+            }`}
+          >
+            {question.testType === "both" ? "Both" : question.testType}
+          </span>
+        )}
+
+        <p className="text-sm text-slate-600 truncate flex-1 min-w-0">
+          {preview || (
+            <span className="text-slate-300 italic">No preview text</span>
+          )}
+        </p>
+
+        <span
+          className={`text-xs font-bold px-3 py-1 rounded-full flex-shrink-0 hidden md:inline-block ${question.published ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
+        >
+          {question.published ? "Published" : "Draft"}
+        </span>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Link
+            href={`/admin/mock-test-questions/${question.id}?module=${activeModule}`}
+            className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-all duration-200"
+          >
+            <i className="ti ti-edit text-sm" />
+          </Link>
+          <DeleteQuestionButton id={question.id} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AdminMockTestQuestionsClient({
+  questions: initialQuestions,
+}) {
   const modules = ["listening", "reading", "writing", "speaking"];
+  const router = useRouter();
 
   const searchParams = useSearchParams();
   const [activeModule, setActiveModule] = useState(
@@ -88,6 +459,19 @@ export default function AdminMockTestQuestionsClient({ questions }) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showTextBlockModal, setShowTextBlockModal] = useState(false);
+  const [reorderError, setReorderError] = useState("");
+
+  // Local editable copy so drag-reorder and quick-add feel instant without a
+  // full page reload; router.refresh() still syncs server state in the background.
+  const [questions, setQuestions] = useState(initialQuestions);
+  useEffect(() => {
+    setQuestions(initialQuestions);
+  }, [initialQuestions]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   // Mock test settings (section lock, audio lock, per-section audio URLs)
   const [settings, setSettings] = useState(null);
@@ -129,40 +513,35 @@ export default function AdminMockTestQuestionsClient({ questions }) {
     return acc;
   }, {});
 
-  // Count per listening section
-  const sectionCounts = LISTENING_SECTIONS.reduce((acc, n) => {
+  // Count per listening section OR reading passage, depending on active module
+  const sectionCount = SECTION_COUNT[activeModule] || 0;
+  const sectionNumbers = Array.from({ length: sectionCount }, (_, i) => i + 1);
+  const sectionCounts = sectionNumbers.reduce((acc, n) => {
     acc[n] = questions.filter(
-      (q) => q.module === "listening" && (q.section || 1) === n,
+      (q) => q.module === activeModule && (q.section || 1) === n,
     ).length;
     return acc;
   }, {});
 
-  // Filter by module (+ section, when listening) + search
+  // Items for the active module (+ section, when the module has sections),
+  // sorted by order — this is the list drag-and-drop reorders directly.
+  const sectionItems = questions
+    .filter(
+      (q) =>
+        q.module === activeModule &&
+        (sectionCount ? (q.section || 1) === activeSection : true),
+    )
+    .sort((a, b) => a.order - b.order);
+
+  // Filter by module (+ section) + search — used for the non-sectioned
+  // (Writing/Speaking) table view only.
   const filtered = questions.filter((q) => {
     const matchModule = q.module === activeModule;
-    const matchSection =
-      activeModule === "listening" ? (q.section || 1) === activeSection : true;
+    const matchSection = sectionCount
+      ? (q.section || 1) === activeSection
+      : true;
     const content = q.content;
-    const searchText =
-      q.type === "mcq"
-        ? content.text
-        : q.type === "passage"
-          ? content.title
-          : q.type === "task"
-            ? content.label
-            : q.type === "part"
-              ? content.part
-              : q.type === "matching"
-                ? content.instruction
-                : q.type === "form-completion"
-                  ? content.instruction
-                  : q.type === "sentence-completion"
-                    ? content.instruction
-                    : q.type === "short-answer"
-                      ? content.instruction
-                      : q.type === "map-labelling"
-                        ? content.instruction
-                        : "";
+    const searchText = getPreviewText(q.type, content);
     const matchSearch = searchText
       ?.toLowerCase()
       .includes(search.toLowerCase());
@@ -183,13 +562,123 @@ export default function AdminMockTestQuestionsClient({ questions }) {
   const handleModuleSelect = (m) => {
     setActiveModule(m);
     setSearch("");
-    if (m === "listening") setActiveSection(1);
+    if (SECTION_COUNT[m]) setActiveSection(1);
+  };
+
+  const nextOrderForSection = () =>
+    sectionItems.length > 0
+      ? Math.max(...sectionItems.map((q) => q.order)) + 1
+      : 0;
+
+  const handleTextBlockCreated = (created) => {
+    setQuestions((prev) => [...prev, created]);
+    router.refresh();
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sectionItems.findIndex((q) => q.id === active.id);
+    const newIndex = sectionItems.findIndex((q) => q.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(sectionItems, oldIndex, newIndex).map(
+      (q, i) => ({ ...q, order: i }),
+    );
+
+    // Optimistic local update
+    const reorderedIds = new Set(reordered.map((q) => q.id));
+    setQuestions((prev) => [
+      ...prev.filter((q) => !reorderedIds.has(q.id)),
+      ...reordered,
+    ]);
+    setReorderError("");
+
+    // Persist only the items whose order actually changed
+    const changed = reordered.filter((q) => {
+      const original = sectionItems.find((o) => o.id === q.id);
+      return original.order !== q.order;
+    });
+
+    try {
+      await Promise.all(
+        changed.map((q) =>
+          fetch(`/api/mock-test-questions/${q.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              module: q.module,
+              type: q.type,
+              order: q.order,
+              content: q.content,
+              published: q.published,
+              testType: q.testType,
+              section: q.section,
+            }),
+          }).then((res) => {
+            if (!res.ok) throw new Error();
+          }),
+        ),
+      );
+      router.refresh();
+    } catch {
+      setReorderError(
+        "Some changes couldn't be saved — refresh the page and try again.",
+      );
+    }
+  };
+
+  const handleIndentChange = async (question, delta) => {
+    const currentLevel = Math.min(
+      MAX_INDENT_LEVEL,
+      Math.max(0, question.content?.indent || 0),
+    );
+    const nextLevel = Math.min(
+      MAX_INDENT_LEVEL,
+      Math.max(0, currentLevel + delta),
+    );
+    if (nextLevel === currentLevel) return;
+
+    const updatedContent = { ...question.content, indent: nextLevel };
+
+    // Optimistic local update
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id ? { ...q, content: updatedContent } : q,
+      ),
+    );
+    setReorderError("");
+
+    try {
+      const res = await fetch(`/api/mock-test-questions/${question.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          module: question.module,
+          type: question.type,
+          order: question.order,
+          content: updatedContent,
+          published: question.published,
+          testType: question.testType,
+          section: question.section,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      router.refresh();
+    } catch {
+      // revert on failure
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === question.id ? question : q)),
+      );
+      setReorderError("Failed to save indent change. Please try again.");
+    }
   };
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800">
             Mock Test Questions
@@ -198,13 +687,6 @@ export default function AdminMockTestQuestionsClient({ questions }) {
             Manage questions for all four modules.
           </p>
         </div>
-        <Link
-          href="/admin/mock-test-questions/new"
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-        >
-          <i className="ti ti-plus text-base" />
-          Add New Question
-        </Link>
       </div>
 
       {/* Module Cards */}
@@ -242,12 +724,12 @@ export default function AdminMockTestQuestionsClient({ questions }) {
         })}
       </div>
 
-      {/* Listening: section tabs + lock toggles + per-section audio upload */}
-      {activeModule === "listening" && (
+      {/* Section/Passage tabs — Listening gets lock toggles + audio upload too */}
+      {sectionCount > 0 && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 flex-wrap">
-              {LISTENING_SECTIONS.map((n) => {
+              {sectionNumbers.map((n) => {
                 const isActive = activeSection === n;
                 return (
                   <button
@@ -259,8 +741,8 @@ export default function AdminMockTestQuestionsClient({ questions }) {
                         : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                     }`}
                   >
-                    <i className="ti ti-headphones text-sm" />
-                    Section {n}
+                    <i className={`ti ${SECTION_ICON[activeModule]} text-sm`} />
+                    {SECTION_LABEL[activeModule]} {n}
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                         isActive
@@ -275,7 +757,7 @@ export default function AdminMockTestQuestionsClient({ questions }) {
               })}
             </div>
 
-            {settings && (
+            {activeModule === "listening" && settings && (
               <div className="flex items-center gap-2 flex-wrap">
                 {savingSettings && (
                   <i className="ti ti-loader-2 animate-spin text-slate-300 text-sm" />
@@ -352,293 +834,391 @@ export default function AdminMockTestQuestionsClient({ questions }) {
             )}
           </div>
 
-          <p className="text-xs text-slate-400 -mt-2">
-            These control how strictly the Listening test matches the real IELTS
-            exam — toggle any of them off for a more flexible practice mode.
-          </p>
+          {activeModule === "listening" && (
+            <p className="text-xs text-slate-400 -mt-2">
+              These control how strictly the Listening test matches the real
+              IELTS exam — toggle any of them off for a more flexible practice
+              mode.
+            </p>
+          )}
 
-          {settingsError && (
+          {activeModule === "listening" && settingsError && (
             <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
               <i className="ti ti-alert-circle flex-shrink-0" />
               {settingsError}
             </div>
           )}
 
-          {/* Audio upload scoped to the active section only */}
-          <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
-            {settings ? (
-              <AudioUpload
-                label={`Section ${activeSection} Audio`}
-                value={settings[`audioSection${activeSection}`] || ""}
-                onChange={(url) =>
-                  saveSettings({ [`audioSection${activeSection}`]: url })
-                }
-              />
-            ) : (
-              <div className="flex items-center gap-2 text-xs text-slate-400 py-6 justify-center">
-                <i className="ti ti-loader-2 animate-spin" />
-                Loading audio settings...
-              </div>
-            )}
-          </div>
+          {/* Audio upload scoped to the active section — listening only */}
+          {activeModule === "listening" && (
+            <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
+              {settings ? (
+                <AudioUpload
+                  label={`Section ${activeSection} Audio`}
+                  value={settings[`audioSection${activeSection}`] || ""}
+                  onChange={(url) =>
+                    saveSettings({ [`audioSection${activeSection}`]: url })
+                  }
+                />
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-slate-400 py-6 justify-center">
+                  <i className="ti ti-loader-2 animate-spin" />
+                  Loading audio settings...
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeModule === "reading" && (
+            <p className="text-xs text-slate-400">
+              Add a "Reading Passage" type question to each passage tab for the
+              passage text itself, then add the question types (True/False/NG,
+              Matching Headings, etc.) tagged to the same passage.
+            </p>
+          )}
         </div>
       )}
 
-      {/* Questions Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {/* Table header with search + per page */}
-        <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      {/* Sectioned modules (Listening/Reading): draggable preview cards */}
+      {sectionCount > 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span
-              className={`text-xs font-bold px-3 py-1.5 rounded-full capitalize
-              ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
+              className={`text-xs font-bold px-3 py-1.5 rounded-full capitalize ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
             >
-              {activeModule}
-              {activeModule === "listening" && ` — Section ${activeSection}`}
+              {activeModule} — {SECTION_LABEL[activeModule]} {activeSection}
             </span>
             <span className="text-xs text-slate-400">
-              {filtered.length} question{filtered.length !== 1 ? "s" : ""}
-              {search && ` matching "${search}"`}
+              {sectionItems.length} item{sectionItems.length !== 1 ? "s" : ""} —
+              drag <i className="ti ti-grip-vertical" /> to reorder
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="relative">
-              <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search questions..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-slate-50 text-slate-700 text-xs placeholder-slate-400 pl-8 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all w-48"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          {reorderError && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
+              <i className="ti ti-alert-circle flex-shrink-0" />
+              {reorderError}
+            </div>
+          )}
+
+          {sectionItems.length > 0 ? (
+            <>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={sectionItems.map((q) => q.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <i className="ti ti-x text-xs" />
+                  <div className="flex flex-col gap-2">
+                    {(() => {
+                      let questionCounter = 0;
+                      return sectionItems.map((q) => {
+                        const isTextBlock = q.type === "text-block";
+                        if (!isTextBlock) questionCounter += 1;
+                        return (
+                          <QuestionCard
+                            key={q.id}
+                            question={q}
+                            activeModule={activeModule}
+                            onIndentChange={handleIndentChange}
+                            position={isTextBlock ? null : questionCounter}
+                          />
+                        );
+                      });
+                    })()}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              <div className="flex items-center justify-center gap-3 pt-3 mt-1 border-t border-slate-100">
+                <button
+                  onClick={() => setShowTextBlockModal(true)}
+                  className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-5 py-3 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
+                >
+                  <i className="ti ti-typography text-base" />
+                  Add Text Block
                 </button>
+                <Link
+                  href={`/admin/mock-test-questions/new?module=${activeModule}`}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
+                >
+                  <i className="ti ti-plus text-base" />
+                  Add Question
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-14">
+              <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
+                <i className="ti ti-file-off" />
+              </div>
+              <p className="text-sm font-bold text-slate-600 mb-1">
+                No items in {SECTION_LABEL[activeModule]} {activeSection} yet
+              </p>
+              <p className="text-xs text-slate-400 mb-5">
+                Add a question or a text block to get started.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setShowTextBlockModal(true)}
+                  className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-5 py-3 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
+                >
+                  <i className="ti ti-typography" />
+                  Add Text Block
+                </button>
+                <Link
+                  href={`/admin/mock-test-questions/new?module=${activeModule}`}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200"
+                >
+                  <i className="ti ti-plus" />
+                  Add Question
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Writing / Speaking: original table + search + pagination (unchanged) */
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span
+                className={`text-xs font-bold px-3 py-1.5 rounded-full capitalize
+                ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
+              >
+                {activeModule}
+              </span>
+              <span className="text-xs text-slate-400">
+                {filtered.length} question{filtered.length !== 1 ? "s" : ""}
+                {search && ` matching "${search}"`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search questions..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="bg-slate-50 text-slate-700 text-xs placeholder-slate-400 pl-8 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all w-48"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <i className="ti ti-x text-xs" />
+                  </button>
+                )}
+              </div>
+
+              <div className="relative">
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(parseInt(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-slate-50 text-slate-700 text-xs pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
+                >
+                  {ITEMS_PER_PAGE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n} per page
+                    </option>
+                  ))}
+                </select>
+                <i className="ti ti-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {paginated.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50">
+                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Order
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Test Type
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Preview
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginated.map((q) => {
+                    const preview = getPreviewText(q.type, q.content);
+                    return (
+                      <tr
+                        key={q.id}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                            {q.order}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${typeColors[q.type]}`}
+                          >
+                            {typeLabels[q.type] || q.type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${
+                              q.testType === "academic"
+                                ? "bg-blue-50 text-blue-600"
+                                : q.testType === "general"
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-violet-50 text-violet-600"
+                            }`}
+                          >
+                            {q.testType === "both" ? "Both" : q.testType}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-slate-600 max-w-md truncate">
+                            {preview}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`text-xs font-bold px-3 py-1 rounded-full ${q.published ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
+                          >
+                            {q.published ? "Published" : "Draft"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/admin/mock-test-questions/${q.id}?module=${activeModule}`}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-all duration-200"
+                            >
+                              <i className="ti ti-edit text-sm" />
+                              Edit
+                            </Link>
+                            <DeleteQuestionButton id={q.id} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
+                <i className="ti ti-search-off" />
+              </div>
+              <p className="text-sm font-bold text-slate-600 mb-1">
+                {search
+                  ? "No questions match your search"
+                  : `No ${activeModule} questions yet`}
+              </p>
+              <p className="text-xs text-slate-400 mb-5">
+                {search
+                  ? "Try a different keyword."
+                  : "Add your first question for this module."}
+              </p>
+              {!search && (
+                <Link
+                  href="/admin/mock-test-questions/new"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200"
+                >
+                  <i className="ti ti-plus" />
+                  Add Question
+                </Link>
               )}
             </div>
+          )}
 
-            {/* Per page */}
-            <div className="relative">
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(parseInt(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="bg-slate-50 text-slate-700 text-xs pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
-              >
-                {ITEMS_PER_PAGE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n} per page
-                  </option>
-                ))}
-              </select>
-              <i className="ti ti-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        {paginated.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Order
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Test Type
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Preview
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginated.map((q) => {
-                  const content = q.content;
-                  const preview =
-                    q.type === "mcq"
-                      ? content.text
-                      : q.type === "passage"
-                        ? content.title
-                        : q.type === "task"
-                          ? content.label
-                          : q.type === "part"
-                            ? content.part
-                            : q.type === "matching"
-                              ? content.instruction
-                              : q.type === "form-completion"
-                                ? content.instruction
-                                : q.type === "sentence-completion"
-                                  ? content.instruction
-                                  : q.type === "short-answer"
-                                    ? content.instruction
-                                    : q.type === "map-labelling"
-                                      ? content.instruction
-                                      : "";
-
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4">
+              <p className="text-xs text-slate-400">
+                Showing{" "}
+                <span className="font-bold text-slate-600">
+                  {(currentPage - 1) * itemsPerPage + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-bold text-slate-600">
+                  {Math.min(currentPage * itemsPerPage, filtered.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-bold text-slate-600">
+                  {filtered.length}
+                </span>{" "}
+                questions
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-blue-600 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  <i className="ti ti-chevron-left text-sm" />
+                </button>
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  const page = i + 1;
                   return (
-                    <tr
-                      key={q.id}
-                      className="hover:bg-slate-50 transition-colors"
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all
+                        ${
+                          currentPage === page
+                            ? "bg-blue-600 text-white"
+                            : "border border-slate-200 text-slate-500 hover:border-blue-600 hover:text-blue-600"
+                        }`}
                     >
-                      <td className="px-6 py-4">
-                        <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                          {q.order}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${typeColors[q.type]}`}
-                        >
-                          {q.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${
-                            q.testType === "academic"
-                              ? "bg-blue-50 text-blue-600"
-                              : q.testType === "general"
-                                ? "bg-emerald-50 text-emerald-600"
-                                : "bg-violet-50 text-violet-600"
-                          }`}
-                        >
-                          {q.testType === "both" ? "Both" : q.testType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-slate-600 max-w-md truncate">
-                          {preview}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`text-xs font-bold px-3 py-1 rounded-full ${q.published ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
-                        >
-                          {q.published ? "Published" : "Draft"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/admin/mock-test-questions/${q.id}?module=${activeModule}`}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-all duration-200"
-                          >
-                            <i className="ti ti-edit text-sm" />
-                            Edit
-                          </Link>
-                          <DeleteQuestionButton id={q.id} />
-                        </div>
-                      </td>
-                    </tr>
+                      {page}
+                    </button>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-16">
-            <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
-              <i className="ti ti-search-off" />
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-blue-600 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  <i className="ti ti-chevron-right text-sm" />
+                </button>
+              </div>
             </div>
-            <p className="text-sm font-bold text-slate-600 mb-1">
-              {search
-                ? "No questions match your search"
-                : activeModule === "listening"
-                  ? `No questions in Section ${activeSection} yet`
-                  : `No ${activeModule} questions yet`}
-            </p>
-            <p className="text-xs text-slate-400 mb-5">
-              {search
-                ? "Try a different keyword."
-                : "Add your first question for this module."}
-            </p>
-            {!search && (
-              <Link
-                href="/admin/mock-test-questions/new"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200"
-              >
-                <i className="ti ti-plus" />
-                Add Question
-              </Link>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4">
-            <p className="text-xs text-slate-400">
-              Showing{" "}
-              <span className="font-bold text-slate-600">
-                {(currentPage - 1) * itemsPerPage + 1}
-              </span>{" "}
-              to{" "}
-              <span className="font-bold text-slate-600">
-                {Math.min(currentPage * itemsPerPage, filtered.length)}
-              </span>{" "}
-              of{" "}
-              <span className="font-bold text-slate-600">
-                {filtered.length}
-              </span>{" "}
-              questions
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-blue-600 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                <i className="ti ti-chevron-left text-sm" />
-              </button>
-              {Array.from({ length: totalPages }).map((_, i) => {
-                const page = i + 1;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all
-                      ${
-                        currentPage === page
-                          ? "bg-blue-600 text-white"
-                          : "border border-slate-200 text-slate-500 hover:border-blue-600 hover:text-blue-600"
-                      }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(p + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-blue-600 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                <i className="ti ti-chevron-right text-sm" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      {showTextBlockModal && (
+        <QuickTextBlockModal
+          activeModule={activeModule}
+          activeSection={activeSection}
+          nextOrder={nextOrderForSection()}
+          testType={activeModule === "reading" ? "both" : undefined}
+          onClose={() => setShowTextBlockModal(false)}
+          onCreated={handleTextBlockCreated}
+        />
+      )}
     </div>
   );
 }

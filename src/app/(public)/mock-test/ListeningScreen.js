@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 // Self-contained 30-minute timer — the parent page doesn't pass timer props
 // to ListeningScreen (same pattern as Reading/Writing/Speaking screens).
@@ -18,6 +18,41 @@ function useTimer(seconds, active) {
   const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
   const ss = String(timeLeft % 60).padStart(2, "0");
   return { timeLeft, display: `${mm}:${ss}` };
+}
+
+// Renders the optional custom text block above a question — supports old
+// data where groupHeading was a plain string, and new data where it's
+// { text, tag, align }.
+function GroupHeadingBlock({ groupHeading }) {
+  if (!groupHeading) return null;
+  const block =
+    typeof groupHeading === "string"
+      ? { text: groupHeading, tag: "h3", align: "left" }
+      : groupHeading;
+  if (!block.text) return null;
+
+  const tag = block.tag || "h3";
+  const alignClass =
+    block.align === "center"
+      ? "text-center"
+      : block.align === "right"
+        ? "text-right"
+        : "text-left";
+  const sizeClass =
+    {
+      h2: "text-2xl font-extrabold text-slate-800",
+      h3: "text-xl font-extrabold text-slate-800",
+      h4: "text-lg font-bold text-slate-800",
+      h5: "text-base font-bold text-slate-700",
+      h6: "text-sm font-bold text-slate-700",
+      p: "text-sm text-slate-600",
+    }[tag] || "text-xl font-extrabold text-slate-800";
+
+  return React.createElement(
+    tag,
+    { className: `${sizeClass} ${alignClass} mt-2` },
+    block.text,
+  );
 }
 
 function TimerBadge({ display, warn }) {
@@ -62,9 +97,24 @@ function MCQRenderer({ question, answers, onChange }) {
   );
 }
 
-// Type 2: Form Completion
-function FormCompletionRenderer({ question, answers, onChange }) {
-  const { instruction, fields } = question.content;
+// Type 1b: Multi-Select MCQ — "Choose TWO/THREE letters"
+function MultiSelectRenderer({ question, answers, onChange }) {
+  const { instruction, questionText, options, selectCount } = question.content;
+  const key = question.id;
+  const selected = answers[key] || [];
+
+  const toggle = (label) => {
+    let next;
+    if (selected.includes(label)) {
+      next = selected.filter((l) => l !== label);
+    } else if (selected.length < selectCount) {
+      next = [...selected, label];
+    } else {
+      return; // already at max — ignore extra clicks
+    }
+    onChange(key, next);
+  };
+
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
       {instruction && (
@@ -73,27 +123,240 @@ function FormCompletionRenderer({ question, answers, onChange }) {
           {instruction}
         </p>
       )}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-4">
-        {fields.map((field, i) => {
-          const key = `${question.id}-field-${i}`;
+      <p className="text-sm font-bold text-slate-700">{questionText}</p>
+      <div className="flex flex-col gap-2">
+        {options.map((opt) => {
+          const isSelected = selected.includes(opt.label);
           return (
-            <div
-              key={i}
-              className="flex flex-col sm:flex-row sm:items-center gap-2"
+            <button
+              key={opt.label}
+              onClick={() => toggle(opt.label)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-all duration-200 ${isSelected ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}
             >
-              <span className="text-sm font-semibold text-slate-600 sm:w-48 flex-shrink-0">
-                {field.label}
+              <span
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isSelected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}
+              >
+                {opt.label}
               </span>
-              <input
-                type="text"
-                placeholder="Write your answer..."
-                value={answers[key] || ""}
-                onChange={(e) => onChange(key, e.target.value)}
-                className="flex-1 bg-slate-50 text-slate-700 text-sm px-4 py-2.5 rounded-xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-              />
+              {opt.text}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-slate-400">
+        {selected.length} of {selectCount} selected
+      </p>
+    </div>
+  );
+}
+
+// Type 2: Form Completion
+function FormCompletionRenderer({ question, answers, onChange, startNumber }) {
+  const { instruction, noteTitle, fields } = question.content;
+  let num = startNumber;
+  return (
+    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
+      {instruction && (
+        <p className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-4 py-2.5 rounded-xl">
+          <i className="ti ti-info-circle mr-1" />
+          {instruction}
+        </p>
+      )}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col gap-2.5">
+        {noteTitle && (
+          <h4 className="text-sm font-extrabold text-slate-800 text-center pb-3 mb-1 border-b border-slate-100">
+            {noteTitle}
+          </h4>
+        )}
+        {fields.map((field, i) => {
+          const kind = field.kind || "label";
+          const isExample = !!field.isExample;
+
+          if (kind === "bullet") {
+            const text = field.text || "";
+            const parts = text.split("___");
+            return (
+              <div key={i} className="flex flex-col gap-1">
+                {field.sectionBreakBefore && (
+                  <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mt-2">
+                    {field.sectionBreakBefore}
+                  </p>
+                )}
+                <div className="flex items-start gap-2 text-sm text-slate-700">
+                  <span className="text-slate-400 flex-shrink-0 mt-0.5">•</span>
+                  <p className="flex-1">
+                    {parts.map((part, pi) => {
+                      const isLast = pi === parts.length - 1;
+                      if (isLast) return <span key={pi}>{part}</span>;
+
+                      if (isExample) {
+                        const exampleAnswer = field.answers?.[pi] || "";
+                        return (
+                          <span key={pi}>
+                            {part}
+                            <span className="italic text-slate-500">
+                              {exampleAnswer}{" "}
+                              <span className="text-xs text-slate-400 not-italic">
+                                (Example)
+                              </span>
+                            </span>
+                          </span>
+                        );
+                      }
+
+                      const key = `${question.id}-field-${i}-blank-${pi}`;
+                      const displayNum = num;
+                      num += 1;
+                      return (
+                        <span key={pi}>
+                          {part}
+                          <span className="inline-flex items-center gap-1 mx-1">
+                            <span className="text-xs font-bold text-blue-600">
+                              {displayNum}
+                            </span>
+                            <input
+                              type="text"
+                              value={answers[key] || ""}
+                              onChange={(e) => onChange(key, e.target.value)}
+                              className="inline-block w-28 bg-slate-50 text-slate-700 text-sm text-center px-2 py-1 rounded-lg border-2 border-blue-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 align-baseline"
+                            />
+                          </span>
+                        </span>
+                      );
+                    })}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          // kind === "label"
+          const key = `${question.id}-field-${i}`;
+          const displayNum = isExample ? null : num;
+          if (!isExample) num += 1;
+          return (
+            <div key={i} className="flex flex-col gap-1">
+              {field.sectionBreakBefore && (
+                <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mt-2">
+                  {field.sectionBreakBefore}
+                </p>
+              )}
+              <div className="flex items-center gap-2 flex-wrap text-sm">
+                <span className="font-semibold text-slate-600 flex-shrink-0">
+                  {field.label}:
+                </span>
+                {isExample ? (
+                  <span className="text-slate-500 italic">
+                    {field.answer}{" "}
+                    <span className="text-xs text-slate-400 not-italic">
+                      (Example)
+                    </span>
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-xs font-bold text-blue-600 flex-shrink-0 w-4 text-right">
+                      {displayNum}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="......."
+                      value={answers[key] || ""}
+                      onChange={(e) => onChange(key, e.target.value)}
+                      className="flex-1 min-w-[120px] bg-slate-50 text-slate-700 text-sm px-3 py-2 rounded-lg border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                  </>
+                )}
+              </div>
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// Type 2b: Table Completion — grid with inline blanks marked as "___" in cell text
+function TableCompletionRenderer({ question, answers, onChange, startNumber }) {
+  const { instruction, tableTitle, columns, rows } = question.content;
+  let num = startNumber;
+  return (
+    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
+      {instruction && (
+        <p className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-4 py-2.5 rounded-xl">
+          <i className="ti ti-info-circle mr-1" />
+          {instruction}
+        </p>
+      )}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        {tableTitle && (
+          <h4 className="text-sm font-extrabold text-slate-800 text-center py-3 border-b border-slate-100 bg-slate-50">
+            {tableTitle}
+          </h4>
+        )}
+        <div className="overflow-x-auto">
+          <table
+            className="w-full text-sm border-collapse"
+            style={{ tableLayout: "fixed" }}
+          >
+            <thead>
+              <tr className="bg-slate-100 border-b-2 border-slate-200">
+                {columns.map((col, ci) => (
+                  <th
+                    key={ci}
+                    className="text-left px-4 py-3 text-sm font-extrabold text-slate-800 border-r border-slate-200 last:border-r-0 break-words"
+                    style={{ width: `${100 / columns.length}%` }}
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => (
+                <tr
+                  key={ri}
+                  className="border-b border-slate-100 last:border-b-0"
+                >
+                  {row.cells.map((cell, ci) => {
+                    const parts = cell.text.split("___");
+                    return (
+                      <td
+                        key={ci}
+                        className="px-4 py-3 text-slate-600 align-top border-r border-slate-100 last:border-r-0 whitespace-pre-line break-words"
+                      >
+                        {parts.map((part, pi) => {
+                          const isLast = pi === parts.length - 1;
+                          if (isLast) return <span key={pi}>{part}</span>;
+                          const key = `${question.id}-table-${ri}-${ci}-${pi}`;
+                          const displayNum = num;
+                          num += 1;
+                          return (
+                            <span key={pi}>
+                              {part}
+                              <span className="inline-flex items-center gap-1 mx-1">
+                                <span className="text-xs font-bold text-blue-600">
+                                  {displayNum}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={answers[key] || ""}
+                                  onChange={(e) =>
+                                    onChange(key, e.target.value)
+                                  }
+                                  className="inline-block w-24 bg-slate-50 text-slate-700 text-xs text-center px-2 py-1 rounded-lg border-2 border-blue-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 align-baseline"
+                                />
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -298,8 +561,27 @@ function countAnswerSlots(question) {
   switch (question.type) {
     case "mcq":
       return 1;
+    case "multi-select":
+      return question.content.selectCount || 2;
     case "form-completion":
-      return question.content.fields?.length || 0;
+      return (
+        question.content.fields?.reduce((acc, f) => {
+          if (f.isExample) return acc;
+          if ((f.kind || "label") === "bullet") {
+            return acc + (f.answers?.length || 0);
+          }
+          return acc + 1;
+        }, 0) || 0
+      );
+    case "table-completion":
+      return (
+        question.content.rows?.reduce(
+          (acc, row) =>
+            acc +
+            row.cells.reduce((a, cell) => a + (cell.answers?.length || 0), 0),
+          0,
+        ) || 0
+      );
     case "sentence-completion":
       return question.content.sentences?.length || 0;
     case "short-answer":
@@ -318,12 +600,39 @@ function countAnswered(question, answers) {
   switch (question.type) {
     case "mcq":
       return answers[question.id] ? 1 : 0;
-    case "form-completion":
-      return (
-        question.content.fields?.filter((_, i) =>
-          answers[`${question.id}-field-${i}`]?.trim(),
-        ).length || 0
+    case "multi-select":
+      return Math.min(
+        (answers[question.id] || []).length,
+        question.content.selectCount || 2,
       );
+    case "form-completion": {
+      let count = 0;
+      question.content.fields?.forEach((f, i) => {
+        if (f.isExample) return;
+        if ((f.kind || "label") === "bullet") {
+          (f.answers || []).forEach((_, bi) => {
+            const key = `${question.id}-field-${i}-blank-${bi}`;
+            if (answers[key]?.trim()) count += 1;
+          });
+        } else {
+          const key = `${question.id}-field-${i}`;
+          if (answers[key]?.trim()) count += 1;
+        }
+      });
+      return count;
+    }
+    case "table-completion": {
+      let count = 0;
+      question.content.rows?.forEach((row, ri) => {
+        row.cells.forEach((cell, ci) => {
+          (cell.answers || []).forEach((_, bi) => {
+            const key = `${question.id}-table-${ri}-${ci}-${bi}`;
+            if (answers[key]?.trim()) count += 1;
+          });
+        });
+      });
+      return count;
+    }
     case "sentence-completion":
       return (
         question.content.sentences?.filter((_, i) =>
@@ -698,6 +1007,17 @@ export default function ListeningScreen({
           {/* Questions */}
           <div className="flex flex-col gap-6">
             {currentSection.questions.map((question) => {
+              // Standalone text block — not a scored question, renders as-is
+              // wherever its Order places it in the sequence.
+              if (question.type === "text-block") {
+                return (
+                  <GroupHeadingBlock
+                    key={question.id}
+                    groupHeading={question.content}
+                  />
+                );
+              }
+
               const slots = countAnswerSlots(question);
               const startNum = qNum;
               qNum += slots;
@@ -717,16 +1037,18 @@ export default function ListeningScreen({
                           ? "bg-blue-50 text-blue-600"
                           : question.type === "form-completion"
                             ? "bg-violet-50 text-violet-600"
-                            : question.type === "sentence-completion"
-                              ? "bg-emerald-50 text-emerald-600"
-                              : question.type === "short-answer"
-                                ? "bg-amber-50 text-amber-600"
-                                : question.type === "matching"
-                                  ? "bg-rose-50 text-rose-600"
-                                  : "bg-slate-100 text-slate-600"
+                            : question.type === "table-completion"
+                              ? "bg-cyan-50 text-cyan-600"
+                              : question.type === "sentence-completion"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : question.type === "short-answer"
+                                  ? "bg-amber-50 text-amber-600"
+                                  : question.type === "matching"
+                                    ? "bg-rose-50 text-rose-600"
+                                    : "bg-slate-100 text-slate-600"
                       }`}
                     >
-                      {question.type.replace("-", " ")}
+                      {question.type.replace(/-/g, " ")}
                     </span>
                   </div>
 
@@ -737,11 +1059,27 @@ export default function ListeningScreen({
                       onChange={handleChange}
                     />
                   )}
+                  {question.type === "multi-select" && (
+                    <MultiSelectRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                    />
+                  )}
                   {question.type === "form-completion" && (
                     <FormCompletionRenderer
                       question={question}
                       answers={answers}
                       onChange={handleChange}
+                      startNumber={startNum}
+                    />
+                  )}
+                  {question.type === "table-completion" && (
+                    <TableCompletionRenderer
+                      question={question}
+                      answers={answers}
+                      onChange={handleChange}
+                      startNumber={startNum}
                     />
                   )}
                   {question.type === "sentence-completion" && (

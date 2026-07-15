@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import ListeningScreen from "./ListeningScreen";
+import ReadingScreen from "./ReadingScreen";
 
 function wordCount(text) {
   return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
@@ -94,52 +95,6 @@ function ProgressBar({ steps, current, onBack }) {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function MCQBlock({ questions, answers, onChange }) {
-  return (
-    <div className="flex flex-col gap-6">
-      {questions.map((q, qi) => (
-        <div
-          key={q.id}
-          className="bg-slate-50 rounded-2xl p-6 border border-slate-100"
-        >
-          <p className="text-sm font-bold text-slate-700 mb-4">
-            <span className="text-blue-600 mr-2">Q{qi + 1}.</span>
-            {q.content.text}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {q.content.options.map((opt, oi) => {
-              const letter = ["A", "B", "C", "D"][oi];
-              const selected = answers[q.id] === opt;
-              return (
-                <button
-                  key={oi}
-                  onClick={() => onChange(q.id, opt)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-all duration-200 ${
-                    selected
-                      ? "border-blue-600 bg-blue-50 text-blue-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"
-                  }`}
-                >
-                  <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
-                      selected
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {letter}
-                  </span>
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -633,68 +588,6 @@ function ModuleSelectScreen({ completed, onSelect, testType, onBack }) {
   );
 }
 
-function ReadingScreen({ onComplete, onBack, passage, questions, testType }) {
-  const [answers, setAnswers] = useState({});
-  const { display, timeLeft } = useTimer(60 * 60, true);
-  const answered = Object.keys(answers).length;
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="mb-2">
-            <BackButton onClick={onBack} label="Back to Modules" />
-          </div>
-          <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
-            Reading Module
-          </span>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-extrabold text-slate-800">
-              Passage 1 — {passage?.content?.title ?? "Reading Passage"}
-            </h2>
-            <span
-              className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
-            >
-              {testType}
-            </span>
-          </div>
-        </div>
-        <TimerBadge display={display} warn={timeLeft < 600} />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-            Reading Passage
-          </h3>
-          <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-            {passage?.content?.passage ?? "Passage not available."}
-          </div>
-        </div>
-        <div className="flex flex-col gap-5">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Questions 1–{questions.length}
-          </h3>
-          <MCQBlock
-            questions={questions}
-            answers={answers}
-            onChange={(id, val) => setAnswers((a) => ({ ...a, [id]: val }))}
-          />
-        </div>
-      </div>
-      <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
-        <p className="text-sm text-slate-400">
-          {answered} of {questions.length} answered
-        </p>
-        <button
-          onClick={() => onComplete("reading", answers)}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-        >
-          Submit Reading <i className="ti ti-arrow-right text-sm" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function WritingScreen({ onComplete, onBack, tasks, testType }) {
   const [answers, setAnswers] = useState({});
   const [activeTask, setActiveTask] = useState(0);
@@ -1029,14 +922,13 @@ export default function MockTestPage() {
     }
   }, [step, mockTestSettings]);
 
-  // ✅ All listening question types (not just mcq)
+  // All listening question types, grouped into 4 sections by ListeningScreen
   const listeningQuestions =
     questions?.filter((q) => q.module === "listening") ?? [];
-  const readingPassage =
-    questions?.find((q) => q.module === "reading" && q.type === "passage") ??
-    null;
+  // All reading question types (passage + 7 question types), grouped into
+  // 3 passages by ReadingScreen
   const readingQuestions =
-    questions?.filter((q) => q.module === "reading" && q.type === "mcq") ?? [];
+    questions?.filter((q) => q.module === "reading") ?? [];
   const writingTasks =
     questions?.filter((q) => q.module === "writing" && q.type === "task") ?? [];
   const speakingParts =
@@ -1162,7 +1054,6 @@ export default function MockTestPage() {
           <ReadingScreen
             onComplete={handleModuleComplete}
             onBack={() => handleBack()}
-            passage={readingPassage}
             questions={readingQuestions}
             testType={testType}
           />

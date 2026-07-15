@@ -6,35 +6,101 @@ import { useRouter } from "next/navigation";
 const moduleTypes = {
   listening: [
     "mcq",
+    "multi-select",
     "form-completion",
+    "table-completion",
     "sentence-completion",
     "short-answer",
     "matching",
     "map-labelling",
   ],
-  reading: ["passage", "mcq"],
+  reading: [
+    "passage",
+    "mcq",
+    "multi-select",
+    "true-false-ng",
+    "yes-no-ng",
+    "matching-headings",
+    "matching-information",
+    "matching-features",
+    "summary-completion",
+  ],
   writing: ["task"],
   speaking: ["part"],
 };
 
 const typeLabels = {
   mcq: "Multiple Choice (MCQ)",
-  "form-completion": "Form / Note / Table Completion",
+  "multi-select": "Multiple Choice — Choose Multiple",
+  "form-completion": "Form / Note Completion",
+  "table-completion": "Table Completion",
   "sentence-completion": "Sentence Completion",
   "short-answer": "Short Answer",
   matching: "Matching",
   "map-labelling": "Map / Diagram Labelling",
   passage: "Reading Passage",
+  "true-false-ng": "True / False / Not Given",
+  "yes-no-ng": "Yes / No / Not Given",
+  "matching-headings": "Matching Headings",
+  "matching-information": "Matching Information",
+  "matching-features": "Matching Features",
+  "summary-completion": "Summary / Sentence Completion",
+  "text-block": "Custom Text Block",
   task: "Writing Task",
   part: "Speaking Part",
 };
 
 const supportsTestType = ["reading", "writing"];
-const supportsSection = ["listening"];
+const supportsSection = ["listening", "reading"];
+const SECTION_COUNT = { listening: 4, reading: 3 };
+const SECTION_LABEL = {
+  listening: "Listening Section",
+  reading: "Reading Passage",
+};
 
 const defaultContent = {
   mcq: { text: "", options: ["", "", "", ""], correctAnswer: "" },
-  "form-completion": { instruction: "", fields: [{ label: "", answer: "" }] },
+  "multi-select": {
+    instruction: "",
+    questionText: "",
+    options: [
+      { label: "A", text: "" },
+      { label: "B", text: "" },
+      { label: "C", text: "" },
+      { label: "D", text: "" },
+      { label: "E", text: "" },
+    ],
+    correctAnswers: [],
+    selectCount: 2,
+  },
+  "form-completion": {
+    instruction: "",
+    noteTitle: "",
+    fields: [
+      {
+        kind: "label",
+        label: "",
+        text: "",
+        answer: "",
+        answers: [],
+        isExample: false,
+        sectionBreakBefore: "",
+      },
+    ],
+  },
+  "table-completion": {
+    instruction: "",
+    tableTitle: "",
+    columns: ["", ""],
+    rows: [
+      {
+        cells: [
+          { text: "", answers: [] },
+          { text: "", answers: [] },
+        ],
+      },
+    ],
+  },
   "sentence-completion": {
     instruction: "",
     sentences: [{ before: "", after: "", answer: "" }],
@@ -52,6 +118,34 @@ const defaultContent = {
     labels: [{ number: 1, answer: "" }],
   },
   passage: { title: "", passage: "" },
+  "true-false-ng": {
+    instruction: "",
+    statements: [{ text: "", answer: "TRUE" }],
+  },
+  "yes-no-ng": { instruction: "", statements: [{ text: "", answer: "YES" }] },
+  "matching-headings": {
+    instruction: "",
+    headings: [{ label: "i", text: "" }],
+    paragraphs: [{ label: "A", answer: "" }],
+  },
+  "matching-information": {
+    instruction: "",
+    options: [{ label: "A", text: "" }],
+    items: [{ text: "" }],
+    answers: {},
+  },
+  "matching-features": {
+    instruction: "",
+    options: [{ label: "A", text: "" }],
+    items: [{ text: "" }],
+    answers: {},
+  },
+  "summary-completion": {
+    instruction: "",
+    wordBank: [],
+    sentences: [{ before: "", after: "", answer: "" }],
+  },
+  "text-block": { text: "", tag: "h3", align: "left" },
   task: { label: "", prompt: "", minWords: 150, timeLabel: "" },
   part: { part: "", instruction: "", questions: [""] },
 };
@@ -62,7 +156,13 @@ export default function MockTestQuestionForm({ question }) {
 
   const [module, setModule] = useState(question?.module ?? "listening");
   const [type, setType] = useState(question?.type ?? "mcq");
-  const [order, setOrder] = useState(question?.order ?? 0);
+  // Order is no longer a manual field — new questions land at the end of the
+  // list (a large number sorts after existing sequential 0,1,2... values)
+  // and get dragged into position from the admin list. Edits keep their
+  // existing order untouched. 1,000,000 comfortably fits in Postgres's Int
+  // column (max ~2.14 billion) while still sorting after any realistic
+  // number of existing questions.
+  const [order] = useState(question?.order ?? 1000000);
   const [published, setPublished] = useState(question?.published ?? false);
   const [content, setContent] = useState(
     question?.content ?? defaultContent["mcq"],
@@ -86,6 +186,105 @@ export default function MockTestQuestionForm({ question }) {
     setContent(defaultContent[val]);
   };
 
+  // --- Table Completion helpers ---
+  const addColumn = () => {
+    setContent((c) => ({
+      ...c,
+      columns: [...c.columns, ""],
+      rows: c.rows.map((r) => ({
+        cells: [...r.cells, { text: "", answers: [] }],
+      })),
+    }));
+  };
+  const removeColumn = (colIdx) => {
+    setContent((c) => ({
+      ...c,
+      columns: c.columns.filter((_, i) => i !== colIdx),
+      rows: c.rows.map((r) => ({
+        cells: r.cells.filter((_, i) => i !== colIdx),
+      })),
+    }));
+  };
+  const addTableRow = () => {
+    setContent((c) => ({
+      ...c,
+      rows: [
+        ...c.rows,
+        { cells: c.columns.map(() => ({ text: "", answers: [] })) },
+      ],
+    }));
+  };
+  const removeTableRow = (rowIdx) => {
+    setContent((c) => ({
+      ...c,
+      rows: c.rows.filter((_, i) => i !== rowIdx),
+    }));
+  };
+  const updateCellText = (rowIdx, colIdx, text) => {
+    const blankCount = (text.match(/___/g) || []).length;
+    setContent((c) => {
+      const rows = [...c.rows];
+      const cells = [...rows[rowIdx].cells];
+      const prevAnswers = cells[colIdx].answers || [];
+      const answers = Array.from(
+        { length: blankCount },
+        (_, i) => prevAnswers[i] || "",
+      );
+      cells[colIdx] = { text, answers };
+      rows[rowIdx] = { cells };
+      return { ...c, rows };
+    });
+  };
+  const updateCellAnswer = (rowIdx, colIdx, blankIdx, value) => {
+    setContent((c) => {
+      const rows = [...c.rows];
+      const cells = [...rows[rowIdx].cells];
+      const answers = [...(cells[colIdx].answers || [])];
+      answers[blankIdx] = value;
+      cells[colIdx] = { ...cells[colIdx], answers };
+      rows[rowIdx] = { cells };
+      return { ...c, rows };
+    });
+  };
+
+  // --- Form/Note Completion bullet-point field helpers ---
+  const updateBulletFieldText = (fieldIdx, text) => {
+    const blankCount = (text.match(/___/g) || []).length;
+    setContent((c) => {
+      const fields = [...c.fields];
+      const prevAnswers = fields[fieldIdx].answers || [];
+      const answers = Array.from(
+        { length: blankCount },
+        (_, i) => prevAnswers[i] || "",
+      );
+      fields[fieldIdx] = { ...fields[fieldIdx], text, answers };
+      return { ...c, fields };
+    });
+  };
+  const updateBulletFieldAnswer = (fieldIdx, blankIdx, value) => {
+    setContent((c) => {
+      const fields = [...c.fields];
+      const answers = [...(fields[fieldIdx].answers || [])];
+      answers[blankIdx] = value;
+      fields[fieldIdx] = { ...fields[fieldIdx], answers };
+      return { ...c, fields };
+    });
+  };
+  const setFieldKind = (fieldIdx, kind) => {
+    setContent((c) => {
+      const fields = [...c.fields];
+      fields[fieldIdx] = {
+        ...fields[fieldIdx],
+        kind,
+        // reset the fields specific to the kind being switched away from
+        ...(kind === "label"
+          ? { text: "", answers: [] }
+          : { label: "", answer: "" }),
+      };
+      return { ...c, fields };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -102,7 +301,7 @@ export default function MockTestQuestionForm({ question }) {
           module,
           type,
           order,
-          content,
+          content: content,
           published,
           testType,
           section: supportsSection.includes(module) ? section : 1,
@@ -139,12 +338,14 @@ export default function MockTestQuestionForm({ question }) {
           {error}
         </div>
       )}
+
       {/* Settings */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col gap-5">
         <h2 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
           <i className="ti ti-settings text-blue-600" /> Question Settings
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <label className={labelClass}>Module *</label>
             <div className="relative">
@@ -169,7 +370,12 @@ export default function MockTestQuestionForm({ question }) {
                 onChange={(e) => handleTypeChange(e.target.value)}
                 className={`${inputClass} appearance-none cursor-pointer`}
               >
-                {moduleTypes[module].map((t) => (
+                {[
+                  ...moduleTypes[module],
+                  ...(isEdit && !moduleTypes[module].includes(type)
+                    ? [type]
+                    : []),
+                ].map((t) => (
                   <option key={t} value={t}>
                     {typeLabels[t] || t}
                   </option>
@@ -178,24 +384,23 @@ export default function MockTestQuestionForm({ question }) {
               <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
             </div>
           </div>
-          <div>
-            <label className={labelClass}>Display Order *</label>
-            <input
-              type="number"
-              min="0"
-              value={order}
-              onChange={(e) => setOrder(e.target.value)}
-              className={inputClass}
-              placeholder="0 = show first"
-            />
-          </div>
         </div>
-        {/* Section selector — listening only */}
+        <p className="text-xs text-slate-400 -mt-2">
+          Order is set by dragging in the question list — new items land at the
+          end, ready to be dragged into position.
+        </p>
+
+        {/* Section selector — listening (4) or reading (3) */}
         {supportsSection.includes(module) && (
           <div>
-            <label className={labelClass}>Listening Section *</label>
-            <div className="grid grid-cols-4 gap-3">
-              {[1, 2, 3, 4].map((num) => (
+            <label className={labelClass}>{SECTION_LABEL[module]} *</label>
+            <div
+              className={`grid gap-3 ${SECTION_COUNT[module] === 3 ? "grid-cols-3" : "grid-cols-4"}`}
+            >
+              {Array.from(
+                { length: SECTION_COUNT[module] },
+                (_, i) => i + 1,
+              ).map((num) => (
                 <button
                   key={num}
                   type="button"
@@ -206,17 +411,23 @@ export default function MockTestQuestionForm({ question }) {
                       : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                   }`}
                 >
-                  <i className="ti ti-headphones text-lg" />
-                  <span className="text-xs font-bold">Section {num}</span>
+                  <i
+                    className={`ti ${module === "listening" ? "ti-headphones" : "ti-book"} text-lg`}
+                  />
+                  <span className="text-xs font-bold">
+                    {module === "listening" ? "Section" : "Passage"} {num}
+                  </span>
                 </button>
               ))}
             </div>
             <p className="text-xs text-slate-400 mt-2">
-              Determines which of the 4 listening sections this question appears
-              in, and its question numbering.
+              {module === "listening"
+                ? "Determines which of the 4 listening sections this question appears in, and its question numbering."
+                : 'Determines which of the 3 reading passages this question belongs to. Use type "Reading Passage" once per passage for the passage text itself.'}
             </p>
           </div>
         )}
+
         {/* Test Type for Reading/Writing */}
         {supportsTestType.includes(module) ? (
           <div>
@@ -264,6 +475,7 @@ export default function MockTestQuestionForm({ question }) {
           </div>
         )}
       </div>
+
       {/* Content */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col gap-5">
         <h2 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
@@ -272,6 +484,9 @@ export default function MockTestQuestionForm({ question }) {
             — {typeLabels[type]}
           </span>
         </h2>
+
+        <div className="w-full h-px bg-slate-100" />
+
         {/* MCQ */}
         {type === "mcq" && (
           <div className="flex flex-col gap-4">
@@ -289,28 +504,70 @@ export default function MockTestQuestionForm({ question }) {
               />
             </div>
             <div>
-              <label className={labelClass}>Options *</label>
-              <div className="flex flex-col gap-2">
-                {content.options.map((opt, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
-                      {["A", "B", "C", "D"][i]}
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      placeholder={`Option ${["A", "B", "C", "D"][i]}`}
-                      value={opt}
-                      onChange={(e) => {
-                        const u = [...content.options];
-                        u[i] = e.target.value;
-                        setContent((c) => ({ ...c, options: u }));
-                      }}
-                      className={`${inputClass} flex-1`}
-                    />
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Options *</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((c) => ({
+                      ...c,
+                      options: [...c.options, ""],
+                    }))
+                  }
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Option
+                </button>
               </div>
+              <div className="flex flex-col gap-2">
+                {content.options.map((opt, i) => {
+                  const letter = String.fromCharCode(65 + i);
+                  return (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
+                        {letter}
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        placeholder={`Option ${letter}`}
+                        value={opt}
+                        onChange={(e) => {
+                          const u = [...content.options];
+                          u[i] = e.target.value;
+                          setContent((c) => ({ ...c, options: u }));
+                        }}
+                        className={`${inputClass} flex-1`}
+                      />
+                      {content.options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const removedValue = content.options[i];
+                            const u = content.options.filter(
+                              (_, idx) => idx !== i,
+                            );
+                            setContent((c) => ({
+                              ...c,
+                              options: u,
+                              correctAnswer:
+                                c.correctAnswer === removedValue
+                                  ? ""
+                                  : c.correctAnswer,
+                            }));
+                          }}
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Minimum 2 options — add as many as you need, no fixed count.
+              </p>
             </div>
             <div>
               <label className={labelClass}>Correct Answer *</label>
@@ -319,10 +576,7 @@ export default function MockTestQuestionForm({ question }) {
                   required
                   value={content.correctAnswer}
                   onChange={(e) =>
-                    setContent((c) => ({
-                      ...c,
-                      correctAnswer: e.target.value,
-                    }))
+                    setContent((c) => ({ ...c, correctAnswer: e.target.value }))
                   }
                   className={`${inputClass} appearance-none cursor-pointer`}
                 >
@@ -331,7 +585,7 @@ export default function MockTestQuestionForm({ question }) {
                     (opt, i) =>
                       opt && (
                         <option key={i} value={opt}>
-                          {["A", "B", "C", "D"][i]}: {opt}
+                          {String.fromCharCode(65 + i)}: {opt}
                         </option>
                       ),
                   )}
@@ -341,6 +595,239 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
+        {/* Multi-Select MCQ — "Choose TWO/THREE letters" */}
+        {type === "multi-select" && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder="e.g. Choose TWO letters, A-E."
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Question Text *</label>
+              <textarea
+                required
+                rows={2}
+                placeholder="e.g. Which TWO features had the greatest impact on the students?"
+                value={content.questionText}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, questionText: e.target.value }))
+                }
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Number of Correct Answers *</label>
+              <input
+                type="number"
+                min={2}
+                max={content.options.length}
+                value={content.selectCount}
+                onChange={(e) => {
+                  const val = Math.max(2, parseInt(e.target.value) || 2);
+                  setContent((c) => ({
+                    ...c,
+                    selectCount: val,
+                    correctAnswers: c.correctAnswers.slice(0, val),
+                  }));
+                }}
+                className={inputClass}
+              />
+              <p className="text-xs text-slate-400 mt-1.5">
+                How many letters students must choose — e.g. "TWO" = 2. This
+                also determines how many question numbers this block uses (e.g.
+                selecting 2 shows as "Questions 21 and 22").
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Options *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextLabel = String.fromCharCode(
+                      65 + content.options.length,
+                    );
+                    setContent((c) => ({
+                      ...c,
+                      options: [...c.options, { label: nextLabel, text: "" }],
+                    }));
+                  }}
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Option
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {content.options.map((opt, i) => {
+                  const isMarkedCorrect = content.correctAnswers.includes(
+                    opt.label,
+                  );
+                  return (
+                    <div key={i} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setContent((c) => {
+                            let correctAnswers;
+                            if (c.correctAnswers.includes(opt.label)) {
+                              correctAnswers = c.correctAnswers.filter(
+                                (l) => l !== opt.label,
+                              );
+                            } else if (
+                              c.correctAnswers.length < c.selectCount
+                            ) {
+                              correctAnswers = [...c.correctAnswers, opt.label];
+                            } else {
+                              correctAnswers = c.correctAnswers;
+                            }
+                            return { ...c, correctAnswers };
+                          })
+                        }
+                        title="Mark as correct"
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 border-2 transition-all ${
+                          isMarkedCorrect
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-600"
+                            : "border-slate-200 bg-white text-slate-400 hover:border-slate-300"
+                        }`}
+                      >
+                        {isMarkedCorrect ? (
+                          <i className="ti ti-check text-sm" />
+                        ) : (
+                          opt.label
+                        )}
+                      </button>
+                      <input
+                        type="text"
+                        placeholder={`Option ${opt.label} text`}
+                        value={opt.text}
+                        onChange={(e) => {
+                          const u = [...content.options];
+                          u[i] = { ...u[i], text: e.target.value };
+                          setContent((c) => ({ ...c, options: u }));
+                        }}
+                        className={`${inputClass} flex-1`}
+                      />
+                      {content.options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent((c) => ({
+                              ...c,
+                              options: c.options.filter((_, idx) => idx !== i),
+                              correctAnswers: c.correctAnswers.filter(
+                                (l) => l !== opt.label,
+                              ),
+                            }))
+                          }
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-400 mt-2">
+                Click a letter badge to mark/unmark it as correct — marked:{" "}
+                <span
+                  className={
+                    content.correctAnswers.length === content.selectCount
+                      ? "font-bold text-emerald-600"
+                      : "font-bold text-amber-600"
+                  }
+                >
+                  {content.correctAnswers.length}/{content.selectCount}
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Text Block — a standalone heading/paragraph placed between
+            questions via its own Order number, not tied to any question */}
+        {type === "text-block" && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelClass}>Text *</label>
+              <textarea
+                required
+                rows={3}
+                placeholder="e.g. Questions 1–6, or any note/instruction you want shown between questions."
+                value={content.text}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, text: e.target.value }))
+                }
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Style</label>
+                <div className="relative">
+                  <select
+                    value={content.tag}
+                    onChange={(e) =>
+                      setContent((c) => ({ ...c, tag: e.target.value }))
+                    }
+                    className={`${inputClass} appearance-none cursor-pointer`}
+                  >
+                    <option value="h2">Heading 2 (largest)</option>
+                    <option value="h3">Heading 3</option>
+                    <option value="h4">Heading 4</option>
+                    <option value="h5">Heading 5</option>
+                    <option value="h6">Heading 6 (smallest heading)</option>
+                    <option value="p">Paragraph (plain text)</option>
+                  </select>
+                  <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Alignment</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "left", icon: "ti-align-left" },
+                    { value: "center", icon: "ti-align-center" },
+                    { value: "right", icon: "ti-align-right" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() =>
+                        setContent((c) => ({ ...c, align: opt.value }))
+                      }
+                      className={`flex items-center justify-center py-3 rounded-xl border-2 transition-all ${
+                        content.align === opt.value
+                          ? "border-blue-600 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-400 hover:border-slate-300"
+                      }`}
+                    >
+                      <i className={`ti ${opt.icon} text-lg`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-50 rounded-xl px-5 py-3 flex items-center gap-3 border border-slate-100">
+              <i className="ti ti-info-circle text-slate-400" />
+              <p className="text-xs text-slate-500">
+                This won't be scored or numbered — it just displays at the point
+                in the sequence set by its <strong>Order</strong> value above,
+                within the chosen Section.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Form Completion */}
         {type === "form-completion" && (
           <div className="flex flex-col gap-4">
@@ -348,13 +835,29 @@ export default function MockTestQuestionForm({ question }) {
               <label className={labelClass}>Instruction</label>
               <input
                 type="text"
-                placeholder="e.g. Complete the form. Write NO MORE THAN TWO WORDS for each answer."
+                placeholder="e.g. Complete the notes. Write NO MORE THAN THREE WORDS OR A NUMBER for each answer."
                 value={content.instruction}
                 onChange={(e) =>
                   setContent((c) => ({ ...c, instruction: e.target.value }))
                 }
                 className={inputClass}
               />
+            </div>
+            <div>
+              <label className={labelClass}>Note Title (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. School Excursion"
+                value={content.noteTitle || ""}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, noteTitle: e.target.value }))
+                }
+                className={inputClass}
+              />
+              <p className="text-xs text-slate-400 mt-1.5">
+                Shown as a centered heading inside the note box, above the
+                fields — e.g. the title of a form or set of notes.
+              </p>
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -364,7 +867,18 @@ export default function MockTestQuestionForm({ question }) {
                   onClick={() =>
                     setContent((c) => ({
                       ...c,
-                      fields: [...c.fields, { label: "", answer: "" }],
+                      fields: [
+                        ...c.fields,
+                        {
+                          kind: "label",
+                          label: "",
+                          text: "",
+                          answer: "",
+                          answers: [],
+                          isExample: false,
+                          sectionBreakBefore: "",
+                        },
+                      ],
                     }))
                   }
                   className={addBtn}
@@ -373,58 +887,320 @@ export default function MockTestQuestionForm({ question }) {
                 </button>
               </div>
               <div className="flex flex-col gap-3">
-                {content.fields.map((field, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-start bg-slate-50 p-3 rounded-xl border border-slate-100"
-                  >
-                    <div>
-                      <label className="text-xs text-slate-400 mb-1 block">
-                        Field Label (shown to student)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Name of hotel:"
-                        value={field.label}
-                        onChange={(e) => {
-                          const u = [...content.fields];
-                          u[i] = { ...u[i], label: e.target.value };
-                          setContent((c) => ({ ...c, fields: u }));
-                        }}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
+                {content.fields.map((field, i) => {
+                  const kind = field.kind || "label";
+                  return (
+                    <div
+                      key={i}
+                      className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="grid grid-cols-2 gap-1.5 bg-white rounded-lg border border-slate-200 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setFieldKind(i, "label")}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-md transition-all ${
+                              kind === "label"
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            Label: Value
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFieldKind(i, "bullet")}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-md transition-all ${
+                              kind === "bullet"
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            Bullet Point
+                          </button>
+                        </div>
+                        {content.fields.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setContent((c) => ({
+                                ...c,
+                                fields: c.fields.filter((_, idx) => idx !== i),
+                              }))
+                            }
+                            className={removeBtn}
+                          >
+                            <i className="ti ti-x text-xs" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div>
                         <label className="text-xs text-slate-400 mb-1 block">
-                          Correct Answer
+                          Sub-heading before this field (optional)
                         </label>
                         <input
                           type="text"
-                          placeholder="e.g. Grand Plaza"
-                          value={field.answer}
+                          placeholder="e.g. Activities Planned"
+                          value={field.sectionBreakBefore || ""}
                           onChange={(e) => {
                             const u = [...content.fields];
-                            u[i] = { ...u[i], answer: e.target.value };
+                            u[i] = {
+                              ...u[i],
+                              sectionBreakBefore: e.target.value,
+                            };
                             setContent((c) => ({ ...c, fields: u }));
                           }}
                           className={inputClass}
                         />
                       </div>
-                      {content.fields.length > 1 && (
+
+                      {kind === "label" ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-start">
+                          <div>
+                            <label className="text-xs text-slate-400 mb-1 block">
+                              Field Label (shown to student)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Destination"
+                              value={field.label}
+                              onChange={(e) => {
+                                const u = [...content.fields];
+                                u[i] = { ...u[i], label: e.target.value };
+                                setContent((c) => ({ ...c, fields: u }));
+                              }}
+                              className={inputClass}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-400 mb-1 block">
+                              {field.isExample
+                                ? "Example Answer (shown to student)"
+                                : "Correct Answer"}
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Wednesday"
+                              value={field.answer}
+                              onChange={(e) => {
+                                const u = [...content.fields];
+                                u[i] = { ...u[i], answer: e.target.value };
+                                setContent((c) => ({ ...c, fields: u }));
+                              }}
+                              className={inputClass}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">
+                            Bullet Text — type{" "}
+                            <code className="bg-slate-100 px-1 rounded">
+                              ___
+                            </code>{" "}
+                            (three underscores) wherever a blank goes
+                          </label>
+                          <textarea
+                            rows={2}
+                            placeholder="e.g. Bring suitable clothing, a ___ and toiletries."
+                            value={field.text || ""}
+                            onChange={(e) =>
+                              updateBulletFieldText(i, e.target.value)
+                            }
+                            className={`${inputClass} resize-none`}
+                          />
+                          {(field.answers || []).length > 0 && (
+                            <div className="flex flex-col gap-1.5 mt-2">
+                              {field.answers.map((a, bi) => (
+                                <input
+                                  key={bi}
+                                  type="text"
+                                  placeholder={`Answer for blank ${bi + 1}`}
+                                  value={a}
+                                  onChange={(e) =>
+                                    updateBulletFieldAnswer(
+                                      i,
+                                      bi,
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="bg-white text-slate-700 text-xs px-3 py-2 rounded-lg border border-blue-200 outline-none focus:border-blue-400"
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {(field.answers || []).length === 0 && (
+                            <p className="text-xs text-slate-400 mt-1.5">
+                              No{" "}
+                              <code className="bg-slate-100 px-1 rounded">
+                                ___
+                              </code>{" "}
+                              detected yet — this will show as a plain
+                              informational bullet with no blank.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const u = [...content.fields];
+                          u[i] = { ...u[i], isExample: !u[i].isExample };
+                          setContent((c) => ({ ...c, fields: u }));
+                        }}
+                        className={`self-start flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border-2 transition-all ${
+                          field.isExample
+                            ? "border-amber-400 bg-amber-50 text-amber-700"
+                            : "border-slate-200 bg-white text-slate-400 hover:border-slate-300"
+                        }`}
+                      >
+                        <i
+                          className={`ti ${field.isExample ? "ti-check" : "ti-plus"} text-xs`}
+                        />
+                        Mark as Example (shown filled-in, not scored, no number)
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Table Completion */}
+        {type === "table-completion" && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder="e.g. Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer."
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Table Title (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Oyster Bay Sailing Club Courses"
+                value={content.tableTitle || ""}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, tableTitle: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Columns</label>
+                <button type="button" onClick={addColumn} className={addBtn}>
+                  <i className="ti ti-plus text-xs" /> Add Column
+                </button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {content.columns.map((col, ci) => (
+                  <div key={ci} className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      placeholder={`Column ${ci + 1} header`}
+                      value={col}
+                      onChange={(e) => {
+                        const u = [...content.columns];
+                        u[ci] = e.target.value;
+                        setContent((c) => ({ ...c, columns: u }));
+                      }}
+                      className="bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-blue-400 w-36"
+                    />
+                    {content.columns.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeColumn(ci)}
+                        className={removeBtn}
+                      >
+                        <i className="ti ti-x text-xs" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Rows *</label>
+                <button type="button" onClick={addTableRow} className={addBtn}>
+                  <i className="ti ti-plus text-xs" /> Add Row
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                Type <code className="bg-slate-100 px-1 rounded">___</code>{" "}
+                (three underscores) anywhere in a cell to mark a blank —
+                matching answer boxes appear automatically, in order, for each
+                one you type.
+              </p>
+              <div className="flex flex-col gap-3">
+                {content.rows.map((row, ri) => (
+                  <div
+                    key={ri}
+                    className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">
+                        Row {ri + 1}
+                      </span>
+                      {content.rows.length > 1 && (
                         <button
                           type="button"
-                          onClick={() =>
-                            setContent((c) => ({
-                              ...c,
-                              fields: c.fields.filter((_, idx) => idx !== i),
-                            }))
-                          }
-                          className={`${removeBtn} mt-6`}
+                          onClick={() => removeTableRow(ri)}
+                          className={removeBtn}
                         >
                           <i className="ti ti-x text-xs" />
                         </button>
                       )}
+                    </div>
+                    <div
+                      className="grid gap-2"
+                      style={{
+                        gridTemplateColumns: `repeat(${content.columns.length}, minmax(0,1fr))`,
+                      }}
+                    >
+                      {row.cells.map((cell, ci) => (
+                        <div key={ci} className="flex flex-col gap-1">
+                          <label className="text-xs text-slate-400 truncate">
+                            {content.columns[ci] || `Column ${ci + 1}`}
+                          </label>
+                          <textarea
+                            rows={2}
+                            placeholder="Cell text, use ___ for a blank"
+                            value={cell.text}
+                            onChange={(e) =>
+                              updateCellText(ri, ci, e.target.value)
+                            }
+                            className={`${inputClass} resize-none text-xs`}
+                          />
+                          {cell.answers.length > 0 && (
+                            <div className="flex flex-col gap-1">
+                              {cell.answers.map((a, bi) => (
+                                <input
+                                  key={bi}
+                                  type="text"
+                                  placeholder={`Answer for blank ${bi + 1}`}
+                                  value={a}
+                                  onChange={(e) =>
+                                    updateCellAnswer(ri, ci, bi, e.target.value)
+                                  }
+                                  className="bg-white text-slate-700 text-xs px-2 py-1.5 rounded-lg border border-blue-200 outline-none focus:border-blue-400"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
@@ -432,6 +1208,7 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
         {/* Sentence Completion */}
         {type === "sentence-completion" && (
           <div className="flex flex-col gap-4">
@@ -554,6 +1331,7 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
         {/* Short Answer */}
         {type === "short-answer" && (
           <div className="flex flex-col gap-4">
@@ -650,6 +1428,7 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
         {/* Matching */}
         {type === "matching" && (
           <div className="flex flex-col gap-5">
@@ -665,6 +1444,7 @@ export default function MockTestQuestionForm({ question }) {
                 className={inputClass}
               />
             </div>
+
             {/* Options box */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -720,6 +1500,7 @@ export default function MockTestQuestionForm({ question }) {
                 ))}
               </div>
             </div>
+
             {/* Items to match */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -807,6 +1588,7 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
         {/* Map Labelling */}
         {type === "map-labelling" && (
           <div className="flex flex-col gap-4">
@@ -900,6 +1682,685 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
+        {/* True / False / Not Given */}
+        {type === "true-false-ng" && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder="Do the following statements agree with the information given in the passage?"
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Statements *</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((c) => ({
+                      ...c,
+                      statements: [
+                        ...c.statements,
+                        { text: "", answer: "TRUE" },
+                      ],
+                    }))
+                  }
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Statement
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                {content.statements.map((s, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">
+                        Statement {i + 1}
+                      </span>
+                      {content.statements.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent((c) => ({
+                              ...c,
+                              statements: c.statements.filter(
+                                (_, idx) => idx !== i,
+                              ),
+                            }))
+                          }
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      )}
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Statement text..."
+                      value={s.text}
+                      onChange={(e) => {
+                        const u = [...content.statements];
+                        u[i] = { ...u[i], text: e.target.value };
+                        setContent((c) => ({ ...c, statements: u }));
+                      }}
+                      className={`${inputClass} resize-none`}
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      {["TRUE", "FALSE", "NOT GIVEN"].map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            const u = [...content.statements];
+                            u[i] = { ...u[i], answer: opt };
+                            setContent((c) => ({ ...c, statements: u }));
+                          }}
+                          className={`text-xs font-bold px-3 py-2 rounded-lg border-2 transition-all ${s.answer === opt ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Yes / No / Not Given */}
+        {type === "yes-no-ng" && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder="Do the following statements agree with the claims of the writer?"
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Statements *</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((c) => ({
+                      ...c,
+                      statements: [
+                        ...c.statements,
+                        { text: "", answer: "YES" },
+                      ],
+                    }))
+                  }
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Statement
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                {content.statements.map((s, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">
+                        Statement {i + 1}
+                      </span>
+                      {content.statements.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent((c) => ({
+                              ...c,
+                              statements: c.statements.filter(
+                                (_, idx) => idx !== i,
+                              ),
+                            }))
+                          }
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      )}
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Statement text..."
+                      value={s.text}
+                      onChange={(e) => {
+                        const u = [...content.statements];
+                        u[i] = { ...u[i], text: e.target.value };
+                        setContent((c) => ({ ...c, statements: u }));
+                      }}
+                      className={`${inputClass} resize-none`}
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      {["YES", "NO", "NOT GIVEN"].map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            const u = [...content.statements];
+                            u[i] = { ...u[i], answer: opt };
+                            setContent((c) => ({ ...c, statements: u }));
+                          }}
+                          className={`text-xs font-bold px-3 py-2 rounded-lg border-2 transition-all ${s.answer === opt ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Matching Headings */}
+        {type === "matching-headings" && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder="Choose the correct heading for each paragraph from the list of headings below."
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>List of Headings</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const romanNumerals = [
+                      "i",
+                      "ii",
+                      "iii",
+                      "iv",
+                      "v",
+                      "vi",
+                      "vii",
+                      "viii",
+                      "ix",
+                      "x",
+                      "xi",
+                      "xii",
+                    ];
+                    const nextLabel =
+                      romanNumerals[content.headings.length] ||
+                      `h${content.headings.length + 1}`;
+                    setContent((c) => ({
+                      ...c,
+                      headings: [...c.headings, { label: nextLabel, text: "" }],
+                    }));
+                  }}
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Heading
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {content.headings.map((h, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="min-w-9 h-7 px-2 rounded-lg bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-600 flex-shrink-0">
+                      {h.label}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Heading text"
+                      value={h.text}
+                      onChange={(e) => {
+                        const u = [...content.headings];
+                        u[i] = { ...u[i], text: e.target.value };
+                        setContent((c) => ({ ...c, headings: u }));
+                      }}
+                      className={`${inputClass} flex-1`}
+                    />
+                    {content.headings.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setContent((c) => ({
+                            ...c,
+                            headings: c.headings.filter((_, idx) => idx !== i),
+                          }))
+                        }
+                        className={removeBtn}
+                      >
+                        <i className="ti ti-x text-xs" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>
+                  Paragraphs (correct heading for each)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextLabel = String.fromCharCode(
+                      65 + content.paragraphs.length,
+                    );
+                    setContent((c) => ({
+                      ...c,
+                      paragraphs: [
+                        ...c.paragraphs,
+                        { label: nextLabel, answer: "" },
+                      ],
+                    }));
+                  }}
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Paragraph
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {content.paragraphs.map((p, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100"
+                  >
+                    <span className="text-xs font-bold text-slate-600 flex-shrink-0 w-20">
+                      Paragraph {p.label}
+                    </span>
+                    <div className="relative flex-1">
+                      <select
+                        value={p.answer}
+                        onChange={(e) => {
+                          const u = [...content.paragraphs];
+                          u[i] = { ...u[i], answer: e.target.value };
+                          setContent((c) => ({ ...c, paragraphs: u }));
+                        }}
+                        className={`${inputClass} appearance-none cursor-pointer`}
+                      >
+                        <option value="">— Select correct heading —</option>
+                        {content.headings.map(
+                          (h) =>
+                            h.text && (
+                              <option key={h.label} value={h.label}>
+                                {h.label}: {h.text}
+                              </option>
+                            ),
+                        )}
+                      </select>
+                      <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                    </div>
+                    {content.paragraphs.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setContent((c) => ({
+                            ...c,
+                            paragraphs: c.paragraphs.filter(
+                              (_, idx) => idx !== i,
+                            ),
+                          }))
+                        }
+                        className={removeBtn}
+                      >
+                        <i className="ti ti-x text-xs" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Matching Information / Matching Features — identical shape, different framing */}
+        {(type === "matching-information" || type === "matching-features") && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder={
+                  type === "matching-information"
+                    ? "Which paragraph contains the following information?"
+                    : "Match each statement with the correct person / theory / feature."
+                }
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>
+                  {type === "matching-information"
+                    ? "Paragraph Options (A, B, C...)"
+                    : "Answer Options"}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextLabel = String.fromCharCode(
+                      65 + content.options.length,
+                    );
+                    setContent((c) => ({
+                      ...c,
+                      options: [...c.options, { label: nextLabel, text: "" }],
+                    }));
+                  }}
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Option
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {content.options.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 flex-shrink-0">
+                      {opt.label}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder={`Option ${opt.label} text`}
+                      value={opt.text}
+                      onChange={(e) => {
+                        const u = [...content.options];
+                        u[i] = { ...u[i], text: e.target.value };
+                        setContent((c) => ({ ...c, options: u }));
+                      }}
+                      className={`${inputClass} flex-1`}
+                    />
+                    {content.options.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setContent((c) => ({
+                            ...c,
+                            options: c.options.filter((_, idx) => idx !== i),
+                          }))
+                        }
+                        className={removeBtn}
+                      >
+                        <i className="ti ti-x text-xs" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Items to Match</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((c) => ({
+                      ...c,
+                      items: [...c.items, { text: "" }],
+                      answers: { ...c.answers, [c.items.length]: "" },
+                    }))
+                  }
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Item
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {content.items.map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100"
+                  >
+                    <span className="text-xs font-bold text-slate-500 flex-shrink-0 w-6">
+                      {i + 1}.
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Statement / item text"
+                      value={item.text}
+                      onChange={(e) => {
+                        const u = [...content.items];
+                        u[i] = { text: e.target.value };
+                        setContent((c) => ({ ...c, items: u }));
+                      }}
+                      className={`${inputClass} flex-1`}
+                    />
+                    <div className="relative w-28 flex-shrink-0">
+                      <select
+                        value={content.answers[i] || ""}
+                        onChange={(e) =>
+                          setContent((c) => ({
+                            ...c,
+                            answers: { ...c.answers, [i]: e.target.value },
+                          }))
+                        }
+                        className={`${inputClass} appearance-none cursor-pointer text-xs`}
+                      >
+                        <option value="">Answer</option>
+                        {content.options.map((opt) => (
+                          <option key={opt.label} value={opt.label}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <i className="ti ti-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+                    </div>
+                    {content.items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newItems = content.items.filter(
+                            (_, idx) => idx !== i,
+                          );
+                          const newAnswers = {};
+                          newItems.forEach((_, idx) => {
+                            newAnswers[idx] =
+                              content.answers[idx >= i ? idx + 1 : idx] || "";
+                          });
+                          setContent((c) => ({
+                            ...c,
+                            items: newItems,
+                            answers: newAnswers,
+                          }));
+                        }}
+                        className={removeBtn}
+                      >
+                        <i className="ti ti-x text-xs" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Summary / Sentence Completion */}
+        {type === "summary-completion" && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelClass}>Instruction</label>
+              <input
+                type="text"
+                placeholder="Complete the summary using the list of words below."
+                value={content.instruction}
+                onChange={(e) =>
+                  setContent((c) => ({ ...c, instruction: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Word Bank (optional)</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((c) => ({ ...c, wordBank: [...c.wordBank, ""] }))
+                  }
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Word
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {content.wordBank.map((w, i) => (
+                  <div key={i} className="flex items-center gap-1">
+                    <input
+                      type="text"
+                      placeholder="word/phrase"
+                      value={w}
+                      onChange={(e) => {
+                        const u = [...content.wordBank];
+                        u[i] = e.target.value;
+                        setContent((c) => ({ ...c, wordBank: u }));
+                      }}
+                      className="bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-blue-400 w-32"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent((c) => ({
+                          ...c,
+                          wordBank: c.wordBank.filter((_, idx) => idx !== i),
+                        }))
+                      }
+                      className={removeBtn}
+                    >
+                      <i className="ti ti-x text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelClass}>Summary Segments *</label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContent((c) => ({
+                      ...c,
+                      sentences: [
+                        ...c.sentences,
+                        { before: "", after: "", answer: "" },
+                      ],
+                    }))
+                  }
+                  className={addBtn}
+                >
+                  <i className="ti ti-plus text-xs" /> Add Blank
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                Each row is one blank in the flowing summary. "Before" and
+                "after" text join together in reading order to form one
+                continuous paragraph on the student's screen.
+              </p>
+              <div className="flex flex-col gap-3">
+                {content.sentences.map((sent, i) => (
+                  <div
+                    key={i}
+                    className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">
+                        Blank {i + 1}
+                      </span>
+                      {content.sentences.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent((c) => ({
+                              ...c,
+                              sentences: c.sentences.filter(
+                                (_, idx) => idx !== i,
+                              ),
+                            }))
+                          }
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-xs text-slate-400 mb-1 block">
+                          Text before blank
+                        </label>
+                        <input
+                          type="text"
+                          value={sent.before}
+                          onChange={(e) => {
+                            const u = [...content.sentences];
+                            u[i] = { ...u[i], before: e.target.value };
+                            setContent((c) => ({ ...c, sentences: u }));
+                          }}
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-400 mb-1 block">
+                          Text after blank (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={sent.after}
+                          onChange={(e) => {
+                            const u = [...content.sentences];
+                            u[i] = { ...u[i], after: e.target.value };
+                            setContent((c) => ({ ...c, sentences: u }));
+                          }}
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-400 mb-1 block">
+                          Correct Answer
+                        </label>
+                        <input
+                          type="text"
+                          value={sent.answer}
+                          onChange={(e) => {
+                            const u = [...content.sentences];
+                            u[i] = { ...u[i], answer: e.target.value };
+                            setContent((c) => ({ ...c, sentences: u }));
+                          }}
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Reading Passage */}
         {type === "passage" && (
           <div className="flex flex-col gap-4">
@@ -931,6 +2392,7 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
         {/* Writing Task */}
         {type === "task" && (
           <div className="flex flex-col gap-4">
@@ -993,6 +2455,7 @@ export default function MockTestQuestionForm({ question }) {
             </div>
           </div>
         )}
+
         {/* Speaking Part */}
         {type === "part" && (
           <div className="flex flex-col gap-4">
@@ -1081,6 +2544,7 @@ export default function MockTestQuestionForm({ question }) {
           </div>
         )}
       </div>
+
       {/* Publish + Submit */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
         <label className="flex items-center gap-3 cursor-pointer">

@@ -47,9 +47,51 @@ export function markQuestion(question, studentAnswers) {
       break;
     }
 
+    case "multi-select": {
+      // studentAnswers[qId] = array of selected letters, e.g. ["B", "D"]
+      // Scored per correct letter matched (capped at selectCount), not
+      // all-or-nothing — mirrors how real IELTS awards these marks.
+      const studentSelected = Array.isArray(studentAnswers[qId])
+        ? studentAnswers[qId]
+        : [];
+      const correctSet = content.correctAnswers || [];
+      const total = content.selectCount || correctSet.length;
+      const matchedCount = studentSelected.filter((a) =>
+        correctSet.includes(a),
+      ).length;
+      for (let i = 0; i < total; i++) {
+        results.push({
+          key: `${qId}-multi-${i}`,
+          correct: i < matchedCount,
+          studentAnswer: studentSelected,
+          correctAnswer: correctSet,
+        });
+      }
+      break;
+    }
+
     case "form-completion": {
-      // studentAnswers[`${qId}-field-${i}`] = typed answer
+      // Label fields: studentAnswers[`${qId}-field-${i}`] = typed answer
+      // Bullet fields: studentAnswers[`${qId}-field-${i}-blank-${bi}`] per blank
+      // Example fields (isExample: true) are shown pre-filled to the student
+      // and are never scored or numbered — skip them entirely here.
       content.fields.forEach((field, i) => {
+        if (field.isExample) return;
+
+        if ((field.kind || "label") === "bullet") {
+          (field.answers || []).forEach((correctAnswer, bi) => {
+            const key = `${qId}-field-${i}-blank-${bi}`;
+            const correct = isCorrect(studentAnswers[key], correctAnswer);
+            results.push({
+              key,
+              correct,
+              studentAnswer: studentAnswers[key],
+              correctAnswer,
+            });
+          });
+          return;
+        }
+
         const key = `${qId}-field-${i}`;
         const correct = isCorrect(studentAnswers[key], field.answer);
         results.push({
@@ -58,6 +100,25 @@ export function markQuestion(question, studentAnswers) {
           studentAnswer: studentAnswers[key],
           correctAnswer: field.answer,
           label: field.label,
+        });
+      });
+      break;
+    }
+
+    case "table-completion": {
+      // studentAnswers[`${qId}-table-${rowIdx}-${colIdx}-${blankIdx}`] = typed answer
+      content.rows.forEach((row, ri) => {
+        row.cells.forEach((cell, ci) => {
+          (cell.answers || []).forEach((correctAnswer, bi) => {
+            const key = `${qId}-table-${ri}-${ci}-${bi}`;
+            const correct = isCorrect(studentAnswers[key], correctAnswer);
+            results.push({
+              key,
+              correct,
+              studentAnswer: studentAnswers[key],
+              correctAnswer,
+            });
+          });
         });
       });
       break;

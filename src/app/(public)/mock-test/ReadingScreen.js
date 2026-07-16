@@ -74,7 +74,7 @@ function MCQRenderer({ question, answers, onChange }) {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {question.content.options.map((opt, oi) => {
-          const letter = ["A", "B", "C", "D"][oi];
+          const letter = String.fromCharCode(65 + oi);
           const selected = answers[question.id] === opt;
           return (
             <button
@@ -89,6 +89,132 @@ function MCQRenderer({ question, answers, onChange }) {
               </span>
               {opt}
             </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Type: Form / Note Completion — label:value fields and/or bullet-point
+// lines with inline "___" blanks, same as Listening's version
+function FormCompletionRenderer({ question, answers, onChange, startNumber }) {
+  const { instruction, noteTitle, fields } = question.content;
+  let num = startNumber;
+  return (
+    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
+      {instruction && (
+        <p className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-4 py-2.5 rounded-xl">
+          <i className="ti ti-info-circle mr-1" />
+          {instruction}
+        </p>
+      )}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col gap-2.5">
+        {noteTitle && (
+          <h4 className="text-sm font-extrabold text-slate-800 text-center pb-3 mb-1 border-b border-slate-100">
+            {noteTitle}
+          </h4>
+        )}
+        {fields.map((field, i) => {
+          const kind = field.kind || "label";
+          const isExample = !!field.isExample;
+
+          if (kind === "bullet") {
+            const text = field.text || "";
+            const parts = text.split("___");
+            return (
+              <div key={i} className="flex flex-col gap-1">
+                {field.sectionBreakBefore && (
+                  <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mt-2">
+                    {field.sectionBreakBefore}
+                  </p>
+                )}
+                <div className="flex items-start gap-2 text-sm text-slate-700">
+                  <span className="text-slate-400 flex-shrink-0 mt-0.5">•</span>
+                  <p className="flex-1">
+                    {parts.map((part, pi) => {
+                      const isLast = pi === parts.length - 1;
+                      if (isLast) return <span key={pi}>{part}</span>;
+
+                      if (isExample) {
+                        const exampleAnswer = field.answers?.[pi] || "";
+                        return (
+                          <span key={pi}>
+                            {part}
+                            <span className="italic text-slate-500">
+                              {exampleAnswer}{" "}
+                              <span className="text-xs text-slate-400 not-italic">
+                                (Example)
+                              </span>
+                            </span>
+                          </span>
+                        );
+                      }
+
+                      const key = `${question.id}-field-${i}-blank-${pi}`;
+                      const displayNum = num;
+                      num += 1;
+                      return (
+                        <span key={pi}>
+                          {part}
+                          <span className="inline-flex items-center gap-1 mx-1">
+                            <span className="text-xs font-bold text-blue-600">
+                              {displayNum}
+                            </span>
+                            <input
+                              type="text"
+                              value={answers[key] || ""}
+                              onChange={(e) => onChange(key, e.target.value)}
+                              className="inline-block w-28 bg-slate-50 text-slate-700 text-sm text-center px-2 py-1 rounded-lg border-2 border-blue-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 align-baseline"
+                            />
+                          </span>
+                        </span>
+                      );
+                    })}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          // kind === "label"
+          const key = `${question.id}-field-${i}`;
+          const displayNum = isExample ? null : num;
+          if (!isExample) num += 1;
+          return (
+            <div key={i} className="flex flex-col gap-1">
+              {field.sectionBreakBefore && (
+                <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mt-2">
+                  {field.sectionBreakBefore}
+                </p>
+              )}
+              <div className="flex items-center gap-2 flex-wrap text-sm">
+                <span className="font-semibold text-slate-600 flex-shrink-0">
+                  {field.label}:
+                </span>
+                {isExample ? (
+                  <span className="text-slate-500 italic">
+                    {field.answer}{" "}
+                    <span className="text-xs text-slate-400 not-italic">
+                      (Example)
+                    </span>
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-xs font-bold text-blue-600 flex-shrink-0 w-4 text-right">
+                      {displayNum}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="......."
+                      value={answers[key] || ""}
+                      onChange={(e) => onChange(key, e.target.value)}
+                      className="flex-1 min-w-[120px] bg-slate-50 text-slate-700 text-sm px-3 py-2 rounded-lg border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -378,6 +504,16 @@ function countAnswerSlots(question) {
       return 1;
     case "multi-select":
       return question.content.selectCount || 2;
+    case "form-completion":
+      return (
+        question.content.fields?.reduce((acc, f) => {
+          if (f.isExample) return acc;
+          if ((f.kind || "label") === "bullet") {
+            return acc + (f.answers?.length || 0);
+          }
+          return acc + 1;
+        }, 0) || 0
+      );
     case "true-false-ng":
     case "yes-no-ng":
       return question.content.statements?.length || 0;
@@ -403,6 +539,22 @@ function countAnswered(question, answers) {
         (answers[question.id] || []).length,
         question.content.selectCount || 2,
       );
+    case "form-completion": {
+      let count = 0;
+      question.content.fields?.forEach((f, i) => {
+        if (f.isExample) return;
+        if ((f.kind || "label") === "bullet") {
+          (f.answers || []).forEach((_, bi) => {
+            const key = `${question.id}-field-${i}-blank-${bi}`;
+            if (answers[key]?.trim()) count += 1;
+          });
+        } else {
+          const key = `${question.id}-field-${i}`;
+          if (answers[key]?.trim()) count += 1;
+        }
+      });
+      return count;
+    }
     case "true-false-ng":
     case "yes-no-ng":
       return (
@@ -584,6 +736,14 @@ export default function ReadingScreen({
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                      />
+                    )}
+                    {question.type === "form-completion" && (
+                      <FormCompletionRenderer
+                        question={question}
+                        answers={answers}
+                        onChange={handleChange}
+                        startNumber={startNum}
                       />
                     )}
                     {(question.type === "true-false-ng" ||

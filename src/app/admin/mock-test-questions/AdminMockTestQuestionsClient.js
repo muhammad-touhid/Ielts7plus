@@ -72,7 +72,6 @@ const typeColors = {
   "text-block": "bg-slate-100 text-slate-500",
 };
 
-const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 const SECTION_COUNT = { listening: 4, reading: 3 };
 const SECTION_LABEL = { listening: "Section", reading: "Passage" };
 const SECTION_ICON = { listening: "ti-headphones", reading: "ti-book" };
@@ -98,7 +97,8 @@ function getPreviewText(type, content) {
   if (type === "mcq") return content.text;
   if (type === "multi-select") return content.questionText;
   if (type === "passage") return content.title;
-  if (type === "task") return content.label;
+  if (type === "task")
+    return `Task ${content.taskNumber ?? "?"} — ${content.prompt || "(no prompt yet)"}`;
   if (type === "part") return content.part;
   if (type === "text-block") return content.text;
   if (INSTRUCTION_PREVIEW_TYPES.includes(type)) return content.instruction;
@@ -321,26 +321,6 @@ function QuestionCard({ question, activeModule, onIndentChange, position }) {
     MAX_INDENT_LEVEL,
     Math.max(0, question.content?.indent || 0),
   );
-  const typeLabels = {
-    mcq: "MCQ",
-    "multi-select": "Multi-Select",
-    passage: "Reading Passage",
-    task: "Writing Task",
-    part: "Speaking Part",
-    "form-completion": "Form / Note Completion",
-    "table-completion": "Table Completion",
-    "sentence-completion": "Sentence Completion",
-    "short-answer": "Short Answer",
-    matching: "Matching",
-    "map-labelling": "Map / Diagram Labelling",
-    "true-false-ng": "True / False / Not Given",
-    "yes-no-ng": "Yes / No / Not Given",
-    "matching-headings": "Matching Headings",
-    "matching-information": "Matching Information",
-    "matching-features": "Matching Features",
-    "summary-completion": "Summary Completion",
-    "text-block": "Text Block",
-  };
 
   return (
     <div
@@ -402,7 +382,7 @@ function QuestionCard({ question, activeModule, onIndentChange, position }) {
         <span
           className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize flex-shrink-0 ${typeColors[question.type] || "bg-slate-100 text-slate-600"}`}
         >
-          {typeLabels[question.type] || question.type}
+          {question.type.replace(/-/g, " ")}
         </span>
 
         {!isTextBlock && (
@@ -456,9 +436,6 @@ export default function AdminMockTestQuestionsClient({
     searchParams.get("module") || "listening",
   );
   const [activeSection, setActiveSection] = useState(1);
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showTextBlockModal, setShowTextBlockModal] = useState(false);
   const [reorderError, setReorderError] = useState("");
 
@@ -524,7 +501,8 @@ export default function AdminMockTestQuestionsClient({
   }, {});
 
   // Items for the active module (+ section, when the module has sections),
-  // sorted by order — this is the list drag-and-drop reorders directly.
+  // sorted by order — this is the list drag-and-drop reorders directly, for
+  // every module (Listening, Reading, Writing, Speaking all use this).
   const sectionItems = questions
     .filter(
       (q) =>
@@ -533,35 +511,8 @@ export default function AdminMockTestQuestionsClient({
     )
     .sort((a, b) => a.order - b.order);
 
-  // Filter by module (+ section) + search — used for the non-sectioned
-  // (Writing/Speaking) table view only.
-  const filtered = questions.filter((q) => {
-    const matchModule = q.module === activeModule;
-    const matchSection = sectionCount
-      ? (q.section || 1) === activeSection
-      : true;
-    const content = q.content;
-    const searchText = getPreviewText(q.type, content);
-    const matchSearch = searchText
-      ?.toLowerCase()
-      .includes(search.toLowerCase());
-    return matchModule && matchSection && matchSearch;
-  });
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
-
-  // Reset page when module, section, or search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeModule, activeSection, search]);
-
   const handleModuleSelect = (m) => {
     setActiveModule(m);
-    setSearch("");
     if (SECTION_COUNT[m]) setActiveSection(1);
   };
 
@@ -879,61 +830,63 @@ export default function AdminMockTestQuestionsClient({
         </div>
       )}
 
-      {/* Sectioned modules (Listening/Reading): draggable preview cards */}
-      {sectionCount > 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span
-              className={`text-xs font-bold px-3 py-1.5 rounded-full capitalize ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
-            >
-              {activeModule} — {SECTION_LABEL[activeModule]} {activeSection}
-            </span>
-            <span className="text-xs text-slate-400">
-              {sectionItems.length} item{sectionItems.length !== 1 ? "s" : ""} —
-              drag <i className="ti ti-grip-vertical" /> to reorder
-            </span>
+      {/* Question / text-block list — same draggable card UI across all four modules */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span
+            className={`text-xs font-bold px-3 py-1.5 rounded-full capitalize ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
+          >
+            {activeModule}
+            {sectionCount > 0 &&
+              ` — ${SECTION_LABEL[activeModule]} ${activeSection}`}
+          </span>
+          <span className="text-xs text-slate-400">
+            {sectionItems.length} item{sectionItems.length !== 1 ? "s" : ""} —
+            drag <i className="ti ti-grip-vertical" /> to reorder
+          </span>
+        </div>
+
+        {reorderError && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
+            <i className="ti ti-alert-circle flex-shrink-0" />
+            {reorderError}
           </div>
+        )}
 
-          {reorderError && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-600 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
-              <i className="ti ti-alert-circle flex-shrink-0" />
-              {reorderError}
-            </div>
-          )}
-
-          {sectionItems.length > 0 ? (
-            <>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+        {sectionItems.length > 0 ? (
+          <>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sectionItems.map((q) => q.id)}
+                strategy={verticalListSortingStrategy}
               >
-                <SortableContext
-                  items={sectionItems.map((q) => q.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="flex flex-col gap-2">
-                    {(() => {
-                      let questionCounter = 0;
-                      return sectionItems.map((q) => {
-                        const isTextBlock = q.type === "text-block";
-                        if (!isTextBlock) questionCounter += 1;
-                        return (
-                          <QuestionCard
-                            key={q.id}
-                            question={q}
-                            activeModule={activeModule}
-                            onIndentChange={handleIndentChange}
-                            position={isTextBlock ? null : questionCounter}
-                          />
-                        );
-                      });
-                    })()}
-                  </div>
-                </SortableContext>
-              </DndContext>
+                <div className="flex flex-col gap-2">
+                  {(() => {
+                    let questionCounter = 0;
+                    return sectionItems.map((q) => {
+                      const isTextBlock = q.type === "text-block";
+                      if (!isTextBlock) questionCounter += 1;
+                      return (
+                        <QuestionCard
+                          key={q.id}
+                          question={q}
+                          activeModule={activeModule}
+                          onIndentChange={handleIndentChange}
+                          position={isTextBlock ? null : questionCounter}
+                        />
+                      );
+                    });
+                  })()}
+                </div>
+              </SortableContext>
+            </DndContext>
 
-              <div className="flex items-center justify-center gap-3 pt-3 mt-1 border-t border-slate-100">
+            <div className="flex items-center justify-center gap-3 pt-3 mt-1 border-t border-slate-100">
+              {sectionCount > 0 && (
                 <button
                   onClick={() => setShowTextBlockModal(true)}
                   className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-5 py-3 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
@@ -941,27 +894,33 @@ export default function AdminMockTestQuestionsClient({
                   <i className="ti ti-typography text-base" />
                   Add Text Block
                 </button>
-                <Link
-                  href={`/admin/mock-test-questions/new?module=${activeModule}`}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-                >
-                  <i className="ti ti-plus text-base" />
-                  Add Question
-                </Link>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-14">
-              <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
-                <i className="ti ti-file-off" />
-              </div>
-              <p className="text-sm font-bold text-slate-600 mb-1">
-                No items in {SECTION_LABEL[activeModule]} {activeSection} yet
-              </p>
-              <p className="text-xs text-slate-400 mb-5">
-                Add a question or a text block to get started.
-              </p>
-              <div className="flex items-center justify-center gap-3">
+              )}
+              <Link
+                href={`/admin/mock-test-questions/new?module=${activeModule}`}
+                className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
+              >
+                <i className="ti ti-plus text-base" />
+                Add Question
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-14">
+            <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
+              <i className="ti ti-file-off" />
+            </div>
+            <p className="text-sm font-bold text-slate-600 mb-1">
+              No items in {activeModule}
+              {sectionCount > 0 &&
+                ` — ${SECTION_LABEL[activeModule]} ${activeSection}`}{" "}
+              yet
+            </p>
+            <p className="text-xs text-slate-400 mb-5">
+              Add a question{sectionCount > 0 ? " or a text block" : ""} to get
+              started.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              {sectionCount > 0 && (
                 <button
                   onClick={() => setShowTextBlockModal(true)}
                   className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-5 py-3 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
@@ -969,245 +928,18 @@ export default function AdminMockTestQuestionsClient({
                   <i className="ti ti-typography" />
                   Add Text Block
                 </button>
-                <Link
-                  href={`/admin/mock-test-questions/new?module=${activeModule}`}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200"
-                >
-                  <i className="ti ti-plus" />
-                  Add Question
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Writing / Speaking: original table + search + pagination (unchanged) */
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span
-                className={`text-xs font-bold px-3 py-1.5 rounded-full capitalize
-                ${moduleConfig[activeModule].bg} ${moduleConfig[activeModule].color}`}
+              )}
+              <Link
+                href={`/admin/mock-test-questions/new?module=${activeModule}`}
+                className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200"
               >
-                {activeModule}
-              </span>
-              <span className="text-xs text-slate-400">
-                {filtered.length} question{filtered.length !== 1 ? "s" : ""}
-                {search && ` matching "${search}"`}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <i className="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search questions..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="bg-slate-50 text-slate-700 text-xs placeholder-slate-400 pl-8 pr-8 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all w-48"
-                />
-                {search && (
-                  <button
-                    onClick={() => setSearch("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <i className="ti ti-x text-xs" />
-                  </button>
-                )}
-              </div>
-
-              <div className="relative">
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(parseInt(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="bg-slate-50 text-slate-700 text-xs pl-3 pr-7 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
-                >
-                  {ITEMS_PER_PAGE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n} per page
-                    </option>
-                  ))}
-                </select>
-                <i className="ti ti-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
-              </div>
+                <i className="ti ti-plus" />
+                Add Question
+              </Link>
             </div>
           </div>
-
-          {paginated.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Order
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Test Type
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Preview
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginated.map((q) => {
-                    const preview = getPreviewText(q.type, q.content);
-                    return (
-                      <tr
-                        key={q.id}
-                        className="hover:bg-slate-50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                            {q.order}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${typeColors[q.type]}`}
-                          >
-                            {typeLabels[q.type] || q.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${
-                              q.testType === "academic"
-                                ? "bg-blue-50 text-blue-600"
-                                : q.testType === "general"
-                                  ? "bg-emerald-50 text-emerald-600"
-                                  : "bg-violet-50 text-violet-600"
-                            }`}
-                          >
-                            {q.testType === "both" ? "Both" : q.testType}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm text-slate-600 max-w-md truncate">
-                            {preview}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`text-xs font-bold px-3 py-1 rounded-full ${q.published ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
-                          >
-                            {q.published ? "Published" : "Draft"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/admin/mock-test-questions/${q.id}?module=${activeModule}`}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-all duration-200"
-                            >
-                              <i className="ti ti-edit text-sm" />
-                              Edit
-                            </Link>
-                            <DeleteQuestionButton id={q.id} />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
-                <i className="ti ti-search-off" />
-              </div>
-              <p className="text-sm font-bold text-slate-600 mb-1">
-                {search
-                  ? "No questions match your search"
-                  : `No ${activeModule} questions yet`}
-              </p>
-              <p className="text-xs text-slate-400 mb-5">
-                {search
-                  ? "Try a different keyword."
-                  : "Add your first question for this module."}
-              </p>
-              {!search && (
-                <Link
-                  href="/admin/mock-test-questions/new"
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200"
-                >
-                  <i className="ti ti-plus" />
-                  Add Question
-                </Link>
-              )}
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4">
-              <p className="text-xs text-slate-400">
-                Showing{" "}
-                <span className="font-bold text-slate-600">
-                  {(currentPage - 1) * itemsPerPage + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-bold text-slate-600">
-                  {Math.min(currentPage * itemsPerPage, filtered.length)}
-                </span>{" "}
-                of{" "}
-                <span className="font-bold text-slate-600">
-                  {filtered.length}
-                </span>{" "}
-                questions
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-blue-600 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  <i className="ti ti-chevron-left text-sm" />
-                </button>
-                {Array.from({ length: totalPages }).map((_, i) => {
-                  const page = i + 1;
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all
-                        ${
-                          currentPage === page
-                            ? "bg-blue-600 text-white"
-                            : "border border-slate-200 text-slate-500 hover:border-blue-600 hover:text-blue-600"
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(p + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-blue-600 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  <i className="ti ti-chevron-right text-sm" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {showTextBlockModal && (
         <QuickTextBlockModal

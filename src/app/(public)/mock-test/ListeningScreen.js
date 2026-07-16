@@ -75,7 +75,7 @@ function MCQRenderer({ question, answers, onChange }) {
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {question.content.options.map((opt, oi) => {
-          const letter = ["A", "B", "C", "D"][oi];
+          const letter = String.fromCharCode(65 + oi);
           const selected = answers[question.id] === opt;
           return (
             <button

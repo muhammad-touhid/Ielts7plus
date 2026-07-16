@@ -3,10 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import ListeningScreen from "./ListeningScreen";
 import ReadingScreen from "./ReadingScreen";
-
-function wordCount(text) {
-  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-}
+import WritingScreen from "./WritingScreen";
 
 function useTimer(seconds, active) {
   const [timeLeft, setTimeLeft] = useState(seconds);
@@ -584,113 +581,6 @@ function ModuleSelectScreen({ completed, onSelect, testType, onBack }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function WritingScreen({ onComplete, onBack, tasks, testType }) {
-  const [answers, setAnswers] = useState({});
-  const [activeTask, setActiveTask] = useState(0);
-  const { display, timeLeft } = useTimer(60 * 60, true);
-  const task = tasks[activeTask];
-  const taskId = task?.id;
-  const wc = wordCount(answers[taskId] ?? "");
-  const meetsMin = wc >= (task?.content?.minWords ?? 0);
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="mb-2">
-            <BackButton onClick={onBack} label="Back to Modules" />
-          </div>
-          <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
-            Writing Module
-          </span>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-extrabold text-slate-800">
-              {testType === "academic"
-                ? "Academic Writing"
-                : "General Training Writing"}
-            </h2>
-            <span
-              className={`text-xs font-bold px-2.5 py-1 rounded-full capitalize ${testType === "academic" ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-600"}`}
-            >
-              {testType}
-            </span>
-          </div>
-        </div>
-        <TimerBadge display={display} warn={timeLeft < 600} />
-      </div>
-      <div
-        className={`rounded-xl px-5 py-3 flex items-center gap-3 text-sm ${testType === "academic" ? "bg-blue-50 border border-blue-100 text-blue-700" : "bg-emerald-50 border border-emerald-100 text-emerald-700"}`}
-      >
-        <i className="ti ti-info-circle flex-shrink-0" />
-        {testType === "academic"
-          ? "Task 1: Describe a graph, chart, table or diagram (150+ words). Task 2: Write an essay (250+ words)."
-          : "Task 1: Write a letter — formal, semi-formal or informal (150+ words). Task 2: Write an essay (250+ words)."}
-      </div>
-      <div className="flex gap-2">
-        {tasks.map((t, i) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTask(i)}
-            className={`text-sm font-bold px-5 py-2.5 rounded-xl border-2 transition-all duration-200 flex items-center gap-2 ${activeTask === i ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"}`}
-          >
-            {t.content.label}
-            {answers[t.id]?.trim() && (
-              <i className="ti ti-circle-check-filled text-emerald-400 text-xs" />
-            )}
-          </button>
-        ))}
-      </div>
-      {task && (
-        <>
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
-            <div className="flex items-center gap-2 text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">
-              <i className="ti ti-clock" />
-              {task.content.timeLabel}
-            </div>
-            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-              {task.content.prompt}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <textarea
-              rows={12}
-              placeholder="Write your response here..."
-              value={answers[taskId] ?? ""}
-              onChange={(e) =>
-                setAnswers((a) => ({ ...a, [taskId]: e.target.value }))
-              }
-              className="w-full bg-white text-slate-700 text-sm placeholder-slate-400 p-5 rounded-2xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none leading-relaxed"
-            />
-            <div className="flex items-center justify-between text-xs px-1">
-              <span
-                className={`font-bold ${meetsMin ? "text-emerald-500" : "text-slate-400"}`}
-              >
-                {wc} words {!meetsMin && `(minimum ${task.content.minWords})`}
-              </span>
-              {!meetsMin && (
-                <span className="text-slate-400">
-                  {task.content.minWords - wc} more words needed
-                </span>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-      <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
-        <p className="text-sm text-slate-400">
-          {tasks.filter((t) => answers[t.id]?.trim()).length} of {tasks.length}{" "}
-          tasks attempted
-        </p>
-        <button
-          onClick={() => onComplete("writing", answers)}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-        >
-          Submit Writing <i className="ti ti-arrow-right text-sm" />
-        </button>
-      </div>
     </div>
   );
 }

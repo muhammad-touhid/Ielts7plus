@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import ImageUpload from "../ImageUpload";
 
 const moduleTypes = {
   listening: [
@@ -18,6 +19,7 @@ const moduleTypes = {
     "passage",
     "mcq",
     "multi-select",
+    "form-completion",
     "true-false-ng",
     "yes-no-ng",
     "matching-headings",
@@ -146,16 +148,31 @@ const defaultContent = {
     sentences: [{ before: "", after: "", answer: "" }],
   },
   "text-block": { text: "", tag: "h3", align: "left" },
-  task: { label: "", prompt: "", minWords: 150, timeLabel: "" },
+  task: {
+    taskNumber: 1,
+    visualType: "",
+    letterType: "",
+    essayType: "",
+    imageUrl: "",
+    bulletPoints: [],
+    prompt: "",
+    minWords: 150,
+    timeLabel: "20 minutes",
+  },
   part: { part: "", instruction: "", questions: [""] },
 };
 
 export default function MockTestQuestionForm({ question }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isEdit = !!question;
 
-  const [module, setModule] = useState(question?.module ?? "listening");
-  const [type, setType] = useState(question?.type ?? "mcq");
+  const initialModule =
+    question?.module ?? searchParams.get("module") ?? "listening";
+  const [module, setModule] = useState(initialModule);
+  const [type, setType] = useState(
+    question?.type ?? moduleTypes[initialModule][0],
+  );
   // Order is no longer a manual field — new questions land at the end of the
   // list (a large number sorts after existing sequential 0,1,2... values)
   // and get dragged into position from the admin list. Edits keep their
@@ -165,7 +182,7 @@ export default function MockTestQuestionForm({ question }) {
   const [order] = useState(question?.order ?? 1000000);
   const [published, setPublished] = useState(question?.published ?? false);
   const [content, setContent] = useState(
-    question?.content ?? defaultContent["mcq"],
+    question?.content ?? defaultContent[moduleTypes[initialModule][0]],
   );
   const [testType, setTestType] = useState(question?.testType ?? "both");
   const [section, setSection] = useState(question?.section ?? 1);
@@ -309,7 +326,7 @@ export default function MockTestQuestionForm({ question }) {
       });
       if (res.ok) {
         router.refresh();
-        router.push("/admin/mock-test-questions");
+        router.push(`/admin/mock-test-questions?module=${module}`);
       } else {
         const data = await res.json();
         setError(data.error || "Something went wrong.");
@@ -452,18 +469,34 @@ export default function MockTestQuestionForm({ question }) {
                   icon: "ti-circles-relation",
                   color: "border-violet-600 bg-violet-50 text-violet-700",
                 },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTestType(opt.value)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${testType === opt.value ? opt.color : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}
-                >
-                  <i className={`ti ${opt.icon} text-xl`} />
-                  <span className="text-xs font-bold">{opt.label}</span>
-                </button>
-              ))}
+              ]
+                .filter(
+                  (opt) =>
+                    !(
+                      module === "writing" &&
+                      content.taskNumber === 1 &&
+                      opt.value === "both"
+                    ),
+                )
+                .map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTestType(opt.value)}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${testType === opt.value ? opt.color : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}
+                  >
+                    <i className={`ti ${opt.icon} text-xl`} />
+                    <span className="text-xs font-bold">{opt.label}</span>
+                  </button>
+                ))}
             </div>
+            {module === "writing" && content.taskNumber === 1 && (
+              <p className="text-xs text-slate-400 mt-2">
+                Task 1 must be Academic or General specifically — Academic
+                describes a chart/graph, General writes a letter, so they can't
+                share one entry.
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-slate-50 rounded-xl px-5 py-3 flex items-center gap-3 border border-slate-100">
@@ -2395,27 +2428,220 @@ export default function MockTestQuestionForm({ question }) {
 
         {/* Writing Task */}
         {type === "task" && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
+            <div>
+              <label className={labelClass}>Task Number *</label>
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => {
+                      setContent((c) => ({
+                        ...c,
+                        taskNumber: num,
+                        minWords: num === 1 ? 150 : 250,
+                        timeLabel: num === 1 ? "20 minutes" : "40 minutes",
+                        // reset type-specific fields when switching task number
+                        visualType: "",
+                        letterType: "",
+                        essayType: "",
+                        imageUrl: "",
+                        bulletPoints: [],
+                      }));
+                      // Task 1 can't be "both" — Academic (chart) and
+                      // General (letter) are structurally different
+                      if (num === 1 && testType === "both") {
+                        setTestType("academic");
+                      }
+                    }}
+                    className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all text-center ${
+                      content.taskNumber === num
+                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="text-sm font-extrabold">Task {num}</span>
+                    <span className="text-xs text-slate-400">
+                      {num === 1
+                        ? "20 min · 150+ words"
+                        : "40 min · 250+ words"}
+                    </span>
+                    {num === 2 && (
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full mt-0.5">
+                        2× the marks of Task 1
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Task 1 — Academic: Visual Type + Image */}
+            {content.taskNumber === 1 && testType === "academic" && (
+              <>
+                <div>
+                  <label className={labelClass}>Visual Type *</label>
+                  <div className="relative">
+                    <select
+                      required
+                      value={content.visualType}
+                      onChange={(e) =>
+                        setContent((c) => ({
+                          ...c,
+                          visualType: e.target.value,
+                        }))
+                      }
+                      className={`${inputClass} appearance-none cursor-pointer`}
+                    >
+                      <option value="">— Select visual type —</option>
+                      <option value="line-graph">Line Graph</option>
+                      <option value="bar-chart">Bar Chart</option>
+                      <option value="pie-chart">Pie Chart</option>
+                      <option value="table">Table</option>
+                      <option value="process-diagram">Process Diagram</option>
+                      <option value="map">Map</option>
+                      <option value="mixed">Mixed Charts</option>
+                    </select>
+                    <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    Chart / Graph / Diagram Image
+                  </label>
+                  <ImageUpload
+                    value={content.imageUrl}
+                    onChange={(url) =>
+                      setContent((c) => ({ ...c, imageUrl: url }))
+                    }
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Task 1 — General: Letter Type + Bullet Points */}
+            {content.taskNumber === 1 && testType === "general" && (
+              <>
+                <div>
+                  <label className={labelClass}>Letter Type *</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: "formal", label: "Formal" },
+                      { value: "semi-formal", label: "Semi-Formal" },
+                      { value: "informal", label: "Informal" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          setContent((c) => ({ ...c, letterType: opt.value }))
+                        }
+                        className={`text-xs font-bold px-3 py-3 rounded-xl border-2 transition-all ${
+                          content.letterType === opt.value
+                            ? "border-blue-600 bg-blue-50 text-blue-700"
+                            : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className={labelClass}>
+                      "You should" Bullet Points
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent((c) => ({
+                          ...c,
+                          bulletPoints: [...c.bulletPoints, ""],
+                        }))
+                      }
+                      className={addBtn}
+                    >
+                      <i className="ti ti-plus text-xs" /> Add Point
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {content.bulletPoints.map((point, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-slate-400 flex-shrink-0">•</span>
+                        <input
+                          type="text"
+                          placeholder="e.g. explain the problem"
+                          value={point}
+                          onChange={(e) => {
+                            const u = [...content.bulletPoints];
+                            u[i] = e.target.value;
+                            setContent((c) => ({ ...c, bulletPoints: u }));
+                          }}
+                          className={`${inputClass} flex-1`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent((c) => ({
+                              ...c,
+                              bulletPoints: c.bulletPoints.filter(
+                                (_, idx) => idx !== i,
+                              ),
+                            }))
+                          }
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      </div>
+                    ))}
+                    {content.bulletPoints.length === 0 && (
+                      <p className="text-xs text-slate-400">
+                        e.g. "explain the problem", "request a solution", "ask
+                        for compensation"
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Task 2 — Essay Type (same for Academic & General) */}
+            {content.taskNumber === 2 && (
+              <div>
+                <label className={labelClass}>Essay Type *</label>
+                <div className="relative">
+                  <select
+                    required
+                    value={content.essayType}
+                    onChange={(e) =>
+                      setContent((c) => ({ ...c, essayType: e.target.value }))
+                    }
+                    className={`${inputClass} appearance-none cursor-pointer`}
+                  >
+                    <option value="">— Select essay type —</option>
+                    <option value="opinion">Opinion Essay</option>
+                    <option value="discussion">Discussion Essay</option>
+                    <option value="advantages-disadvantages">
+                      Advantages & Disadvantages Essay
+                    </option>
+                    <option value="problem-solution">
+                      Problem & Solution Essay
+                    </option>
+                    <option value="two-part">Two-Part Question Essay</option>
+                  </select>
+                  <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Task Label *</label>
+                <label className={labelClass}>Time Label</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Task 1"
-                  value={content.label}
-                  onChange={(e) =>
-                    setContent((c) => ({ ...c, label: e.target.value }))
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Time Label *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 20 minutes recommended"
                   value={content.timeLabel}
                   onChange={(e) =>
                     setContent((c) => ({ ...c, timeLabel: e.target.value }))
@@ -2423,29 +2649,40 @@ export default function MockTestQuestionForm({ question }) {
                   className={inputClass}
                 />
               </div>
+              <div>
+                <label className={labelClass}>Minimum Words *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={content.minWords}
+                  onChange={(e) =>
+                    setContent((c) => ({
+                      ...c,
+                      minWords: parseInt(e.target.value),
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </div>
             </div>
+
             <div>
-              <label className={labelClass}>Minimum Words *</label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={content.minWords}
-                onChange={(e) =>
-                  setContent((c) => ({
-                    ...c,
-                    minWords: parseInt(e.target.value),
-                  }))
-                }
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Task Prompt *</label>
+              <label className={labelClass}>
+                {content.taskNumber === 1 && testType === "general"
+                  ? "Situation *"
+                  : "Task Prompt / Question *"}
+              </label>
               <textarea
                 required
                 rows={6}
-                placeholder="Enter the writing task prompt..."
+                placeholder={
+                  content.taskNumber === 1 && testType === "academic"
+                    ? "e.g. The graph below shows the number of international students in Australia between 2015 and 2025. Summarise the information by selecting and reporting the main features..."
+                    : content.taskNumber === 1 && testType === "general"
+                      ? "e.g. You recently bought a product that does not work properly. Write a letter to the company."
+                      : "e.g. Some people think universities should provide free education. To what extent do you agree or disagree?"
+                }
                 value={content.prompt}
                 onChange={(e) =>
                   setContent((c) => ({ ...c, prompt: e.target.value }))
@@ -2569,7 +2806,9 @@ export default function MockTestQuestionForm({ question }) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push("/admin/mock-test-questions")}
+            onClick={() =>
+              router.push(`/admin/mock-test-questions?module=${module}`)
+            }
             className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-6 py-3 rounded-xl hover:border-slate-300 transition-all duration-200"
           >
             Cancel

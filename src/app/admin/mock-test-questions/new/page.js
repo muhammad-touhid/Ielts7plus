@@ -1,12 +1,15 @@
 import Link from "next/link";
 import MockTestQuestionForm from "../MockTestQuestionForm";
 
-export default function NewMockTestQuestionPage() {
+export default async function NewMockTestQuestionPage({ searchParams }) {
+  const params = await searchParams;
+  const activeModule = params?.module || "listening";
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <Link
-          href="/admin/mock-test-questions"
+          href={`/admin/mock-test-questions?module=${activeModule}`}
           className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all"
         >
           <i className="ti ti-arrow-left text-base" />

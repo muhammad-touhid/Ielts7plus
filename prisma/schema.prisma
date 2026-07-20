@@ -77,6 +77,7 @@ model MockTestSubmission {
   resultSent       Boolean  @default(false)
   createdAt        DateTime @default(now())
   testType  String  @default("academic")
+  speakingMarks Json? 
 }
 
 model MockTestQuestion {
@@ -93,17 +94,18 @@ model MockTestQuestion {
 
 model MockTestSettings {
   id                  String  @id @default(cuid())
-  sectionLocked       Boolean @default(false)
-  audioLocked         Boolean @default(false)
-  autoPlayAudio       Boolean @default(false)
-  autoAdvanceSection  Boolean @default(false)
-  noPauseRewind       Boolean @default(false)
-  previewTimeEnabled  Boolean @default(false)
-  previewSeconds      Int     @default(30)
+  sectionLocked       Boolean @default(false)  // lock sections in order, no going back
+  audioLocked         Boolean @default(false)  // lock audio after it's played once
+  autoPlayAudio       Boolean @default(false)  // audio starts on its own, no play button
+  autoAdvanceSection  Boolean @default(false)  // auto-move to next section when audio ends
+  noPauseRewind       Boolean @default(false)  // hide scrub bar / pause during playback
+  previewTimeEnabled  Boolean @default(false)  // show a reading countdown before audio starts
+  previewSeconds      Int     @default(30)     // length of that reading countdown
   audioSection1       String?
   audioSection2       String?
   audioSection3       String?
   audioSection4       String?
+  speakingShowQuestionText Boolean @default(true)  // show question text while its audio plays
 }
 
 model Enrollment {

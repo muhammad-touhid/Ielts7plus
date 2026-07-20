@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import UpdateStatusButton from "./UpdateStatusButton";
+import SpeakingMarkInput from "./SpeakingMarkInput";
 
 export default async function MockTestDetailPage({ params }) {
   const { id } = await params;
@@ -10,6 +11,16 @@ export default async function MockTestDetailPage({ params }) {
 
   const answers = sub.answers;
   const modules = ["listening", "reading", "writing", "speaking"];
+
+  // Fetch speaking parts (ordered) so we can show the actual question text
+  // next to each recorded answer — answers.speaking keys are
+  // `${partIndex}-${questionIndex}` matching this same order.
+  const speakingParts = answers?.speaking
+    ? await prisma.mockTestQuestion.findMany({
+        where: { module: "speaking", type: "part" },
+        orderBy: { order: "asc" },
+      })
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -231,24 +242,69 @@ export default async function MockTestDetailPage({ params }) {
               <i className="ti ti-microphone text-blue-600" />
               Speaking Responses
             </h3>
+            <p className="text-xs text-slate-400 -mt-3 mb-5">
+              No auto-marking — listen to each recording and assess manually.
+            </p>
             <div className="flex flex-col gap-4">
-              {Object.entries(answers.speaking).map(([key, text]) => {
-                const [part, q] = key.split("-");
+              {Object.entries(answers.speaking).map(([key, value]) => {
+                const [partIdxStr, qIdxStr] = key.split("-");
+                const partIdx = parseInt(partIdxStr);
+                const qIdx = parseInt(qIdxStr);
+                const part = speakingParts[partIdx];
+                const questionText = part?.content?.questions?.[qIdx];
+                const partLabel = part?.content?.part || `Part ${partIdx + 1}`;
+
+                // Recordings are stored as an uploaded file URL. Older
+                // submissions (before audio recording was added) may still
+                // have plain typed text — fall back to showing that instead.
+                const isRecording =
+                  typeof value === "string" && value.startsWith("http");
+
                 return (
                   <div
                     key={key}
-                    className="bg-slate-50 rounded-xl p-5 border border-slate-100"
+                    className="bg-slate-50 rounded-xl p-5 border border-slate-100 flex flex-col gap-3"
                   >
-                    <p className="text-xs font-bold text-blue-600 mb-2">
-                      Part {parseInt(part) + 1} — Q{parseInt(q) + 1}
-                    </p>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {text || (
-                        <span className="text-slate-300 italic">
-                          No response
-                        </span>
+                    <div>
+                      <p className="text-xs font-bold text-blue-600 mb-1">
+                        {partLabel} — Question {qIdx + 1}
+                      </p>
+                      {questionText && (
+                        <p className="text-sm font-semibold text-slate-700">
+                          {questionText}
+                        </p>
                       )}
-                    </p>
+                    </div>
+
+                    {isRecording ? (
+                      value ? (
+                        <audio
+                          src={value}
+                          controls
+                          controlsList="nodownload"
+                          className="w-full h-10"
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-300 italic">
+                          No recording
+                        </span>
+                      )
+                    ) : (
+                      <p className="text-sm text-slate-700 leading-relaxed">
+                        {value || (
+                          <span className="text-slate-300 italic">
+                            No response
+                          </span>
+                        )}
+                      </p>
+                    )}
+
+                    <SpeakingMarkInput
+                      submissionId={sub.id}
+                      answerKey={key}
+                      initialBand={sub.speakingMarks?.[key]?.band}
+                      initialNotes={sub.speakingMarks?.[key]?.notes}
+                    />
                   </div>
                 );
               })}

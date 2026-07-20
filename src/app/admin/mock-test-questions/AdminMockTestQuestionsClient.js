@@ -830,6 +830,36 @@ export default function AdminMockTestQuestionsClient({
         </div>
       )}
 
+      {activeModule === "speaking" && settings && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-bold text-slate-700">
+              Show Question Text While Listening
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              When off, students only hear the question audio — no text shown,
+              closer to the real exam.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {savingSettings && (
+              <i className="ti ti-loader-2 animate-spin text-slate-300 text-sm" />
+            )}
+            <LockToggle
+              label={
+                settings.speakingShowQuestionText ? "Text Shown" : "Text Hidden"
+              }
+              checked={settings.speakingShowQuestionText}
+              onChange={() =>
+                saveSettings({
+                  speakingShowQuestionText: !settings.speakingShowQuestionText,
+                })
+              }
+            />
+          </div>
+        </div>
+      )}
+
       {/* Question / text-block list — same draggable card UI across all four modules */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
         <div className="flex items-center justify-between flex-wrap gap-2">

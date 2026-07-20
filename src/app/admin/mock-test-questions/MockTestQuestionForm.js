@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ImageUpload from "../ImageUpload";
+import AudioUpload from "../AudioUpload";
 
 const moduleTypes = {
   listening: [
@@ -159,7 +160,16 @@ const defaultContent = {
     minWords: 150,
     timeLabel: "20 minutes",
   },
-  part: { part: "", instruction: "", questions: [""] },
+  part: {
+    part: "",
+    instruction: "",
+    format: "qa", // "qa" | "cue-card"
+    questions: [{ text: "", audioUrl: "" }],
+    cueCardTopic: "",
+    cueCardNotes: [],
+    prepSeconds: 60,
+    speakSeconds: 120,
+  },
 };
 
 export default function MockTestQuestionForm({ question }) {
@@ -2695,7 +2705,7 @@ export default function MockTestQuestionForm({ question }) {
 
         {/* Speaking Part */}
         {type === "part" && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Part Label *</label>
@@ -2724,60 +2734,227 @@ export default function MockTestQuestionForm({ question }) {
                 />
               </div>
             </div>
+
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className={labelClass}>Questions *</label>
+              <label className={labelClass}>Format *</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setContent((c) => ({ ...c, format: "qa" }))}
+                  className={`flex flex-col items-center gap-1 p-4 rounded-xl border-2 transition-all text-center ${
+                    (content.format || "qa") === "qa"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  <span className="text-sm font-extrabold">
+                    Question &amp; Answer
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    Separate questions, one recording each — for Part 1 &amp; 3
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={() =>
-                    setContent((c) => ({
-                      ...c,
-                      questions: [...c.questions, ""],
-                    }))
+                    setContent((c) => ({ ...c, format: "cue-card" }))
                   }
-                  className={addBtn}
+                  className={`flex flex-col items-center gap-1 p-4 rounded-xl border-2 transition-all text-center ${
+                    content.format === "cue-card"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                  }`}
                 >
-                  <i className="ti ti-plus text-xs" /> Add Question
+                  <span className="text-sm font-extrabold">Cue Card</span>
+                  <span className="text-xs text-slate-400">
+                    One topic, prep time, one recording — for Part 2
+                  </span>
                 </button>
               </div>
-              <div className="flex flex-col gap-2">
-                {content.questions.map((q, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0 mt-3">
-                      {i + 1}
-                    </span>
-                    <textarea
-                      rows={2}
-                      required
-                      placeholder={`Question ${i + 1}`}
-                      value={q}
-                      onChange={(e) => {
-                        const u = [...content.questions];
-                        u[i] = e.target.value;
-                        setContent((c) => ({ ...c, questions: u }));
-                      }}
-                      className={`${inputClass} flex-1 resize-none`}
-                    />
-                    {content.questions.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setContent((c) => ({
-                            ...c,
-                            questions: c.questions.filter(
-                              (_, idx) => idx !== i,
-                            ),
-                          }))
-                        }
-                        className={`${removeBtn} mt-3`}
-                      >
-                        <i className="ti ti-x text-xs" />
-                      </button>
+            </div>
+
+            {(content.format || "qa") === "qa" && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={labelClass}>Questions *</label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent((c) => ({
+                        ...c,
+                        questions: [...c.questions, { text: "", audioUrl: "" }],
+                      }))
+                    }
+                    className={addBtn}
+                  >
+                    <i className="ti ti-plus text-xs" /> Add Question
+                  </button>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {content.questions.map((q, i) => (
+                    <div
+                      key={i}
+                      className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0 mt-1">
+                          {i + 1}
+                        </span>
+                        <textarea
+                          rows={2}
+                          required
+                          placeholder={`Question ${i + 1}`}
+                          value={q.text}
+                          onChange={(e) => {
+                            const u = [...content.questions];
+                            u[i] = { ...u[i], text: e.target.value };
+                            setContent((c) => ({ ...c, questions: u }));
+                          }}
+                          className={`${inputClass} flex-1 resize-none`}
+                        />
+                        {content.questions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setContent((c) => ({
+                                ...c,
+                                questions: c.questions.filter(
+                                  (_, idx) => idx !== i,
+                                ),
+                              }))
+                            }
+                            className={`${removeBtn} mt-1`}
+                          >
+                            <i className="ti ti-x text-xs" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="pl-9">
+                        <label className="text-xs text-slate-400 mb-1 block">
+                          Question Audio (optional — uploads a real voice
+                          recording instead of text-to-speech)
+                        </label>
+                        <AudioUpload
+                          value={q.audioUrl}
+                          onChange={(url) => {
+                            const u = [...content.questions];
+                            u[i] = { ...u[i], audioUrl: url };
+                            setContent((c) => ({ ...c, questions: u }));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {content.format === "cue-card" && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className={labelClass}>Cue Card Topic *</label>
+                  <textarea
+                    rows={2}
+                    required
+                    placeholder="e.g. Describe a book you enjoyed reading."
+                    value={content.cueCardTopic}
+                    onChange={(e) =>
+                      setContent((c) => ({
+                        ...c,
+                        cueCardTopic: e.target.value,
+                      }))
+                    }
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className={labelClass}>
+                      "You should say:" Notes
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent((c) => ({
+                          ...c,
+                          cueCardNotes: [...c.cueCardNotes, ""],
+                        }))
+                      }
+                      className={addBtn}
+                    >
+                      <i className="ti ti-plus text-xs" /> Add Note
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {content.cueCardNotes.map((note, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-slate-400 flex-shrink-0">•</span>
+                        <input
+                          type="text"
+                          placeholder="e.g. what the book was"
+                          value={note}
+                          onChange={(e) => {
+                            const u = [...content.cueCardNotes];
+                            u[i] = e.target.value;
+                            setContent((c) => ({ ...c, cueCardNotes: u }));
+                          }}
+                          className={`${inputClass} flex-1`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setContent((c) => ({
+                              ...c,
+                              cueCardNotes: c.cueCardNotes.filter(
+                                (_, idx) => idx !== i,
+                              ),
+                            }))
+                          }
+                          className={removeBtn}
+                        >
+                          <i className="ti ti-x text-xs" />
+                        </button>
+                      </div>
+                    ))}
+                    {content.cueCardNotes.length === 0 && (
+                      <p className="text-xs text-slate-400">
+                        e.g. "what the book was", "when you read it", "why you
+                        enjoyed it"
+                      </p>
                     )}
                   </div>
-                ))}
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    Recommended Speak Time (seconds)
+                  </label>
+                  <input
+                    type="number"
+                    min={30}
+                    max={300}
+                    value={content.speakSeconds}
+                    onChange={(e) =>
+                      setContent((c) => ({
+                        ...c,
+                        speakSeconds: parseInt(e.target.value) || 120,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                  <p className="text-xs text-slate-400 mt-1.5">
+                    Real exam: 1–2 minutes (guidance only, shown to the student,
+                    not a hard cutoff).
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-xl px-5 py-3 flex items-center gap-3 border border-slate-100">
+                  <i className="ti ti-info-circle text-slate-400" />
+                  <p className="text-xs text-slate-500">
+                    The student gets one continuous recording for the whole cue
+                    card response — not separate recordings per note.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

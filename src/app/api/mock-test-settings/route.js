@@ -54,6 +54,7 @@ export async function PUT(req) {
       "autoAdvanceSection",
       "noPauseRewind",
       "previewTimeEnabled",
+      "speakingShowQuestionText",
     ]) {
       if (typeof body[key] === "boolean") {
         data[key] = body[key];
@@ -89,6 +90,7 @@ export async function PUT(req) {
         audioSection2: body.audioSection2 || null,
         audioSection3: body.audioSection3 || null,
         audioSection4: body.audioSection4 || null,
+        speakingShowQuestionText: body.speakingShowQuestionText ?? true,
       },
     });
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import ListeningScreen from "./ListeningScreen";
 import ReadingScreen from "./ReadingScreen";
 import WritingScreen from "./WritingScreen";
+import SpeakingScreen from "./SpeakingScreen";
 
 function useTimer(seconds, active) {
   const [timeLeft, setTimeLeft] = useState(seconds);
@@ -584,107 +585,6 @@ function ModuleSelectScreen({ completed, onSelect, testType, onBack }) {
     </div>
   );
 }
-
-function SpeakingScreen({ onComplete, onBack, parts }) {
-  const [answers, setAnswers] = useState({});
-  const [activePart, setActivePart] = useState(0);
-  const { display, timeLeft } = useTimer(15 * 60, true);
-  const part = parts[activePart];
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="mb-2">
-            <BackButton onClick={onBack} label="Back to Modules" />
-          </div>
-          <span className="inline-block text-xs font-bold tracking-widest uppercase text-blue-600 bg-sky-100 px-4 py-1.5 rounded-full mb-2">
-            Speaking Module
-          </span>
-          <h2 className="text-xl font-extrabold text-slate-800">
-            Speaking Test
-          </h2>
-        </div>
-        <TimerBadge display={display} warn={timeLeft < 300} />
-      </div>
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex items-center gap-3 text-sm text-amber-700">
-        <i className="ti ti-info-circle flex-shrink-0" />
-        Type your spoken answers below. In the full version, you will record
-        audio responses.
-      </div>
-      <div className="flex gap-2 flex-wrap">
-        {parts.map((p, i) => (
-          <button
-            key={i}
-            onClick={() => setActivePart(i)}
-            className={`text-xs font-bold px-4 py-2 rounded-xl border-2 transition-all duration-200 ${activePart === i ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200 hover:border-blue-300"}`}
-          >
-            Part {i + 1}
-          </button>
-        ))}
-      </div>
-      {part && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col gap-5">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-800 mb-1">
-              {part.content.part}
-            </h3>
-            <p className="text-xs text-slate-400">{part.content.instruction}</p>
-          </div>
-          <div className="w-full h-px bg-slate-100" />
-          {part.content.questions.map((q, qi) => {
-            const key = `${activePart}-${qi}`;
-            return (
-              <div key={qi} className="flex flex-col gap-3">
-                <p className="text-sm font-semibold text-slate-700 whitespace-pre-line">
-                  <span className="text-blue-600 font-bold mr-1">
-                    Q{qi + 1}.
-                  </span>
-                  {q}
-                </p>
-                <textarea
-                  rows={4}
-                  placeholder="Type your spoken response here..."
-                  value={answers[key] || ""}
-                  onChange={(e) =>
-                    setAnswers((a) => ({ ...a, [key]: e.target.value }))
-                  }
-                  className="w-full bg-slate-50 text-slate-700 text-sm placeholder-slate-400 p-4 rounded-xl border-2 border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
-        <div className="flex gap-2">
-          {activePart > 0 && (
-            <button
-              onClick={() => setActivePart((p) => p - 1)}
-              className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-600 text-sm font-bold px-5 py-3 rounded-xl hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
-            >
-              <i className="ti ti-arrow-left text-sm" /> Previous
-            </button>
-          )}
-          {activePart < parts.length - 1 && (
-            <button
-              onClick={() => setActivePart((p) => p + 1)}
-              className="inline-flex items-center gap-2 bg-slate-100 text-slate-700 text-sm font-bold px-5 py-3 rounded-xl hover:bg-slate-200 transition-all duration-200"
-            >
-              Next Part <i className="ti ti-arrow-right text-sm" />
-            </button>
-          )}
-        </div>
-        <button
-          onClick={() => onComplete("speaking", answers)}
-          className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-8 py-3.5 rounded-xl shadow-md shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
-        >
-          Submit Speaking <i className="ti ti-arrow-right text-sm" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function SubmitScreen({ student, completed }) {
   const modules = [
     { id: "listening", label: "Listening", icon: "ti ti-headphones" },
@@ -961,6 +861,7 @@ export default function MockTestPage() {
             onComplete={handleModuleComplete}
             onBack={() => handleBack()}
             parts={speakingParts}
+            settings={mockTestSettings}
           />
         )}
         {step === 4 && <SubmitScreen student={student} completed={completed} />}

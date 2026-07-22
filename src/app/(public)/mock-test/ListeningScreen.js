@@ -67,10 +67,11 @@ function TimerBadge({ display, warn }) {
 }
 
 // Type 1: MCQ
-function MCQRenderer({ question, answers, onChange }) {
+function MCQRenderer({ question, answers, onChange, startNumber }) {
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
       <p className="text-sm font-bold text-slate-700 mb-4">
+        <span className="text-blue-600 mr-1.5">{startNumber}.</span>
         {question.content.text}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -98,10 +99,11 @@ function MCQRenderer({ question, answers, onChange }) {
 }
 
 // Type 1b: Multi-Select MCQ — "Choose TWO/THREE letters"
-function MultiSelectRenderer({ question, answers, onChange }) {
+function MultiSelectRenderer({ question, answers, onChange, startNumber }) {
   const { instruction, questionText, options, selectCount } = question.content;
   const key = question.id;
   const selected = answers[key] || [];
+  const endNumber = startNumber + selectCount - 1;
 
   const toggle = (label) => {
     let next;
@@ -123,7 +125,12 @@ function MultiSelectRenderer({ question, answers, onChange }) {
           {instruction}
         </p>
       )}
-      <p className="text-sm font-bold text-slate-700">{questionText}</p>
+      <p className="text-sm font-bold text-slate-700">
+        <span className="text-blue-600 mr-1.5">
+          {startNumber}–{endNumber}.
+        </span>
+        {questionText}
+      </p>
       <div className="flex flex-col gap-2">
         {options.map((opt) => {
           const isSelected = selected.includes(opt.label);
@@ -313,10 +320,7 @@ function TableCompletionRenderer({ question, answers, onChange, startNumber }) {
             </thead>
             <tbody>
               {rows.map((row, ri) => (
-                <tr
-                  key={ri}
-                  className="border-b border-slate-100 last:border-b-0"
-                >
+                <tr key={ri} className="border-b border-slate-100 last:border-b-0">
                   {row.cells.map((cell, ci) => {
                     const parts = cell.text.split("___");
                     return (
@@ -340,9 +344,7 @@ function TableCompletionRenderer({ question, answers, onChange, startNumber }) {
                                 <input
                                   type="text"
                                   value={answers[key] || ""}
-                                  onChange={(e) =>
-                                    onChange(key, e.target.value)
-                                  }
+                                  onChange={(e) => onChange(key, e.target.value)}
                                   className="inline-block w-24 bg-slate-50 text-slate-700 text-xs text-center px-2 py-1 rounded-lg border-2 border-blue-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 align-baseline"
                                 />
                               </span>
@@ -363,7 +365,7 @@ function TableCompletionRenderer({ question, answers, onChange, startNumber }) {
 }
 
 // Type 3: Sentence Completion
-function SentenceCompletionRenderer({ question, answers, onChange }) {
+function SentenceCompletionRenderer({ question, answers, onChange, startNumber }) {
   const { instruction, sentences } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -382,7 +384,7 @@ function SentenceCompletionRenderer({ question, answers, onChange }) {
               className="bg-white rounded-xl border border-slate-200 p-4 flex items-center flex-wrap gap-2 text-sm text-slate-700"
             >
               <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 flex-shrink-0">
-                {i + 1}
+                {startNumber + i}
               </span>
               {sent.before && (
                 <span className="font-medium">{sent.before}</span>
@@ -404,7 +406,7 @@ function SentenceCompletionRenderer({ question, answers, onChange }) {
 }
 
 // Type 4: Short Answer
-function ShortAnswerRenderer({ question, answers, onChange }) {
+function ShortAnswerRenderer({ question, answers, onChange, startNumber }) {
   const { instruction, questions } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -424,7 +426,7 @@ function ShortAnswerRenderer({ question, answers, onChange }) {
             >
               <div className="flex items-start gap-2 flex-1">
                 <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 flex-shrink-0 mt-0.5">
-                  {i + 1}
+                  {startNumber + i}
                 </span>
                 <p className="text-sm font-medium text-slate-700">{q.text}</p>
               </div>
@@ -444,7 +446,7 @@ function ShortAnswerRenderer({ question, answers, onChange }) {
 }
 
 // Type 5: Matching
-function MatchingRenderer({ question, answers, onChange }) {
+function MatchingRenderer({ question, answers, onChange, startNumber }) {
   const { instruction, items, options } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -485,7 +487,7 @@ function MatchingRenderer({ question, answers, onChange }) {
             >
               <div className="flex items-center gap-2 flex-1">
                 <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
-                  {i + 1}
+                  {startNumber + i}
                 </span>
                 <span className="text-sm font-medium text-slate-700">
                   {item.text}
@@ -907,8 +909,8 @@ export default function ListeningScreen({
                   Reading time — Section {activeSection}
                 </p>
                 <p className="text-xs text-amber-600 mt-1">
-                  Look through the questions below. Audio starts automatically
-                  in {previewCountdown}s.
+                  Look through the questions below. Audio starts
+                  automatically in {previewCountdown}s.
                 </p>
               </div>
               <span className="text-2xl font-extrabold text-amber-600 tabular-nums">
@@ -1024,39 +1026,12 @@ export default function ListeningScreen({
 
               return (
                 <div key={question.id} className="flex flex-col gap-2">
-                  {/* Question number badge */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-500">
-                      {slots === 1
-                        ? `Question ${startNum}`
-                        : `Questions ${startNum}–${startNum + slots - 1}`}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        question.type === "mcq"
-                          ? "bg-blue-50 text-blue-600"
-                          : question.type === "form-completion"
-                            ? "bg-violet-50 text-violet-600"
-                            : question.type === "table-completion"
-                              ? "bg-cyan-50 text-cyan-600"
-                              : question.type === "sentence-completion"
-                                ? "bg-emerald-50 text-emerald-600"
-                                : question.type === "short-answer"
-                                  ? "bg-amber-50 text-amber-600"
-                                  : question.type === "matching"
-                                    ? "bg-rose-50 text-rose-600"
-                                    : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {question.type.replace(/-/g, " ")}
-                    </span>
-                  </div>
-
                   {question.type === "mcq" && (
                     <MCQRenderer
                       question={question}
                       answers={answers}
                       onChange={handleChange}
+                      startNumber={startNum}
                     />
                   )}
                   {question.type === "multi-select" && (
@@ -1064,6 +1039,7 @@ export default function ListeningScreen({
                       question={question}
                       answers={answers}
                       onChange={handleChange}
+                      startNumber={startNum}
                     />
                   )}
                   {question.type === "form-completion" && (
@@ -1087,6 +1063,7 @@ export default function ListeningScreen({
                       question={question}
                       answers={answers}
                       onChange={handleChange}
+                      startNumber={startNum}
                     />
                   )}
                   {question.type === "short-answer" && (
@@ -1094,6 +1071,7 @@ export default function ListeningScreen({
                       question={question}
                       answers={answers}
                       onChange={handleChange}
+                      startNumber={startNum}
                     />
                   )}
                   {question.type === "matching" && (
@@ -1101,6 +1079,7 @@ export default function ListeningScreen({
                       question={question}
                       answers={answers}
                       onChange={handleChange}
+                      startNumber={startNum}
                     />
                   )}
                   {question.type === "map-labelling" && (

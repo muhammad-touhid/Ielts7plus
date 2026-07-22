@@ -100,11 +100,21 @@ function PacingHint({ elapsedSeconds, activeTaskNumber }) {
   return null;
 }
 
-export default function WritingScreen({ onComplete, onBack, tasks, testType }) {
+export default function WritingScreen({
+  onComplete,
+  onBack,
+  tasks: rawTasks,
+  testType,
+}) {
   const [answers, setAnswers] = useState({});
   const [activeTask, setActiveTask] = useState(0);
   const { display, timeLeft } = useTimer(60 * 60, true);
   const elapsedSeconds = 60 * 60 - timeLeft;
+
+  // Always show Task 1 before Task 2, regardless of drag/DB order
+  const tasks = [...rawTasks].sort(
+    (a, b) => (a.content?.taskNumber ?? 1) - (b.content?.taskNumber ?? 1),
+  );
 
   const task = tasks[activeTask];
   const taskId = task?.id;

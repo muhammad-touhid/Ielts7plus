@@ -66,10 +66,11 @@ function TimerBadge({ display, warn }) {
 }
 
 // Type: MCQ
-function MCQRenderer({ question, answers, onChange }) {
+function MCQRenderer({ question, answers, onChange, startNumber }) {
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
       <p className="text-sm font-bold text-slate-700 mb-4">
+        <span className="text-blue-600 mr-1.5">{startNumber}.</span>
         {question.content.text}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -223,10 +224,11 @@ function FormCompletionRenderer({ question, answers, onChange, startNumber }) {
 }
 
 // Type: Multi-Select MCQ — "Choose TWO/THREE letters"
-function MultiSelectRenderer({ question, answers, onChange }) {
+function MultiSelectRenderer({ question, answers, onChange, startNumber }) {
   const { instruction, questionText, options, selectCount } = question.content;
   const key = question.id;
   const selected = answers[key] || [];
+  const endNumber = startNumber + selectCount - 1;
 
   const toggle = (label) => {
     let next;
@@ -248,7 +250,12 @@ function MultiSelectRenderer({ question, answers, onChange }) {
           {instruction}
         </p>
       )}
-      <p className="text-sm font-bold text-slate-700">{questionText}</p>
+      <p className="text-sm font-bold text-slate-700">
+        <span className="text-blue-600 mr-1.5">
+          {startNumber}–{endNumber}.
+        </span>
+        {questionText}
+      </p>
       <div className="flex flex-col gap-2">
         {options.map((opt) => {
           const isSelected = selected.includes(opt.label);
@@ -276,7 +283,13 @@ function MultiSelectRenderer({ question, answers, onChange }) {
 }
 
 // Type: True/False/Not Given and Yes/No/Not Given — same structure, different option set
-function TFStatementsRenderer({ question, answers, onChange, options }) {
+function TFStatementsRenderer({
+  question,
+  answers,
+  onChange,
+  options,
+  startNumber,
+}) {
   const { instruction, statements } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -295,7 +308,9 @@ function TFStatementsRenderer({ question, answers, onChange, options }) {
               className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-3"
             >
               <p className="text-sm font-medium text-slate-700">
-                <span className="text-blue-600 font-bold mr-1">{i + 1}.</span>
+                <span className="text-blue-600 font-bold mr-1">
+                  {startNumber + i}.
+                </span>
                 {s.text}
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -318,7 +333,12 @@ function TFStatementsRenderer({ question, answers, onChange, options }) {
 }
 
 // Type: Matching Headings
-function MatchingHeadingsRenderer({ question, answers, onChange }) {
+function MatchingHeadingsRenderer({
+  question,
+  answers,
+  onChange,
+  startNumber,
+}) {
   const { instruction, headings, paragraphs } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -354,7 +374,10 @@ function MatchingHeadingsRenderer({ question, answers, onChange }) {
               key={i}
               className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between gap-4"
             >
-              <span className="text-sm font-bold text-slate-700">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
+                  {startNumber + i}
+                </span>
                 Paragraph {p.label}
               </span>
               <div className="relative w-44">
@@ -381,7 +404,7 @@ function MatchingHeadingsRenderer({ question, answers, onChange }) {
 }
 
 // Type: Matching Information / Matching Features — same shape as Listening's Matching
-function MatchingRenderer({ question, answers, onChange }) {
+function MatchingRenderer({ question, answers, onChange, startNumber }) {
   const { instruction, items, options } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -420,7 +443,7 @@ function MatchingRenderer({ question, answers, onChange }) {
             >
               <div className="flex items-center gap-2 flex-1">
                 <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0">
-                  {i + 1}
+                  {startNumber + i}
                 </span>
                 <span className="text-sm font-medium text-slate-700">
                   {item.text}
@@ -446,7 +469,12 @@ function MatchingRenderer({ question, answers, onChange }) {
 }
 
 // Type: Summary / Sentence Completion
-function SummaryCompletionRenderer({ question, answers, onChange }) {
+function SummaryCompletionRenderer({
+  question,
+  answers,
+  onChange,
+  startNumber,
+}) {
   const { instruction, wordBank, sentences } = question.content;
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4">
@@ -482,12 +510,17 @@ function SummaryCompletionRenderer({ question, answers, onChange }) {
           return (
             <span key={i}>
               {sent.before}{" "}
-              <input
-                type="text"
-                value={answers[key] || ""}
-                onChange={(e) => onChange(key, e.target.value)}
-                className="inline-block w-32 mx-1 bg-slate-50 text-slate-700 text-sm text-center px-2 py-1 rounded-lg border-2 border-blue-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 align-baseline"
-              />{" "}
+              <span className="inline-flex items-center gap-1 mx-1">
+                <span className="text-xs font-bold text-blue-600">
+                  {startNumber + i}
+                </span>
+                <input
+                  type="text"
+                  value={answers[key] || ""}
+                  onChange={(e) => onChange(key, e.target.value)}
+                  className="inline-block w-28 bg-slate-50 text-slate-700 text-sm text-center px-2 py-1 rounded-lg border-2 border-blue-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 align-baseline"
+                />
+              </span>{" "}
               {sent.after}{" "}
             </span>
           );
@@ -713,22 +746,12 @@ export default function ReadingScreen({
 
                 return (
                   <div key={question.id} className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-500">
-                        {slots === 1
-                          ? `Question ${startNum}`
-                          : `Questions ${startNum}–${startNum + slots - 1}`}
-                      </span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
-                        {question.type.replace(/-/g, " ")}
-                      </span>
-                    </div>
-
                     {question.type === "mcq" && (
                       <MCQRenderer
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                        startNumber={startNum}
                       />
                     )}
                     {question.type === "multi-select" && (
@@ -736,6 +759,7 @@ export default function ReadingScreen({
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                        startNumber={startNum}
                       />
                     )}
                     {question.type === "form-completion" && (
@@ -752,6 +776,7 @@ export default function ReadingScreen({
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                        startNumber={startNum}
                         options={
                           question.type === "true-false-ng"
                             ? ["TRUE", "FALSE", "NOT GIVEN"]
@@ -764,6 +789,7 @@ export default function ReadingScreen({
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                        startNumber={startNum}
                       />
                     )}
                     {(question.type === "matching-information" ||
@@ -772,6 +798,7 @@ export default function ReadingScreen({
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                        startNumber={startNum}
                       />
                     )}
                     {question.type === "summary-completion" && (
@@ -779,6 +806,7 @@ export default function ReadingScreen({
                         question={question}
                         answers={answers}
                         onChange={handleChange}
+                        startNumber={startNum}
                       />
                     )}
                   </div>

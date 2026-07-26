@@ -220,3 +220,15 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+
+model Page {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  data      Json     // the LIVE PUBLISHED content — what /p/[slug] renders
+  draftData Json?    // unpublished edits, if any. Null once merged into `data` on publish.
+  status    String   @default("draft") // draft | published
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

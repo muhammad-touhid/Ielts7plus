@@ -35,6 +35,12 @@ const navItems = [
     href: "/admin/batches",
   },
   {
+    label: "Pages",
+    icon: "ti ti-calendar-event",
+    href: "/admin/pages",
+  },
+
+  {
     label: "Mock Tests",
     icon: "ti ti-clipboard-text",
     href: "/admin/mock-tests",

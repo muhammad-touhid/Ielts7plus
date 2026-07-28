@@ -22,10 +22,15 @@ export function heroTemplate() {
           bgType: "gradient",
           bgColor: "#354e98",
           bgImage: "",
+          overlayType: "none",
           overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
           overlayOpacity: "0",
           minHeight: "75vh",
-          contentWidth: "max-w-3xl",
+          verticalAlign: "center",
+          contentWidth: "48rem",
           paddingTop: "96px",
           paddingBottom: "96px",
           paddingLeft: "24px",
@@ -156,10 +161,15 @@ export function statsTemplate() {
           bgType: "color",
           bgColor: "#ffffff",
           bgImage: "",
+          overlayType: "none",
           overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
           overlayOpacity: "0",
           minHeight: "auto",
-          contentWidth: "max-w-6xl",
+          verticalAlign: "flex-start",
+          contentWidth: "72rem",
           paddingTop: "64px",
           paddingBottom: "64px",
           paddingLeft: "24px",
@@ -270,10 +280,15 @@ export function testimonialTemplate() {
           bgType: "color",
           bgColor: "#ffffff",
           bgImage: "",
+          overlayType: "none",
           overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
           overlayOpacity: "0",
           minHeight: "auto",
-          contentWidth: "max-w-6xl",
+          verticalAlign: "flex-start",
+          contentWidth: "72rem",
           paddingTop: "32px",
           paddingBottom: "32px",
           paddingLeft: "24px",
@@ -291,10 +306,15 @@ export function testimonialTemplate() {
           bgType: "color",
           bgColor: "#ffffff",
           bgImage: "",
+          overlayType: "none",
           overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
           overlayOpacity: "0",
           minHeight: "auto",
-          contentWidth: "max-w-6xl",
+          verticalAlign: "flex-start",
+          contentWidth: "72rem",
           paddingTop: "32px",
           paddingBottom: "32px",
           paddingLeft: "24px",
@@ -427,10 +447,15 @@ export function featureGridTemplate() {
           bgType: "color",
           bgColor: "#f9fafb",
           bgImage: "",
+          overlayType: "none",
           overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
           overlayOpacity: "0",
           minHeight: "auto",
-          contentWidth: "max-w-6xl",
+          verticalAlign: "flex-start",
+          contentWidth: "72rem",
           paddingTop: "64px",
           paddingBottom: "64px",
           paddingLeft: "24px",
@@ -444,8 +469,158 @@ export function featureGridTemplate() {
   };
 }
 
+// Built directly from the real, existing Hero component (full-screen
+// background image, navy-to-blue gradient overlay, badge, heading, text,
+// search bar, and tag pills) — not a generic approximation. Same idea as
+// the other templates: every piece lands as a separate, editable layer.
+//
+// Structure matches the original markup's intent: the Section itself is
+// FULL WIDTH (no outer max-width bounding it, background spans edge to
+// edge, matching the original's `w-full`), vertically centered (matching
+// `flex items-center`), with a single Subsection constraining just the
+// TEXT content to a readable max-width and pinning it to the left
+// (matching the original's `max-w-2xl` div inside a full-bleed section).
+export function realHeroTemplate() {
+  const sectionId = genId("section");
+  const contentSubsectionId = genId("subsection");
+
+  return {
+    content: [
+      {
+        type: "Section",
+        props: {
+          id: sectionId,
+          columns: "1",
+          columnGap: "0px",
+          bgType: "image",
+          bgColor: "#ffffff",
+          bgImage: "/images/hero-bg.jpg",
+          overlayType: "gradient",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a", // blue-900
+          overlayColorTo: "#1d4ed8", // blue-700
+          overlayDirection: "to right",
+          overlayOpacity: "0.85",
+          minHeight: "100vh",
+          verticalAlign: "center", // matches original's `flex items-center`
+          contentWidth: "none", // full width, matches original's `w-full` — no outer bounding
+          paddingTop: "48px",
+          paddingBottom: "48px",
+          paddingLeft: "24px", // matches original's container `px-6`
+          paddingRight: "24px",
+          marginTop: "0px",
+          marginBottom: "0px",
+        },
+      },
+    ],
+    zones: {
+      [`${sectionId}:col-0`]: [
+        {
+          type: "Subsection",
+          props: {
+            id: contentSubsectionId,
+            maxWidth: "42rem", // matches original's `max-w-2xl`
+            align: "left", // pinned left, not centered, within the full-width section
+            bgType: "none",
+            bgColor: "#ffffff",
+            bgImage: "",
+            minHeight: "auto",
+            paddingTop: "0px",
+            paddingBottom: "0px",
+            paddingLeft: "0px",
+            paddingRight: "0px",
+            marginTop: "0px",
+            marginBottom: "0px",
+            rounded: "rounded-none",
+          },
+        },
+      ],
+      [`${contentSubsectionId}:content`]: [
+        {
+          type: "Badge",
+          props: {
+            id: genId("badge"),
+            text: "★ #1 IELTS Preparation Platform",
+            style: "translucent",
+            paddingTop: "8px",
+            paddingBottom: "8px",
+            paddingLeft: "20px",
+            paddingRight: "20px",
+            marginTop: "0px",
+            marginBottom: "20px",
+          },
+        },
+        {
+          type: "Heading",
+          props: {
+            id: genId("heading"),
+            text: "Get admitted into prestigious universities with a 7+ IELTS score",
+            tag: "h1",
+            size: "text-4xl md:text-5xl",
+            align: "text-left",
+            color: "#ffffff",
+            weight: "font-extrabold",
+            paddingTop: "0px",
+            paddingBottom: "0px",
+            paddingLeft: "0px",
+            paddingRight: "0px",
+            marginTop: "0px",
+            marginBottom: "16px",
+          },
+        },
+        {
+          type: "Text",
+          props: {
+            id: genId("text"),
+            text: "Receive expert tutoring for an excellent IELTS score through personalized mentorship.",
+            size: "text-lg",
+            align: "text-left",
+            color: "#dbeafe", // blue-100
+            maxWidth: "max-w-none",
+            paddingTop: "0px",
+            paddingBottom: "0px",
+            paddingLeft: "0px",
+            paddingRight: "0px",
+            marginTop: "0px",
+            marginBottom: "32px",
+          },
+        },
+        {
+          type: "SearchBar",
+          props: {
+            id: genId("searchbar"),
+            placeholder: "Search courses, topics, practice tests...",
+            buttonText: "Search",
+            searchPath: "/search",
+            maxWidth: "max-w-lg",
+            marginTop: "0px",
+            marginBottom: "20px",
+          },
+        },
+        {
+          type: "TagList",
+          props: {
+            id: genId("taglist"),
+            items: [
+              { text: "Writing Task 2", href: "/search?q=Writing Task 2" },
+              { text: "Speaking Band 7", href: "/search?q=Speaking Band 7" },
+              { text: "Listening Tips", href: "/search?q=Listening Tips" },
+              { text: "Reading Strategies", href: "/search?q=Reading Strategies" },
+              { text: "Mock Tests", href: "/search?q=Mock Tests" },
+            ],
+            style: "translucent",
+            marginTop: "0px",
+            marginBottom: "0px",
+          },
+        },
+      ],
+    },
+  };
+}
+
 export const templates = [
-  { key: "hero", label: "Hero", description: "Full-width gradient hero with heading, text, button", build: heroTemplate },
+  { key: "realHero", label: "Hero (Real)", description: "Your actual homepage hero — bg image, badge, search, tags", build: realHeroTemplate },
+  { key: "hero", label: "Hero (Generic)", description: "Full-width gradient hero with heading, text, button", build: heroTemplate },
   { key: "stats", label: "Stats Row", description: "4-column stat numbers", build: statsTemplate },
   { key: "testimonials", label: "Testimonials", description: "Heading + 2 testimonial cards", build: testimonialTemplate },
   { key: "features", label: "Feature Grid", description: "4-column icon + title + text cards", build: featureGridTemplate },

@@ -93,3 +93,21 @@ export const GAP_PRESETS = [
   { label: "Medium (32px)", value: "32px" },
   { label: "Large (48px)", value: "48px" },
 ];
+
+export const MAX_WIDTH_PRESETS = [
+  { label: "None (fills column)", value: "none" },
+  { label: "Narrow (28rem / ~448px)", value: "28rem" },
+  { label: "Medium (42rem / ~672px)", value: "42rem" },
+  { label: "Wide (56rem / ~896px)", value: "56rem" },
+  { label: "X-Wide (72rem / ~1152px)", value: "72rem" },
+];
+
+// For Section's overall content width. Same idea as MAX_WIDTH_PRESETS but
+// with wider defaults suited to a whole section's content box rather than
+// a single text block, plus a "Full width" option (maxWidth: none).
+export const CONTENT_WIDTH_PRESETS = [
+  { label: "Boxed — narrow (48rem / ~768px)", value: "48rem" },
+  { label: "Boxed — medium (64rem / ~1024px)", value: "64rem" },
+  { label: "Boxed — wide (72rem / ~1152px)", value: "72rem" },
+  { label: "Full width", value: "none" },
+];

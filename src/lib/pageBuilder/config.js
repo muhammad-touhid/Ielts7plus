@@ -21,6 +21,9 @@ import { ButtonBlock } from "./widgets/ButtonBlock";
 import { IconBlock } from "./widgets/Icon";
 import { HtmlBlock } from "./widgets/HtmlBlock";
 import { Spacer } from "./widgets/Spacer";
+import { Badge } from "./widgets/Badge";
+import { SearchBar } from "./widgets/SearchBar";
+import { TagList } from "./widgets/TagList";
 
 export const config = {
   categories: {
@@ -30,7 +33,18 @@ export const config = {
     },
     elements: {
       title: "Elements",
-      components: ["Heading", "Text", "ImageBlock", "ButtonBlock", "IconBlock", "Spacer", "HtmlBlock"],
+      components: [
+        "Heading",
+        "Text",
+        "ImageBlock",
+        "ButtonBlock",
+        "IconBlock",
+        "Spacer",
+        "HtmlBlock",
+        "Badge",
+        "SearchBar",
+        "TagList",
+      ],
     },
   },
   components: {
@@ -43,5 +57,8 @@ export const config = {
     IconBlock,
     Spacer,
     HtmlBlock,
+    Badge,
+    SearchBar,
+    TagList,
   },
 };

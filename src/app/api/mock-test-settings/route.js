@@ -41,7 +41,7 @@ export async function PUT(req) {
     const session = await auth();
     const role = session?.user?.role;
 
-    if (!session?.user || !["admin", "teacher"].includes(role)) {
+    if (!session?.user || !["admin", "teacher", "moderator"].includes(role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

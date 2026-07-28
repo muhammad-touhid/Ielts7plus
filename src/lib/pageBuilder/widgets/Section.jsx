@@ -4,7 +4,7 @@
 import { DropZone } from "@measured/puck";
 import ImageUpload from "@/app/admin/ImageUpload";
 import { withLabel } from "../fields/withLabel";
-import { flexibleSizeField, SPACING_PRESETS, SECTION_PADDING_PRESETS, HEIGHT_PRESETS, GAP_PRESETS } from "../fields/flexibleSize";
+import { flexibleSizeField, SPACING_PRESETS, SECTION_PADDING_PRESETS, HEIGHT_PRESETS, GAP_PRESETS, CONTENT_WIDTH_PRESETS } from "../fields/flexibleSize";
 
 const COLUMN_LAYOUTS = {
   "1": { label: "1 Column", grid: "1fr" },
@@ -13,6 +13,14 @@ const COLUMN_LAYOUTS = {
   "2-wide-narrow": { label: "2 Columns (70 / 30)", grid: "7fr 3fr" },
   "3-equal": { label: "3 Columns (equal)", grid: "1fr 1fr 1fr" },
   "4-equal": { label: "4 Columns (equal)", grid: "1fr 1fr 1fr 1fr" },
+};
+
+const GRADIENT_DIRECTIONS = {
+  "to right": "to right",
+  "to bottom right": "to bottom right",
+  "to bottom": "to bottom",
+  "to bottom left": "to bottom left",
+  "to left": "to left",
 };
 
 function columnCount(key) {
@@ -52,6 +60,15 @@ export const Section = {
       label: "Background Image",
       render: withLabel(({ value, onChange }) => <ImageUpload value={value} onChange={(url) => onChange(url)} />),
     },
+    overlayType: {
+      type: "radio",
+      label: "Overlay Type",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Solid Color", value: "solid" },
+        { label: "Gradient (2 colors)", value: "gradient" },
+      ],
+    },
     overlayColor: {
       type: "select",
       label: "Overlay Color",
@@ -62,27 +79,55 @@ export const Section = {
         { label: "Dark navy", value: "#0f172a" },
       ],
     },
+    overlayColorFrom: {
+      type: "select",
+      label: "Overlay Gradient — From",
+      options: [
+        { label: "Navy (blue-900)", value: "#1e3a8a" },
+        { label: "Brand blue", value: "#354e98" },
+        { label: "Black", value: "#000000" },
+        { label: "Dark navy", value: "#0f172a" },
+      ],
+    },
+    overlayColorTo: {
+      type: "select",
+      label: "Overlay Gradient — To",
+      options: [
+        { label: "Blue (blue-700)", value: "#1d4ed8" },
+        { label: "Brand blue light", value: "#4a71df" },
+        { label: "Transparent-ish black", value: "#111827" },
+        { label: "Dark navy", value: "#0f172a" },
+      ],
+    },
+    overlayDirection: {
+      type: "select",
+      label: "Overlay Gradient Direction",
+      options: Object.keys(GRADIENT_DIRECTIONS).map((k) => ({ label: k, value: k })),
+    },
     overlayOpacity: {
       type: "select",
       label: "Overlay Opacity",
       options: [
-        { label: "None", value: "0" },
         { label: "Light (30%)", value: "0.3" },
         { label: "Medium (55%)", value: "0.55" },
         { label: "Dark (75%)", value: "0.75" },
+        { label: "Very Dark (90%)", value: "0.9" },
       ],
     },
     minHeight: flexibleSizeField("Min Height", HEIGHT_PRESETS),
-    contentWidth: {
-      type: "select",
-      label: "Content Width",
+    verticalAlign: {
+      type: "radio",
+      label: "Vertical Alignment",
+      // Only matters when Min Height makes the section taller than its
+      // content (e.g. "Full screen") — controls where content sits
+      // within that extra vertical space.
       options: [
-        { label: "Boxed — narrow", value: "max-w-3xl" },
-        { label: "Boxed — medium", value: "max-w-5xl" },
-        { label: "Boxed — wide", value: "max-w-6xl" },
-        { label: "Full width", value: "max-w-full" },
+        { label: "Top", value: "flex-start" },
+        { label: "Center", value: "center" },
+        { label: "Bottom", value: "flex-end" },
       ],
     },
+    contentWidth: flexibleSizeField("Content Width", CONTENT_WIDTH_PRESETS),
     paddingTop: flexibleSizeField("Padding Top", SECTION_PADDING_PRESETS),
     paddingBottom: flexibleSizeField("Padding Bottom", SECTION_PADDING_PRESETS),
     paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
@@ -96,10 +141,15 @@ export const Section = {
     bgType: "color",
     bgColor: "#ffffff",
     bgImage: "",
+    overlayType: "none",
     overlayColor: "#000000",
+    overlayColorFrom: "#1e3a8a",
+    overlayColorTo: "#1d4ed8",
+    overlayDirection: "to right",
     overlayOpacity: "0.5",
     minHeight: "auto",
-    contentWidth: "max-w-6xl",
+    verticalAlign: "flex-start",
+    contentWidth: "72rem",
     paddingTop: "64px",
     paddingBottom: "64px",
     paddingLeft: "24px",
@@ -113,9 +163,14 @@ export const Section = {
     bgType,
     bgColor,
     bgImage,
+    overlayType,
     overlayColor,
+    overlayColorFrom,
+    overlayColorTo,
+    overlayDirection,
     overlayOpacity,
     minHeight,
+    verticalAlign,
     contentWidth,
     paddingTop,
     paddingBottom,
@@ -127,11 +182,25 @@ export const Section = {
     const layout = COLUMN_LAYOUTS[columns] || COLUMN_LAYOUTS["1"];
     const count = columnCount(columns);
 
+    let overlayStyle = null;
+    if (bgType === "image" && bgImage && overlayType !== "none") {
+      if (overlayType === "gradient") {
+        overlayStyle = {
+          backgroundImage: `linear-gradient(${overlayDirection}, ${overlayColorFrom}, ${overlayColorTo})`,
+          opacity: parseFloat(overlayOpacity),
+        };
+      } else {
+        overlayStyle = { backgroundColor: overlayColor, opacity: parseFloat(overlayOpacity) };
+      }
+    }
+
     return (
       <section
         className={`relative ${bgType === "gradient" ? "bg-gradient-to-br from-[#354e98] to-[#4a71df]" : ""}`}
         style={{
           minHeight: minHeight === "auto" ? undefined : minHeight,
+          display: "flex",
+          alignItems: verticalAlign,
           paddingTop,
           paddingBottom,
           paddingLeft,
@@ -144,15 +213,10 @@ export const Section = {
           backgroundPosition: "center",
         }}
       >
-        {bgType === "image" && bgImage && parseFloat(overlayOpacity) > 0 && (
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: overlayColor, opacity: parseFloat(overlayOpacity) }}
-          />
-        )}
+        {overlayStyle && <div className="absolute inset-0" style={overlayStyle} />}
         <div
-          className={`relative ${contentWidth} mx-auto grid`}
-          style={{ gridTemplateColumns: layout.grid, gap: columnGap }}
+          className="relative mx-auto grid w-full"
+          style={{ maxWidth: contentWidth, gridTemplateColumns: layout.grid, gap: columnGap }}
         >
           {Array.from({ length: count }).map((_, i) => (
             <div key={i} className="min-w-0">

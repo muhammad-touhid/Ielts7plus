@@ -9,8 +9,9 @@ export default auth((req) => {
   const role = session?.user?.role;
 
   // Protect /admin routes
+  const staffRoles = ["admin", "teacher", "moderator"];
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    if (!session || role !== "admin") {
+    if (!session || !staffRoles.includes(role)) {
       return NextResponse.redirect(new URL("/admin/login", req.url));
     }
   }
@@ -27,7 +28,7 @@ export default auth((req) => {
 
   // Redirect logged-in users away from /login
   if (pathname === "/login" && session) {
-    if (role === "admin")
+    if (staffRoles.includes(role))
       return NextResponse.redirect(new URL("/admin", req.url));
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }

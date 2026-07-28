@@ -4,11 +4,23 @@
 import { DropZone } from "@measured/puck";
 import ImageUpload from "@/app/admin/ImageUpload";
 import { withLabel } from "../fields/withLabel";
-import { flexibleSizeField, SPACING_PRESETS, BLOCK_HEIGHT_PRESETS } from "../fields/flexibleSize";
+import { flexibleSizeField, SPACING_PRESETS, BLOCK_HEIGHT_PRESETS, MAX_WIDTH_PRESETS } from "../fields/flexibleSize";
 
 export const Subsection = {
   label: "Subsection (styled block)",
   fields: {
+    maxWidth: flexibleSizeField("Max Width", MAX_WIDTH_PRESETS),
+    align: {
+      type: "radio",
+      label: "Horizontal Position",
+      // Only matters when Max Width constrains this block to less than
+      // the full column — controls where it sits within that column.
+      options: [
+        { label: "Left", value: "left" },
+        { label: "Center", value: "center" },
+        { label: "Right", value: "right" },
+      ],
+    },
     bgType: {
       type: "radio",
       label: "Background Type",
@@ -50,6 +62,8 @@ export const Subsection = {
     },
   },
   defaultProps: {
+    maxWidth: "none",
+    align: "left",
     bgType: "none",
     bgColor: "#ffffff",
     bgImage: "",
@@ -63,6 +77,8 @@ export const Subsection = {
     rounded: "rounded-none",
   },
   render: ({
+    maxWidth,
+    align,
     bgType,
     bgColor,
     bgImage,
@@ -74,24 +90,35 @@ export const Subsection = {
     marginTop,
     marginBottom,
     rounded,
-  }) => (
-    <div
-      className={`${rounded} overflow-hidden h-full`}
-      style={{
-        paddingTop,
-        paddingBottom,
-        paddingLeft,
-        paddingRight,
-        marginTop,
-        marginBottom,
-        minHeight: minHeight === "auto" ? undefined : minHeight,
-        backgroundColor: bgType === "color" ? bgColor : undefined,
-        backgroundImage: bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <DropZone zone="content" />
-    </div>
-  ),
+  }) => {
+    const alignMargin =
+      align === "center"
+        ? { marginLeft: "auto", marginRight: "auto" }
+        : align === "right"
+        ? { marginLeft: "auto", marginRight: 0 }
+        : { marginLeft: 0, marginRight: "auto" }; // left
+
+    return (
+      <div
+        className={`${rounded} overflow-hidden h-full`}
+        style={{
+          maxWidth,
+          ...alignMargin,
+          paddingTop,
+          paddingBottom,
+          paddingLeft,
+          paddingRight,
+          marginTop,
+          marginBottom,
+          minHeight: minHeight === "auto" ? undefined : minHeight,
+          backgroundColor: bgType === "color" ? bgColor : undefined,
+          backgroundImage: bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <DropZone zone="content" />
+      </div>
+    );
+  },
 };

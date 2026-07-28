@@ -114,3 +114,9 @@ body {
   max-width: 100%;
   height: auto;
 }
+
+/* custom css for puck */
+
+._PuckLayout-inner_1yxlw_38 {
+  padding-bottom: 25px !important;
+}

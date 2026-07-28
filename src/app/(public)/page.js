@@ -5,6 +5,7 @@ import OurCourses from "../../components/home/OurCourses";
 import ReviewCarousel from "../../components/shared/ReviewCarousel";
 import StatsSection from "../../components/shared/StatsSection";
 import BatchCarousel from "@/components/shared/batch-schedule/BatchCarousel";
+import UpcomingEvents from "@/components/home/UpcomingEvents";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
       <Hero />
       <OurCourses />
       <BatchCarousel />
+      <UpcomingEvents />
       <HowItWorks />
       <StatsSection />
       <ReviewCarousel />

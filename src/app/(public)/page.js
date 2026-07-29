@@ -1,3 +1,4 @@
+export const revalidate = 300;
 import CTASection from "../../components/shared/CTASection";
 import Hero from "../../components/home/Hero";
 import HowItWorks from "../../components/HowItWorks";

@@ -2408,10 +2408,9 @@ export default function MockTestQuestionForm({ question }) {
         {type === "passage" && (
           <div className="flex flex-col gap-4">
             <div>
-              <label className={labelClass}>Passage Title *</label>
+              <label className={labelClass}>Passage Title (Optional)</label>
               <input
                 type="text"
-                required
                 placeholder="e.g. Emotional Intelligence"
                 value={content.title}
                 onChange={(e) =>

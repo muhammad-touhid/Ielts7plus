@@ -1,7 +1,10 @@
 // src/lib/pageBuilder/widgets/Badge.jsx
 "use client";
 
-import { flexibleSizeField, SPACING_PRESETS } from "../fields/flexibleSize";
+import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
+import { responsiveField } from "../fields/responsiveField";
+import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
+import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
 
 // Small pill/eyebrow label — "★ #1 IELTS Preparation Platform" style tags
 // often used above a hero heading.
@@ -18,36 +21,51 @@ export const Badge = {
         { label: "Solid Brand Blue", value: "solid" },
       ],
     },
-    paddingTop: flexibleSizeField("Padding Top", SPACING_PRESETS),
-    paddingBottom: flexibleSizeField("Padding Bottom", SPACING_PRESETS),
-    paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
-    paddingRight: flexibleSizeField("Padding Right", SPACING_PRESETS),
-    marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS),
-    marginBottom: flexibleSizeField("Margin Bottom", SPACING_PRESETS),
+    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    padding: spacingBoxField("Padding"),
+    margin: spacingBoxField("Margin"),
   },
   defaultProps: {
+    id: "badge-default",
     text: "★ #1 IELTS Preparation Platform",
     style: "translucent",
-    paddingTop: "8px",
-    paddingBottom: "8px",
-    paddingLeft: "20px",
-    paddingRight: "20px",
-    marginTop: "0px",
-    marginBottom: "20px",
+    blockAlign: { desktop: "left" },
+    padding: {
+      top: { desktop: "8px" },
+      right: { desktop: "20px" },
+      bottom: { desktop: "8px" },
+      left: { desktop: "20px" },
+      linked: false,
+    },
+    margin: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "20px" },
+      left: { desktop: "0px" },
+      linked: false,
+    },
   },
-  render: ({ text, style, paddingTop, paddingBottom, paddingLeft, paddingRight, marginTop, marginBottom }) => {
+  render: ({ id, text, style, blockAlign, padding, margin }) => {
+    const scopedClass = `pb-badge-${id}`;
+    const wrapClass = `${scopedClass}-wrap`;
     const styleClasses = {
       translucent: "text-white/80 bg-white/15 border border-white/20",
       light: "text-gray-600 bg-gray-100 border border-gray-200",
       solid: "text-white bg-blue-600 border border-blue-600",
     };
     return (
-      <div
-        className={`inline-block text-xs font-bold tracking-widest uppercase rounded-full ${styleClasses[style]}`}
-        style={{ paddingTop, paddingBottom, paddingLeft, paddingRight, marginTop, marginBottom }}
-      >
-        {text}
-      </div>
+      <>
+        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={[...spacingBoxToEntries("padding", padding), ...spacingBoxToEntries("margin", margin)]}
+        />
+        <div className={wrapClass}>
+          <div className={`text-xs font-bold tracking-widest uppercase rounded-full ${styleClasses[style]} ${scopedClass}`}>
+            {text}
+          </div>
+        </div>
+      </>
     );
   },
 };

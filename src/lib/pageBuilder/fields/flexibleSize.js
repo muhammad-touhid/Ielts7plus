@@ -111,3 +111,38 @@ export const CONTENT_WIDTH_PRESETS = [
   { label: "Boxed — wide (72rem / ~1152px)", value: "72rem" },
   { label: "Full width", value: "none" },
 ];
+
+// Real CSS font-size values (not Tailwind classes) — needed so size can
+// flow through the same responsive-per-device system as spacing fields.
+export const HEADING_SIZE_PRESETS = [
+  { label: "Small", value: "1.5rem" },
+  { label: "Medium", value: "1.875rem" },
+  { label: "Large", value: "2.25rem" },
+  { label: "X-Large", value: "3rem" },
+  { label: "XX-Large", value: "3.75rem" },
+];
+
+export const TEXT_SIZE_PRESETS = [
+  { label: "Small", value: "0.875rem" },
+  { label: "Base", value: "1rem" },
+  { label: "Large", value: "1.125rem" },
+  { label: "X-Large", value: "1.25rem" },
+];
+
+// Real CSS text-align keywords (not Tailwind classes), same reasoning.
+export const TEXT_ALIGN_PRESETS = [
+  { label: "Left", value: "left" },
+  { label: "Center", value: "center" },
+  { label: "Right", value: "right" },
+];
+
+// For elements like Search Bar where "full width" rarely makes sense —
+// narrower range than CONTENT_WIDTH_PRESETS, still with a Custom option
+// via responsiveField/flexibleSizeField.
+export const INLINE_WIDTH_PRESETS = [
+  { label: "Narrow (24rem / ~384px)", value: "24rem" },
+  { label: "Medium (28rem / ~448px)", value: "28rem" },
+  { label: "Wide (32rem / ~512px)", value: "32rem" },
+  { label: "X-Wide (40rem / ~640px)", value: "40rem" },
+  { label: "Full", value: "none" },
+];

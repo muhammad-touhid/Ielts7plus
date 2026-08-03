@@ -4,15 +4,22 @@
 import { DropZone } from "@measured/puck";
 import ImageUpload from "@/app/admin/ImageUpload";
 import { withLabel } from "../fields/withLabel";
-import { flexibleSizeField, SPACING_PRESETS, SECTION_PADDING_PRESETS, HEIGHT_PRESETS, GAP_PRESETS, CONTENT_WIDTH_PRESETS } from "../fields/flexibleSize";
+import { flexibleSizeField, HEIGHT_PRESETS, GAP_PRESETS, CONTENT_WIDTH_PRESETS } from "../fields/flexibleSize";
+import { responsiveField } from "../fields/responsiveField";
+import { ResponsiveStyle } from "../fields/responsiveStyle";
+import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
 
+// Each layout defines a real, literal Tailwind class string (not built
+// dynamically from a variable) so Tailwind's build-time scanner can see
+// and compile it. Every layout stacks to 1 column below the `md`
+// breakpoint and only expands to the full split on tablet/desktop.
 const COLUMN_LAYOUTS = {
-  "1": { label: "1 Column", grid: "1fr" },
-  "2-equal": { label: "2 Columns (50 / 50)", grid: "1fr 1fr" },
-  "2-narrow-wide": { label: "2 Columns (30 / 70)", grid: "3fr 7fr" },
-  "2-wide-narrow": { label: "2 Columns (70 / 30)", grid: "7fr 3fr" },
-  "3-equal": { label: "3 Columns (equal)", grid: "1fr 1fr 1fr" },
-  "4-equal": { label: "4 Columns (equal)", grid: "1fr 1fr 1fr 1fr" },
+  "1": { label: "1 Column", className: "grid-cols-1", count: 1 },
+  "2-equal": { label: "2 Columns (50 / 50)", className: "grid-cols-1 md:grid-cols-2", count: 2 },
+  "2-narrow-wide": { label: "2 Columns (30 / 70)", className: "grid-cols-1 md:grid-cols-[3fr_7fr]", count: 2 },
+  "2-wide-narrow": { label: "2 Columns (70 / 30)", className: "grid-cols-1 md:grid-cols-[7fr_3fr]", count: 2 },
+  "3-equal": { label: "3 Columns (equal)", className: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3", count: 3 },
+  "4-equal": { label: "4 Columns (equal)", className: "grid-cols-1 sm:grid-cols-2 md:grid-cols-4", count: 4 },
 };
 
 const GRADIENT_DIRECTIONS = {
@@ -23,9 +30,16 @@ const GRADIENT_DIRECTIONS = {
   "to left": "to left",
 };
 
-function columnCount(key) {
-  return COLUMN_LAYOUTS[key].grid.split(" ").length;
-}
+// Tailwind only ships a fixed set of `bg-gradient-to-*` utility classes —
+// literal strings here (not built dynamically) so the build-time scanner
+// can see and compile them, same reasoning as the column layout classes.
+const BG_GRADIENT_DIRECTION_CLASS = {
+  "to right": "bg-gradient-to-r",
+  "to bottom right": "bg-gradient-to-br",
+  "to bottom": "bg-gradient-to-b",
+  "to bottom left": "bg-gradient-to-bl",
+  "to left": "bg-gradient-to-l",
+};
 
 export const Section = {
   label: "Section",
@@ -59,6 +73,20 @@ export const Section = {
       type: "custom",
       label: "Background Image",
       render: withLabel(({ value, onChange }) => <ImageUpload value={value} onChange={(url) => onChange(url)} />),
+    },
+    bgGradientDirection: {
+      type: "select",
+      label: "Background Gradient Direction",
+      options: Object.keys(GRADIENT_DIRECTIONS).map((k) => ({ label: k, value: k })),
+    },
+    decorative: {
+      type: "radio",
+      label: "Decorative Background",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Grid Pattern", value: "grid" },
+        { label: "Grid Pattern + Blobs", value: "grid-blobs" },
+      ],
     },
     overlayType: {
       type: "radio",
@@ -118,29 +146,27 @@ export const Section = {
     verticalAlign: {
       type: "radio",
       label: "Vertical Alignment",
-      // Only matters when Min Height makes the section taller than its
-      // content (e.g. "Full screen") — controls where content sits
-      // within that extra vertical space.
       options: [
         { label: "Top", value: "flex-start" },
         { label: "Center", value: "center" },
         { label: "Bottom", value: "flex-end" },
       ],
     },
-    contentWidth: flexibleSizeField("Content Width", CONTENT_WIDTH_PRESETS),
-    paddingTop: flexibleSizeField("Padding Top", SECTION_PADDING_PRESETS),
-    paddingBottom: flexibleSizeField("Padding Bottom", SECTION_PADDING_PRESETS),
-    paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
-    paddingRight: flexibleSizeField("Padding Right", SPACING_PRESETS),
-    marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS),
-    marginBottom: flexibleSizeField("Margin Bottom", SPACING_PRESETS),
+    contentWidth: responsiveField("Content Width", CONTENT_WIDTH_PRESETS),
+    // Compact Elementor-style spacing boxes — replaces 4 separate
+    // paddingTop/Bottom/Left/Right fields with one grouped control.
+    padding: spacingBoxField("Padding"),
+    margin: spacingBoxField("Margin"),
   },
   defaultProps: {
+    id: "section-default",
     columns: "1",
     columnGap: "32px",
     bgType: "color",
     bgColor: "#ffffff",
     bgImage: "",
+    bgGradientDirection: "to bottom right",
+    decorative: "none",
     overlayType: "none",
     overlayColor: "#000000",
     overlayColorFrom: "#1e3a8a",
@@ -149,20 +175,31 @@ export const Section = {
     overlayOpacity: "0.5",
     minHeight: "auto",
     verticalAlign: "flex-start",
-    contentWidth: "72rem",
-    paddingTop: "64px",
-    paddingBottom: "64px",
-    paddingLeft: "24px",
-    paddingRight: "24px",
-    marginTop: "0px",
-    marginBottom: "0px",
+    contentWidth: { desktop: "72rem" },
+    padding: {
+      top: { desktop: "64px", tablet: "40px", mobile: "32px" },
+      right: { desktop: "24px" },
+      bottom: { desktop: "64px", tablet: "40px", mobile: "32px" },
+      left: { desktop: "24px" },
+      linked: false,
+    },
+    margin: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: false,
+    },
   },
   render: ({
+    id,
     columns,
     columnGap,
     bgType,
     bgColor,
     bgImage,
+    bgGradientDirection,
+    decorative,
     overlayType,
     overlayColor,
     overlayColorFrom,
@@ -172,15 +209,12 @@ export const Section = {
     minHeight,
     verticalAlign,
     contentWidth,
-    paddingTop,
-    paddingBottom,
-    paddingLeft,
-    paddingRight,
-    marginTop,
-    marginBottom,
+    padding,
+    margin,
   }) => {
     const layout = COLUMN_LAYOUTS[columns] || COLUMN_LAYOUTS["1"];
-    const count = columnCount(columns);
+    const count = layout.count;
+    const scopedClass = `pb-section-${id}`;
 
     let overlayStyle = null;
     if (bgType === "image" && bgImage && overlayType !== "none") {
@@ -194,30 +228,49 @@ export const Section = {
       }
     }
 
+    const gradientClass = BG_GRADIENT_DIRECTION_CLASS[bgGradientDirection] || "bg-gradient-to-br";
+
     return (
       <section
-        className={`relative ${bgType === "gradient" ? "bg-gradient-to-br from-[#354e98] to-[#4a71df]" : ""}`}
+        className={`relative ${scopedClass} ${bgType === "gradient" ? `${gradientClass} from-[#354e98] to-[#4a71df]` : ""}`}
         style={{
           minHeight: minHeight === "auto" ? undefined : minHeight,
           display: "flex",
           alignItems: verticalAlign,
-          paddingTop,
-          paddingBottom,
-          paddingLeft,
-          paddingRight,
-          marginTop,
-          marginBottom,
           backgroundColor: bgType === "color" ? bgColor : undefined,
           backgroundImage: bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={[...spacingBoxToEntries("padding", padding), ...spacingBoxToEntries("margin", margin)]}
+        />
         {overlayStyle && <div className="absolute inset-0" style={overlayStyle} />}
+
+        {(decorative === "grid" || decorative === "grid-blobs") && (
+          <div
+            className="absolute inset-0 opacity-[0.07] pointer-events-none"
+            style={{
+              backgroundImage:
+                "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+            }}
+          />
+        )}
+        {decorative === "grid-blobs" && (
+          <>
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] bg-white/5 rounded-full blur-3xl pointer-events-none" />
+          </>
+        )}
         <div
-          className="relative mx-auto grid w-full"
-          style={{ maxWidth: contentWidth, gridTemplateColumns: layout.grid, gap: columnGap }}
+          className={`relative mx-auto grid w-full ${layout.className} ${scopedClass}-content`}
+          style={{ gap: columnGap }}
         >
+          <ResponsiveStyle className={`${scopedClass}-content`} entries={[{ property: "max-width", value: contentWidth }]} />
           {Array.from({ length: count }).map((_, i) => (
             <div key={i} className="min-w-0">
               <DropZone zone={`col-${i}`} />

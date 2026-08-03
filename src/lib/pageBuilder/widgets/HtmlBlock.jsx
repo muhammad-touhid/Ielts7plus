@@ -1,7 +1,10 @@
 // src/lib/pageBuilder/widgets/HtmlBlock.jsx
 "use client";
 
-import { flexibleSizeField, SPACING_PRESETS } from "../fields/flexibleSize";
+import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
+import { responsiveField } from "../fields/responsiveField";
+import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
+import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
 
 // Escape hatch for anything the visual widgets don't cover — paste raw
 // HTML (embeds, custom markup, third-party widgets, etc). Renders via
@@ -11,26 +14,47 @@ export const HtmlBlock = {
   label: "HTML Block",
   fields: {
     html: { type: "textarea", label: "HTML Code" },
-    paddingTop: flexibleSizeField("Padding Top", SPACING_PRESETS),
-    paddingBottom: flexibleSizeField("Padding Bottom", SPACING_PRESETS),
-    paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
-    paddingRight: flexibleSizeField("Padding Right", SPACING_PRESETS),
-    marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS),
-    marginBottom: flexibleSizeField("Margin Bottom", SPACING_PRESETS),
+    // Note: Block Alignment only has a visible effect if your HTML itself
+    // sets an explicit width (e.g. a <div style="width:400px">) — a
+    // wrapper can't force positioning onto content that's already
+    // stretching to fill 100% of the available width.
+    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    padding: spacingBoxField("Padding"),
+    margin: spacingBoxField("Margin"),
   },
   defaultProps: {
+    id: "htmlblock-default",
     html: "<div style=\"padding:16px;border:1px dashed #ccc;\">Your custom HTML here</div>",
-    paddingTop: "0px",
-    paddingBottom: "0px",
-    paddingLeft: "0px",
-    paddingRight: "0px",
-    marginTop: "0px",
-    marginBottom: "0px",
+    blockAlign: { desktop: "left" },
+    padding: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: true,
+    },
+    margin: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: false,
+    },
   },
-  render: ({ html, paddingTop, paddingBottom, paddingLeft, paddingRight, marginTop, marginBottom }) => (
-    <div
-      style={{ paddingTop, paddingBottom, paddingLeft, paddingRight, marginTop, marginBottom }}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  ),
+  render: ({ id, html, blockAlign, padding, margin }) => {
+    const scopedClass = `pb-html-${id}`;
+    const wrapClass = `${scopedClass}-wrap`;
+    return (
+      <>
+        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={[...spacingBoxToEntries("padding", padding), ...spacingBoxToEntries("margin", margin)]}
+        />
+        <div className={wrapClass}>
+          <div className={scopedClass} dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
+      </>
+    );
+  },
 };

@@ -1,7 +1,11 @@
 // src/lib/pageBuilder/widgets/Heading.jsx
 "use client";
 
-import { flexibleSizeField, SPACING_PRESETS } from "../fields/flexibleSize";
+import { HEADING_SIZE_PRESETS, TEXT_ALIGN_PRESETS, MAX_WIDTH_PRESETS } from "../fields/flexibleSize";
+import { responsiveField } from "../fields/responsiveField";
+import { colorField } from "../fields/colorField";
+import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
+import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
 
 export const Heading = {
   label: "Heading",
@@ -17,36 +21,12 @@ export const Heading = {
         { label: "H4", value: "h4" },
       ],
     },
-    size: {
-      type: "select",
-      label: "Size",
-      options: [
-        { label: "Small", value: "text-xl md:text-2xl" },
-        { label: "Medium", value: "text-2xl md:text-3xl" },
-        { label: "Large", value: "text-3xl md:text-4xl" },
-        { label: "X-Large", value: "text-4xl md:text-5xl" },
-        { label: "XX-Large", value: "text-5xl md:text-6xl" },
-      ],
-    },
-    align: {
-      type: "radio",
-      label: "Alignment",
-      options: [
-        { label: "Left", value: "text-left" },
-        { label: "Center", value: "text-center" },
-        { label: "Right", value: "text-right" },
-      ],
-    },
-    color: {
-      type: "select",
-      label: "Color",
-      options: [
-        { label: "Dark", value: "#111827" },
-        { label: "White", value: "#ffffff" },
-        { label: "Brand blue", value: "#2563eb" },
-        { label: "Gray", value: "#6b7280" },
-      ],
-    },
+    color: colorField("Color", [
+      { label: "Dark", value: "#111827" },
+      { label: "White", value: "#ffffff" },
+      { label: "Brand blue", value: "#2563eb" },
+      { label: "Gray", value: "#6b7280" },
+    ]),
     weight: {
       type: "select",
       label: "Font Weight",
@@ -57,46 +37,60 @@ export const Heading = {
         { label: "Extra Bold", value: "font-extrabold" },
       ],
     },
-    paddingTop: flexibleSizeField("Padding Top", SPACING_PRESETS),
-    paddingBottom: flexibleSizeField("Padding Bottom", SPACING_PRESETS),
-    paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
-    paddingRight: flexibleSizeField("Padding Right", SPACING_PRESETS),
-    marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS),
-    marginBottom: flexibleSizeField("Margin Bottom", SPACING_PRESETS),
+    size: responsiveField("Size", HEADING_SIZE_PRESETS),
+    align: responsiveField("Text Alignment", TEXT_ALIGN_PRESETS),
+    maxWidth: responsiveField("Max Width", MAX_WIDTH_PRESETS),
+    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    padding: spacingBoxField("Padding"),
+    margin: spacingBoxField("Margin"),
   },
   defaultProps: {
+    id: "heading-default",
     text: "Your Heading Here",
     tag: "h2",
-    size: "text-3xl md:text-4xl",
-    align: "text-left",
     color: "#111827",
     weight: "font-bold",
-    paddingTop: "0px",
-    paddingBottom: "0px",
-    paddingLeft: "0px",
-    paddingRight: "0px",
-    marginTop: "0px",
-    marginBottom: "0px",
+    size: { desktop: "2.25rem", tablet: "1.875rem", mobile: "1.5rem" },
+    align: { desktop: "left" },
+    maxWidth: { desktop: "none" },
+    blockAlign: { desktop: "left" },
+    padding: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: true,
+    },
+    margin: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: false,
+    },
   },
-  render: ({
-    text,
-    tag: Tag,
-    size,
-    align,
-    color,
-    weight,
-    paddingTop,
-    paddingBottom,
-    paddingLeft,
-    paddingRight,
-    marginTop,
-    marginBottom,
-  }) => (
-    <Tag
-      className={`${size} ${align} ${weight}`}
-      style={{ color, paddingTop, paddingBottom, paddingLeft, paddingRight, marginTop, marginBottom }}
-    >
-      {text}
-    </Tag>
-  ),
+  render: ({ id, text, tag: Tag, color, weight, size, align, maxWidth, blockAlign, padding, margin }) => {
+    const scopedClass = `pb-heading-${id}`;
+    const wrapClass = `${scopedClass}-wrap`;
+    return (
+      <>
+        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={[
+            { property: "font-size", value: size },
+            { property: "text-align", value: align },
+            { property: "max-width", value: maxWidth },
+            ...spacingBoxToEntries("padding", padding),
+            ...spacingBoxToEntries("margin", margin),
+          ]}
+        />
+        <div className={wrapClass}>
+          <Tag className={`${weight} ${scopedClass}`} style={{ color, lineHeight: 1.2 }}>
+            {text}
+          </Tag>
+        </div>
+      </>
+    );
+  },
 };

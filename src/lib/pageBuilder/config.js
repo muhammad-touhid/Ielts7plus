@@ -24,6 +24,7 @@ import { Spacer } from "./widgets/Spacer";
 import { Badge } from "./widgets/Badge";
 import { SearchBar } from "./widgets/SearchBar";
 import { TagList } from "./widgets/TagList";
+import { CourseGrid } from "./widgets/CourseGrid";
 
 export const config = {
   categories: {
@@ -46,6 +47,10 @@ export const config = {
         "TagList",
       ],
     },
+    dynamic: {
+      title: "Dynamic (Live Data)",
+      components: ["CourseGrid"],
+    },
   },
   components: {
     Section,
@@ -60,5 +65,6 @@ export const config = {
     Badge,
     SearchBar,
     TagList,
+    CourseGrid,
   },
 };

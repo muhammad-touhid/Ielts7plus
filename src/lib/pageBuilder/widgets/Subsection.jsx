@@ -4,17 +4,17 @@
 import { DropZone } from "@measured/puck";
 import ImageUpload from "@/app/admin/ImageUpload";
 import { withLabel } from "../fields/withLabel";
-import { flexibleSizeField, SPACING_PRESETS, BLOCK_HEIGHT_PRESETS, MAX_WIDTH_PRESETS } from "../fields/flexibleSize";
+import { flexibleSizeField, BLOCK_HEIGHT_PRESETS, MAX_WIDTH_PRESETS } from "../fields/flexibleSize";
+import { responsiveField } from "../fields/responsiveField";
+import { ResponsiveStyle } from "../fields/responsiveStyle";
+import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
 
 export const Subsection = {
   label: "Subsection (styled block)",
   fields: {
-    maxWidth: flexibleSizeField("Max Width", MAX_WIDTH_PRESETS),
     align: {
       type: "radio",
       label: "Horizontal Position",
-      // Only matters when Max Width constrains this block to less than
-      // the full column — controls where it sits within that column.
       options: [
         { label: "Left", value: "left" },
         { label: "Center", value: "center" },
@@ -45,12 +45,6 @@ export const Subsection = {
       render: withLabel(({ value, onChange }) => <ImageUpload value={value} onChange={(url) => onChange(url)} />),
     },
     minHeight: flexibleSizeField("Min Height", BLOCK_HEIGHT_PRESETS),
-    paddingTop: flexibleSizeField("Padding Top", SPACING_PRESETS),
-    paddingBottom: flexibleSizeField("Padding Bottom", SPACING_PRESETS),
-    paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
-    paddingRight: flexibleSizeField("Padding Right", SPACING_PRESETS),
-    marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS),
-    marginBottom: flexibleSizeField("Margin Bottom", SPACING_PRESETS),
     rounded: {
       type: "radio",
       label: "Corner Rounding",
@@ -60,37 +54,36 @@ export const Subsection = {
         { label: "Large", value: "rounded-2xl" },
       ],
     },
+    maxWidth: responsiveField("Max Width", MAX_WIDTH_PRESETS),
+    padding: spacingBoxField("Padding"),
+    margin: spacingBoxField("Margin"),
   },
   defaultProps: {
-    maxWidth: "none",
+    id: "subsection-default",
     align: "left",
     bgType: "none",
     bgColor: "#ffffff",
     bgImage: "",
     minHeight: "auto",
-    paddingTop: "16px",
-    paddingBottom: "16px",
-    paddingLeft: "16px",
-    paddingRight: "16px",
-    marginTop: "0px",
-    marginBottom: "0px",
     rounded: "rounded-none",
+    maxWidth: { desktop: "none" },
+    padding: {
+      top: { desktop: "16px" },
+      right: { desktop: "16px" },
+      bottom: { desktop: "16px" },
+      left: { desktop: "16px" },
+      linked: true,
+    },
+    margin: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: false,
+    },
   },
-  render: ({
-    maxWidth,
-    align,
-    bgType,
-    bgColor,
-    bgImage,
-    minHeight,
-    paddingTop,
-    paddingBottom,
-    paddingLeft,
-    paddingRight,
-    marginTop,
-    marginBottom,
-    rounded,
-  }) => {
+  render: ({ id, align, bgType, bgColor, bgImage, minHeight, rounded, maxWidth, padding, margin }) => {
+    const scopedClass = `pb-subsection-${id}`;
     const alignMargin =
       align === "center"
         ? { marginLeft: "auto", marginRight: "auto" }
@@ -100,16 +93,9 @@ export const Subsection = {
 
     return (
       <div
-        className={`${rounded} overflow-hidden h-full`}
+        className={`${rounded} overflow-hidden h-full ${scopedClass}`}
         style={{
-          maxWidth,
           ...alignMargin,
-          paddingTop,
-          paddingBottom,
-          paddingLeft,
-          paddingRight,
-          marginTop,
-          marginBottom,
           minHeight: minHeight === "auto" ? undefined : minHeight,
           backgroundColor: bgType === "color" ? bgColor : undefined,
           backgroundImage: bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
@@ -117,6 +103,14 @@ export const Subsection = {
           backgroundPosition: "center",
         }}
       >
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={[
+            { property: "max-width", value: maxWidth },
+            ...spacingBoxToEntries("padding", padding),
+            ...spacingBoxToEntries("margin", margin),
+          ]}
+        />
         <DropZone zone="content" />
       </div>
     );

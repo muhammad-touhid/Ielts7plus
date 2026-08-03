@@ -1,89 +1,75 @@
 // src/lib/pageBuilder/widgets/Text.jsx
 "use client";
 
-import { flexibleSizeField, SPACING_PRESETS } from "../fields/flexibleSize";
+import { TEXT_SIZE_PRESETS, TEXT_ALIGN_PRESETS, MAX_WIDTH_PRESETS } from "../fields/flexibleSize";
+import { responsiveField } from "../fields/responsiveField";
+import { colorField } from "../fields/colorField";
+import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
+import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
 
 export const Text = {
   label: "Text",
   fields: {
     text: { type: "textarea", label: "Text" },
-    size: {
-      type: "select",
-      label: "Size",
-      options: [
-        { label: "Small", value: "text-sm" },
-        { label: "Base", value: "text-base" },
-        { label: "Large", value: "text-lg" },
-        { label: "X-Large", value: "text-xl" },
-      ],
-    },
-    align: {
-      type: "radio",
-      label: "Alignment",
-      options: [
-        { label: "Left", value: "text-left" },
-        { label: "Center", value: "text-center" },
-        { label: "Right", value: "text-right" },
-      ],
-    },
-    color: {
-      type: "select",
-      label: "Color",
-      options: [
-        { label: "Gray (default)", value: "#4b5563" },
-        { label: "Dark", value: "#111827" },
-        { label: "White", value: "#ffffff" },
-        { label: "Brand blue", value: "#2563eb" },
-      ],
-    },
-    maxWidth: {
-      type: "select",
-      label: "Max Width",
-      options: [
-        { label: "None", value: "max-w-none" },
-        { label: "Narrow", value: "max-w-md" },
-        { label: "Medium", value: "max-w-2xl" },
-        { label: "Wide", value: "max-w-4xl" },
-      ],
-    },
-    paddingTop: flexibleSizeField("Padding Top", SPACING_PRESETS),
-    paddingBottom: flexibleSizeField("Padding Bottom", SPACING_PRESETS),
-    paddingLeft: flexibleSizeField("Padding Left", SPACING_PRESETS),
-    paddingRight: flexibleSizeField("Padding Right", SPACING_PRESETS),
-    marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS),
-    marginBottom: flexibleSizeField("Margin Bottom", SPACING_PRESETS),
+    color: colorField("Color", [
+      { label: "Gray (default)", value: "#4b5563" },
+      { label: "Dark", value: "#111827" },
+      { label: "White", value: "#ffffff" },
+      { label: "Brand blue", value: "#2563eb" },
+      { label: "Blue-100 (light, for gradients)", value: "#dbeafe" },
+    ]),
+    size: responsiveField("Size", TEXT_SIZE_PRESETS),
+    align: responsiveField("Text Alignment", TEXT_ALIGN_PRESETS),
+    maxWidth: responsiveField("Max Width", MAX_WIDTH_PRESETS),
+    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    padding: spacingBoxField("Padding"),
+    margin: spacingBoxField("Margin"),
   },
   defaultProps: {
+    id: "text-default",
     text: "Write your paragraph content here.",
-    size: "text-base",
-    align: "text-left",
     color: "#4b5563",
-    maxWidth: "max-w-none",
-    paddingTop: "0px",
-    paddingBottom: "0px",
-    paddingLeft: "0px",
-    paddingRight: "0px",
-    marginTop: "0px",
-    marginBottom: "0px",
+    size: { desktop: "1rem" },
+    align: { desktop: "left" },
+    maxWidth: { desktop: "none" },
+    blockAlign: { desktop: "left" },
+    padding: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: true,
+    },
+    margin: {
+      top: { desktop: "0px" },
+      right: { desktop: "0px" },
+      bottom: { desktop: "0px" },
+      left: { desktop: "0px" },
+      linked: false,
+    },
   },
-  render: ({
-    text,
-    size,
-    align,
-    color,
-    maxWidth,
-    paddingTop,
-    paddingBottom,
-    paddingLeft,
-    paddingRight,
-    marginTop,
-    marginBottom,
-  }) => (
-    <p
-      className={`${size} ${align} ${maxWidth} leading-relaxed`}
-      style={{ color, paddingTop, paddingBottom, paddingLeft, paddingRight, marginTop, marginBottom }}
-    >
-      {text}
-    </p>
-  ),
+  render: ({ id, text, color, size, align, maxWidth, blockAlign, padding, margin }) => {
+    const scopedClass = `pb-text-${id}`;
+    const wrapClass = `${scopedClass}-wrap`;
+    return (
+      <>
+        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={[
+            { property: "font-size", value: size },
+            { property: "text-align", value: align },
+            { property: "max-width", value: maxWidth },
+            ...spacingBoxToEntries("padding", padding),
+            ...spacingBoxToEntries("margin", margin),
+          ]}
+        />
+        <div className={wrapClass}>
+          <p className={`leading-relaxed ${scopedClass}`} style={{ color }}>
+            {text}
+          </p>
+        </div>
+      </>
+    );
+  },
 };

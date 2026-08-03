@@ -10,6 +10,7 @@ import { config } from "@/lib/pageBuilder/config";
 import TemplatesSection from "./TemplatesSection";
 import CollapsibleSection from "./CollapsibleSection";
 import HeaderActions from "./HeaderActions";
+import { PUCK_VIEWPORTS } from "@/lib/pageBuilder/fields/breakpoints";
 
 export default function PuckEditorClient({ page }) {
   const router = useRouter();
@@ -18,8 +19,7 @@ export default function PuckEditorClient({ page }) {
 
   // Resume editing wherever you left off: prefer the pending draft if one
   // exists, otherwise start from the live published content.
-  const initialContent = page.draftData ||
-    page.data || { content: [], root: {}, zones: {} };
+  const initialContent = page.draftData || page.data || { content: [], root: {}, zones: {} };
   const [pageData, setPageData] = useState(initialContent);
 
   // Forces <Puck> to fully remount, which is how it picks up `pageData`
@@ -77,15 +77,10 @@ export default function PuckEditorClient({ page }) {
     <div className="h-screen flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/pages"
-            className="text-sm text-gray-500 hover:text-gray-800"
-          >
+          <Link href="/admin/pages" className="text-sm text-gray-500 hover:text-gray-800">
             ← All Pages
           </Link>
-          <span className="text-sm font-medium text-gray-900">
-            {page.title}
-          </span>
+          <span className="text-sm font-medium text-gray-900">{page.title}</span>
           {page.draftData && status === "published" && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
               Draft changes pending
@@ -100,6 +95,7 @@ export default function PuckEditorClient({ page }) {
           config={config}
           data={pageData}
           onChange={handleChange}
+          viewports={PUCK_VIEWPORTS}
           overrides={{
             // Consolidates everything into Puck's ONE native left sidebar:
             // Templates (custom, top) + Elements (Puck's own drag

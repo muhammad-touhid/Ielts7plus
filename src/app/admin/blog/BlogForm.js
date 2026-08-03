@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "react-quill-new/dist/quill.snow.css";
 import ImageUpload from "../ImageUpload";
+import { QuillEditor } from "@/components/QuillEditor";
 
 export default function BlogForm({ post }) {
   const isEdit = !!post;
@@ -172,6 +173,7 @@ export default function BlogForm({ post }) {
         <QuillEditor
           value={form.content}
           onChange={(val) => setForm({ ...form, content: val })}
+          placeholder={"Write your blog post content here..."}
         />
       </div>
 
@@ -216,61 +218,5 @@ export default function BlogForm({ post }) {
         </button>
       </div>
     </form>
-  );
-}
-
-// Separate client component for Quill to avoid SSR
-function QuillEditor({ value, onChange }) {
-  const [mounted, setMounted] = useState(false);
-  const [ReactQuill, setReactQuill] = useState(null);
-
-  useEffect(() => {
-    import("react-quill-new").then((mod) => {
-      setReactQuill(() => mod.default);
-      setMounted(true);
-    });
-  }, []);
-
-  if (!mounted || !ReactQuill) {
-    return (
-      <div className="h-64 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center">
-        <p className="text-xs text-slate-400">Loading editor...</p>
-      </div>
-    );
-  }
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["blockquote", "code-block"],
-      ["link"],
-      ["clean"],
-    ],
-  };
-
-  return (
-    <div className="quill-wrapper">
-      <ReactQuill
-        theme="snow"
-        value={value}
-        onChange={onChange}
-        modules={modules}
-        placeholder="Write your blog post content here..."
-        style={{ minHeight: "300px" }}
-      />
-      <style>{`
-      .quill-wrapper .ql-editor {
-        min-height: 200px;
-        color: #1e293b !important;
-        line-height: 1.7;
-      }
-      .quill-wrapper .ql-editor.ql-blank::before {
-        color: #94a3b8;
-        font-style: normal;
-      }
-    `}</style>
-    </div>
   );
 }

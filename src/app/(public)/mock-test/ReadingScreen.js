@@ -661,7 +661,7 @@ export default function ReadingScreen({
 
   const currentSection = sections.find((s) => s.num === activeSection);
   let qNum = sectionStartNumbers[activeSection];
-
+  const [previewImage, setPreviewImage] = useState(null);
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -719,10 +719,42 @@ export default function ReadingScreen({
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
               Reading Passage
             </h3>
-            <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-              {currentSection.passage?.content?.passage ??
-                "Passage not available."}
-            </div>
+            <div
+              className=" prose  prose-slate  max-w-none text-sm leading-8 [&_img]:rounded-lg [&_img]:my-6 [&_img]:cursor-zoom-in"
+              onClick={(e) => {
+                if (e.target.tagName === "IMG") {
+                  setPreviewImage(e.target.src);
+                }
+              }}
+              dangerouslySetInnerHTML={{
+                __html: currentSection.passage?.content?.passage || "",
+              }}
+            />
+            {previewImage && (
+              <div
+                className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+                onClick={() => setPreviewImage(null)}
+              >
+                <div className="relative">
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setPreviewImage(null)}
+                    className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-white text-slate-700 text-2xl font-bold flex items-center justify-center shadow-lg hover:bg-slate-100 transition cursor-pointer
+                    "
+                  >
+                    ×
+                  </button>
+
+                  {/* Image */}
+                  <img
+                    src={previewImage}
+                    alt="Preview"
+                    className=" max-h-[80vh] rounded-lg object-contain max-w-[80vw]"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Questions */}

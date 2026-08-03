@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ImageUpload from "../ImageUpload";
 import AudioUpload from "../AudioUpload";
+import { QuillEditor } from "@/components/QuillEditor";
 
 const moduleTypes = {
   listening: [
@@ -20,6 +21,7 @@ const moduleTypes = {
     "passage",
     "mcq",
     "multi-select",
+    "short-answer",
     "form-completion",
     "true-false-ng",
     "yes-no-ng",
@@ -2421,15 +2423,15 @@ export default function MockTestQuestionForm({ question }) {
             </div>
             <div>
               <label className={labelClass}>Passage Text *</label>
-              <textarea
-                required
-                rows={10}
-                placeholder="Enter the full reading passage..."
+              <QuillEditor
                 value={content.passage}
-                onChange={(e) =>
-                  setContent((c) => ({ ...c, passage: e.target.value }))
+                onChange={(value) =>
+                  setContent((c) => ({
+                    ...c,
+                    passage: value,
+                  }))
                 }
-                className={`${inputClass} resize-none`}
+                placeholder="Write your passage here..."
               />
             </div>
           </div>

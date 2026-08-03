@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import "react-quill-new/dist/quill.snow.css";
 import ImageUpload from "../ImageUpload";
+import { QuillEditor } from "@/components/QuillEditor";
 
 export default function EventForm({ event }) {
   const isEdit = !!event;
@@ -127,6 +127,7 @@ export default function EventForm({ event }) {
           <QuillEditor
             value={form.para}
             onChange={(val) => setForm((f) => ({ ...f, para: val }))}
+            placeholder={"Write a description of the event..."}
           />
         </div>
 
@@ -183,60 +184,5 @@ export default function EventForm({ event }) {
         </button>
       </div>
     </form>
-  );
-}
-
-// Same Quill pattern as BlogForm
-function QuillEditor({ value, onChange }) {
-  const [mounted, setMounted] = useState(false);
-  const [ReactQuill, setReactQuill] = useState(null);
-
-  useEffect(() => {
-    import("react-quill-new").then((mod) => {
-      setReactQuill(() => mod.default);
-      setMounted(true);
-    });
-  }, []);
-
-  if (!mounted || !ReactQuill) {
-    return (
-      <div className="h-48 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center">
-        <p className="text-xs text-slate-400">Loading editor...</p>
-      </div>
-    );
-  }
-
-  const modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["blockquote", "link"],
-      ["clean"],
-    ],
-  };
-
-  return (
-    <div className="quill-wrapper">
-      <ReactQuill
-        theme="snow"
-        value={value}
-        onChange={onChange}
-        modules={modules}
-        placeholder="Write a description of the event..."
-        style={{ minHeight: "200px" }}
-      />
-      <style>{`
-      .quill-wrapper .ql-editor {
-        min-height: 200px;
-        color: #1e293b !important;
-        line-height: 1.7;
-      }
-      .quill-wrapper .ql-editor.ql-blank::before {
-        color: #94a3b8;
-        font-style: normal;
-      }
-    `}</style>
-    </div>
   );
 }

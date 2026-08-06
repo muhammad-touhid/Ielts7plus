@@ -3,10 +3,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TEXT_ALIGN_PRESETS, INLINE_WIDTH_PRESETS } from "../fields/flexibleSize";
+import {
+  TEXT_ALIGN_PRESETS,
+  INLINE_WIDTH_PRESETS,
+} from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
-import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
-import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
+import {
+  borderFieldSet,
+  borderDefaultProps,
+  borderToEntries,
+} from "../fields/borderFields";
+import {
+  ResponsiveStyle,
+  alignToJustifyEntries,
+} from "../fields/responsiveStyle";
+import {
+  spacingBoxField,
+  spacingBoxToEntries,
+} from "../fields/spacingBoxField";
+import {
+  hoverFieldSet,
+  hoverDefaultProps,
+  buildHoverCss,
+} from "../fields/hoverField";
+import { useThemeColors } from "../theme/ThemeColorsContext";
 
 export const SearchBar = {
   label: "Search Bar",
@@ -14,13 +34,14 @@ export const SearchBar = {
     placeholder: { type: "text", label: "Placeholder Text" },
     buttonText: { type: "text", label: "Button Text" },
     searchPath: { type: "text", label: "Search Results Path (e.g. /search)" },
-    // --- Responsive fields ---
-    // Rebuilt on the same responsiveField system as everything else
-    // (was previously a plain fixed-class select that wasn't reliably
-    // reflecting the selected width) — now has a working Custom... option too.
     width: responsiveField("Width", INLINE_WIDTH_PRESETS),
-    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    blockAlign: responsiveField(
+      "Block Alignment (position within column)",
+      TEXT_ALIGN_PRESETS,
+    ),
     margin: spacingBoxField("Margin"),
+    ...borderFieldSet(),
+    ...hoverFieldSet(),
   },
   defaultProps: {
     id: "searchbar-default",
@@ -30,18 +51,72 @@ export const SearchBar = {
     width: { desktop: "32rem" },
     blockAlign: { desktop: "left" },
     margin: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "20px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "20" },
+      left: { desktop: "0" },
       linked: false,
+      unit: "px",
     },
+    ...borderDefaultProps(),
+    borderRadius: {
+      topLeft: { desktop: "12px" },
+      topRight: { desktop: "12px" },
+      bottomRight: { desktop: "12px" },
+      bottomLeft: { desktop: "12px" },
+      linked: true,
+    },
+    ...hoverDefaultProps(),
   },
-  render: function SearchBarRender({ id, placeholder, buttonText, searchPath, width, blockAlign, margin }) {
+  render: function SearchBarRender({
+    id,
+    placeholder,
+    buttonText,
+    searchPath,
+    width,
+    blockAlign,
+    margin,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    borderRadius,
+    hoverEnabled,
+    hoverBgColor,
+    hoverTextColor,
+    hoverBorderColor,
+    hoverOpacity,
+    hoverScale,
+    hoverTranslateX,
+    hoverTranslateY,
+    hoverRotate,
+    hoverShadow,
+    hoverGrayscaleToColor,
+    hoverTransitionMs,
+  }) {
     const router = useRouter();
+    const { themeColors } = useThemeColors();
     const [query, setQuery] = useState("");
     const scopedClass = `pb-searchbar-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
+
+    const hoverCss = buildHoverCss(
+      scopedClass,
+      {
+        hoverEnabled,
+        hoverBgColor,
+        hoverTextColor,
+        hoverBorderColor,
+        hoverOpacity,
+        hoverScale,
+        hoverTranslateX,
+        hoverTranslateY,
+        hoverRotate,
+        hoverShadow,
+        hoverGrayscaleToColor,
+        hoverTransitionMs,
+      },
+      themeColors,
+    );
 
     function handleSubmit(e) {
       e.preventDefault();
@@ -50,17 +125,35 @@ export const SearchBar = {
 
     return (
       <>
-        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={wrapClass}
+          entries={alignToJustifyEntries(blockAlign)}
+        />
         <ResponsiveStyle
           className={scopedClass}
-          entries={[{ property: "max-width", value: width }, ...spacingBoxToEntries("margin", margin)]}
+          entries={[
+            { property: "max-width", value: width },
+            ...spacingBoxToEntries("margin", margin),
+            ...borderToEntries({
+              borderWidth,
+              borderStyle,
+              borderColor,
+              borderRadius,
+            }),
+          ]}
         />
+        {hoverCss && <style>{hoverCss}</style>}
         <div className={wrapClass}>
           <form
             onSubmit={handleSubmit}
-            className={`flex items-center rounded-xl bg-white px-4 py-2 w-full ${scopedClass}`}
+            className={`flex items-center bg-white px-4 py-2 w-full ${scopedClass}`}
           >
-            <svg className="mr-3 h-5 w-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="mr-3 h-5 w-5 text-gray-400 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

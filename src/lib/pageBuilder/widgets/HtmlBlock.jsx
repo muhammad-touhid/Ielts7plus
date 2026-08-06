@@ -3,56 +3,133 @@
 
 import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
-import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
-import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
+import {
+  borderFieldSet,
+  borderDefaultProps,
+  borderToEntries,
+} from "../fields/borderFields";
+import {
+  ResponsiveStyle,
+  alignToJustifyEntries,
+} from "../fields/responsiveStyle";
+import {
+  spacingBoxField,
+  spacingBoxToEntries,
+} from "../fields/spacingBoxField";
+import {
+  hoverFieldSet,
+  hoverDefaultProps,
+  buildHoverCss,
+} from "../fields/hoverField";
+import { useThemeColors } from "../theme/ThemeColorsContext";
 
-// Escape hatch for anything the visual widgets don't cover — paste raw
-// HTML (embeds, custom markup, third-party widgets, etc). Renders via
-// dangerouslySetInnerHTML, so only use this with HTML you trust; it's an
-// admin-only tool, not user-submitted content.
 export const HtmlBlock = {
   label: "HTML Block",
   fields: {
     html: { type: "textarea", label: "HTML Code" },
-    // Note: Block Alignment only has a visible effect if your HTML itself
-    // sets an explicit width (e.g. a <div style="width:400px">) — a
-    // wrapper can't force positioning onto content that's already
-    // stretching to fill 100% of the available width.
-    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    blockAlign: responsiveField(
+      "Block Alignment (position within column)",
+      TEXT_ALIGN_PRESETS,
+    ),
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
+    ...borderFieldSet(),
+    ...hoverFieldSet(),
   },
   defaultProps: {
     id: "htmlblock-default",
-    html: "<div style=\"padding:16px;border:1px dashed #ccc;\">Your custom HTML here</div>",
+    html: '<div style="padding:16px;border:1px dashed #ccc;">Your custom HTML here</div>',
     blockAlign: { desktop: "left" },
     padding: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "0px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0" },
+      left: { desktop: "0" },
       linked: true,
+      unit: "px",
     },
     margin: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "0px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0" },
+      left: { desktop: "0" },
       linked: false,
+      unit: "px",
     },
+    ...borderDefaultProps(),
+    ...hoverDefaultProps(),
   },
-  render: ({ id, html, blockAlign, padding, margin }) => {
+  render: ({
+    id,
+    html,
+    blockAlign,
+    padding,
+    margin,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    borderRadius,
+    hoverEnabled,
+    hoverBgColor,
+    hoverTextColor,
+    hoverBorderColor,
+    hoverOpacity,
+    hoverScale,
+    hoverTranslateX,
+    hoverTranslateY,
+    hoverRotate,
+    hoverShadow,
+    hoverGrayscaleToColor,
+    hoverTransitionMs,
+  }) => {
+    const { themeColors } = useThemeColors();
     const scopedClass = `pb-html-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
+
+    const hoverCss = buildHoverCss(
+      scopedClass,
+      {
+        hoverEnabled,
+        hoverBgColor,
+        hoverTextColor,
+        hoverBorderColor,
+        hoverOpacity,
+        hoverScale,
+        hoverTranslateX,
+        hoverTranslateY,
+        hoverRotate,
+        hoverShadow,
+        hoverGrayscaleToColor,
+        hoverTransitionMs,
+      },
+      themeColors,
+    );
+
     return (
       <>
-        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={wrapClass}
+          entries={alignToJustifyEntries(blockAlign)}
+        />
         <ResponsiveStyle
           className={scopedClass}
-          entries={[...spacingBoxToEntries("padding", padding), ...spacingBoxToEntries("margin", margin)]}
+          entries={[
+            ...spacingBoxToEntries("padding", padding),
+            ...spacingBoxToEntries("margin", margin),
+            ...borderToEntries({
+              borderWidth,
+              borderStyle,
+              borderColor,
+              borderRadius,
+            }),
+          ]}
         />
+        {hoverCss && <style>{hoverCss}</style>}
         <div className={wrapClass}>
-          <div className={scopedClass} dangerouslySetInnerHTML={{ __html: html }} />
+          <div
+            className={scopedClass}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
         </div>
       </>
     );

@@ -43,9 +43,14 @@ export default function NewPageForm() {
   }
 
   return (
-    <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+    <form
+      onSubmit={handleCreate}
+      className="flex flex-wrap items-end gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200"
+    >
       <div className="flex-1 min-w-[180px]">
-        <label className="block text-xs font-medium text-gray-600 mb-1">Page title</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">
+          Page title
+        </label>
         <input
           value={title}
           onChange={(e) => {
@@ -58,7 +63,9 @@ export default function NewPageForm() {
         />
       </div>
       <div className="flex-1 min-w-[180px]">
-        <label className="block text-xs font-medium text-gray-600 mb-1">URL slug</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">
+          URL slug
+        </label>
         <input
           value={slug}
           onChange={(e) => setSlug(slugify(e.target.value))}

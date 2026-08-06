@@ -5,18 +5,19 @@ import { usePuck } from "@measured/puck";
 import { withLabel } from "./withLabel";
 import { getActiveDevice, DEVICE_LABELS } from "./breakpoints";
 
+const UNITS = ["px", "rem", "%"];
+
 // Value shape:
 //   {
-//     top:    { desktop: "64px", mobile: "32px" },
-//     right:  { desktop: "24px" },
-//     bottom: { desktop: "64px" },
-//     left:   { desktop: "24px" },
-//     linked: false
+//     top:    { desktop: "64", mobile: "32" },
+//     right:  { desktop: "24" },
+//     bottom: { desktop: "64" },
+//     left:   { desktop: "24" },
+//     linked: false,
+//     unit: "px"
 //   }
-// Each side is itself a responsive value (same per-device shape as
-// responsiveField), and `linked` is a plain UI toggle (not per-device) —
-// when on, typing into any one side sets all four at once, same as
-// Elementor's chain-link icon.
+// Sides store plain numbers (no unit baked in) — `unit` is a single
+// box-wide setting, converted to real CSS values in spacingBoxToEntries.
 
 function readSide(obj, side, device) {
   const v = obj?.[side]?.[device];
@@ -48,37 +49,79 @@ export function spacingBoxField(label) {
       const obj =
         value && typeof value === "object"
           ? value
-          : { top: {}, right: {}, bottom: {}, left: {}, linked: false };
+          : {
+              top: {},
+              right: {},
+              bottom: {},
+              left: {},
+              linked: false,
+              unit: "px",
+            };
       const linked = !!obj.linked;
+      const unit = obj.unit || "px";
 
       function handleBlur(side, e) {
         const val = e.target.value.trim();
-        const next = linked ? writeAllSides(obj, device, val) : writeSide(obj, side, device, val);
+        const next = linked
+          ? writeAllSides(obj, device, val)
+          : writeSide(obj, side, device, val);
         onChange(next);
       }
 
-      function toggleLink() {
+      function toggleLink(e) {
+        e.stopPropagation();
         onChange({ ...obj, linked: !linked });
       }
 
-      const cell = "w-full border border-gray-300 rounded px-1 py-1 text-xs text-center bg-white";
+      function handleUnitChange(e) {
+        onChange({ ...obj, unit: e.target.value });
+      }
+
+      const cell =
+        "w-full border border-gray-300 rounded px-1 py-1 text-xs text-center bg-white";
+
+      // Keying off the side's own current value (not just device) forces
+      // the uncontrolled input to remount — and pick up its new
+      // defaultValue — exactly when linked-writes change it elsewhere.
+      const sideKey = (side) =>
+        `${side}-${device}-${readSide(obj, side, device)}`;
 
       return (
         <div className="border border-gray-200 rounded-md p-2 bg-gray-50/60">
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-1.5 gap-2">
             <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">
               {DEVICE_LABELS[device]}
             </span>
-            <button
-              type="button"
-              onClick={toggleLink}
-              title={linked ? "Sides linked — click to unlink" : "Sides unlinked — click to link"}
-              className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                linked ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-500 border-gray-300"
-              }`}
-            >
-              {linked ? "🔗 Linked" : "⛓️‍💥 Unlinked"}
-            </button>
+            <div className="flex items-center gap-1">
+              <select
+                value={unit}
+                onChange={handleUnitChange}
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] border border-gray-300 rounded px-1 py-0.5 bg-white"
+              >
+                {UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={toggleLink}
+                title={
+                  linked
+                    ? "Sides linked — click to unlink"
+                    : "Sides unlinked — click to link"
+                }
+                className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                  linked
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-500 border-gray-300"
+                }`}
+              >
+                {linked ? "🔗 Linked" : "⛓️‍💥 Unlinked"}
+              </button>
+            </div>
           </div>
 
           <div
@@ -94,7 +137,7 @@ export function spacingBoxField(label) {
                 placeholder="Top"
                 defaultValue={readSide(obj, "top", device)}
                 onBlur={(e) => handleBlur("top", e)}
-                key={`top-${device}`}
+                key={sideKey("top")}
               />
             </div>
             <div style={{ gridArea: "left" }}>
@@ -103,10 +146,13 @@ export function spacingBoxField(label) {
                 placeholder="Left"
                 defaultValue={readSide(obj, "left", device)}
                 onBlur={(e) => handleBlur("left", e)}
-                key={`left-${device}`}
+                key={sideKey("left")}
               />
             </div>
-            <div style={{ gridArea: "mid" }} className="text-center text-gray-300 text-base select-none">
+            <div
+              style={{ gridArea: "mid" }}
+              className="text-center text-gray-300 text-base select-none"
+            >
               ▦
             </div>
             <div style={{ gridArea: "right" }}>
@@ -115,7 +161,7 @@ export function spacingBoxField(label) {
                 placeholder="Right"
                 defaultValue={readSide(obj, "right", device)}
                 onBlur={(e) => handleBlur("right", e)}
-                key={`right-${device}`}
+                key={sideKey("right")}
               />
             </div>
             <div style={{ gridArea: "bottom" }}>
@@ -124,13 +170,15 @@ export function spacingBoxField(label) {
                 placeholder="Bottom"
                 defaultValue={readSide(obj, "bottom", device)}
                 onBlur={(e) => handleBlur("bottom", e)}
-                key={`bottom-${device}`}
+                key={sideKey("bottom")}
               />
             </div>
           </div>
 
           {!isDesktop && (
-            <div className="text-[10px] text-gray-400 italic mt-1">Blank = inherits a larger breakpoint</div>
+            <div className="text-[10px] text-gray-400 italic mt-1">
+              Blank = inherits a larger breakpoint
+            </div>
           )}
         </div>
       );
@@ -138,15 +186,28 @@ export function spacingBoxField(label) {
   };
 }
 
+function withUnit(perDeviceObj, unit) {
+  if (!perDeviceObj) return perDeviceObj;
+  const out = {};
+  Object.entries(perDeviceObj).forEach(([device, val]) => {
+    if (val === "" || val === undefined || val === null) return;
+    const isNumeric = /^-?\d+(\.\d+)?$/.test(String(val).trim());
+    out[device] = isNumeric ? `${val}${unit}` : val; // lets "auto"/"0" pass through untouched
+  });
+  return out;
+}
+
 // Converts a spacingBoxField value into the 4 entries buildResponsiveCSS
 // expects, prefixed with whatever CSS property base you need
-// ("padding" or "margin").
+// ("padding" or "margin"). Applies the box's chosen unit here so every
+// consumer keeps working without changes.
 export function spacingBoxToEntries(prefix, value) {
   if (!value) return [];
+  const unit = value.unit || "px";
   return [
-    { property: `${prefix}-top`, value: value.top },
-    { property: `${prefix}-right`, value: value.right },
-    { property: `${prefix}-bottom`, value: value.bottom },
-    { property: `${prefix}-left`, value: value.left },
+    { property: `${prefix}-top`, value: withUnit(value.top, unit) },
+    { property: `${prefix}-right`, value: withUnit(value.right, unit) },
+    { property: `${prefix}-bottom`, value: withUnit(value.bottom, unit) },
+    { property: `${prefix}-left`, value: withUnit(value.left, unit) },
   ];
 }

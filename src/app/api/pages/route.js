@@ -19,12 +19,18 @@ export async function POST(req) {
   const { title, slug } = body;
 
   if (!title || !slug) {
-    return NextResponse.json({ error: "title and slug are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "title and slug are required" },
+      { status: 400 },
+    );
   }
 
   const existing = await prisma.page.findUnique({ where: { slug } });
   if (existing) {
-    return NextResponse.json({ error: "A page with this slug already exists" }, { status: 409 });
+    return NextResponse.json(
+      { error: "A page with this slug already exists" },
+      { status: 409 },
+    );
   }
 
   const page = await prisma.page.create({

@@ -80,6 +80,11 @@ const navItems = [
     icon: "ti ti-mail",
     href: "/admin/contacts",
   },
+  {
+    label: "Site Theme",
+    icon: "ti ti-mail",
+    href: "/admin/site-theme",
+  },
 ];
 
 function NavItem({ item, role, onClick, collapsed }) {
@@ -199,14 +204,21 @@ function AdminPanel({ children }) {
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
           {navItems.map((item) => (
-            <NavItem key={item.href} item={item} role={role} collapsed={collapsed} />
+            <NavItem
+              key={item.href}
+              item={item}
+              role={role}
+              collapsed={collapsed}
+            />
           ))}
         </nav>
 
         {/* Bottom — show role badge + sign out */}
         <div className="px-3 py-4 border-t border-slate-100 flex flex-col gap-2">
           {session?.user && (
-            <div className={`px-4 py-3 flex items-center gap-3 ${collapsed ? "justify-center px-0" : ""}`}>
+            <div
+              className={`px-4 py-3 flex items-center gap-3 ${collapsed ? "justify-center px-0" : ""}`}
+            >
               <div
                 title={collapsed ? session.user.name : undefined}
                 className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0"
@@ -324,7 +336,9 @@ function AdminPanel({ children }) {
       </aside>
 
       {/* Main content */}
-      <div className={`flex-1 ${contentMarginClass} flex flex-col min-h-screen transition-all duration-200`}>
+      <div
+        className={`flex-1 ${contentMarginClass} flex flex-col min-h-screen transition-all duration-200`}
+      >
         {/* Top bar */}
         <header className="bg-white border-b border-slate-100 px-5 py-4 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">

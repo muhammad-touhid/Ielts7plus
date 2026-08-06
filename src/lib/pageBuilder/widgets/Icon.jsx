@@ -3,9 +3,26 @@
 
 import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
-import { colorField } from "../fields/colorField";
-import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
-import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
+import { colorField, resolveColor } from "../fields/colorField";
+import {
+  borderFieldSet,
+  borderDefaultProps,
+  borderToEntries,
+} from "../fields/borderFields";
+import {
+  ResponsiveStyle,
+  alignToJustifyEntries,
+} from "../fields/responsiveStyle";
+import {
+  spacingBoxField,
+  spacingBoxToEntries,
+} from "../fields/spacingBoxField";
+import {
+  hoverFieldSet,
+  hoverDefaultProps,
+  buildHoverCss,
+} from "../fields/hoverField";
+import { useThemeColors } from "../theme/ThemeColorsContext";
 
 const CONTAINER_SIZES = {
   small: { box: "w-12 h-12", text: "text-xl" },
@@ -13,10 +30,6 @@ const CONTAINER_SIZES = {
   large: { box: "w-20 h-20", text: "text-4xl" },
 };
 
-// Standalone icon element using Tabler Icons (already loaded via CDN in
-// your root layout.js). Optionally wraps the icon in a circular badge —
-// a very common pattern for feature/stat grids (icon inside a soft
-// translucent or solid-color circle).
 export const IconBlock = {
   label: "Icon",
   fields: {
@@ -56,9 +69,14 @@ export const IconBlock = {
         { label: "Large", value: "large" },
       ],
     },
-    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    blockAlign: responsiveField(
+      "Block Alignment (position within column)",
+      TEXT_ALIGN_PRESETS,
+    ),
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
+    ...borderFieldSet(),
+    ...hoverFieldSet(),
   },
   defaultProps: {
     id: "icon-default",
@@ -69,23 +87,55 @@ export const IconBlock = {
     containerSize: "medium",
     blockAlign: { desktop: "left" },
     padding: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "0px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0" },
+      left: { desktop: "0" },
       linked: true,
+      unit: "px",
     },
     margin: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "0px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0" },
+      left: { desktop: "0" },
       linked: false,
+      unit: "px",
     },
+    ...borderDefaultProps(),
+    ...hoverDefaultProps(),
   },
-  render: ({ id, icon, size, color, containerStyle, containerSize, blockAlign, padding, margin }) => {
+  render: ({
+    id,
+    icon,
+    size,
+    color,
+    containerStyle,
+    containerSize,
+    blockAlign,
+    padding,
+    margin,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    borderRadius,
+    hoverEnabled,
+    hoverBgColor,
+    hoverTextColor,
+    hoverBorderColor,
+    hoverOpacity,
+    hoverScale,
+    hoverTranslateX,
+    hoverTranslateY,
+    hoverRotate,
+    hoverShadow,
+    hoverGrayscaleToColor,
+    hoverTransitionMs,
+  }) => {
+    const { themeColors } = useThemeColors();
     const scopedClass = `pb-icon-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
+    const resolvedColor = resolveColor(color, themeColors);
 
     const containerClasses = {
       "circle-translucent": "bg-white/15",
@@ -95,21 +145,61 @@ export const IconBlock = {
     const hasContainer = containerStyle !== "none";
     const dims = CONTAINER_SIZES[containerSize] || CONTAINER_SIZES.medium;
 
+    const hoverCss = buildHoverCss(
+      scopedClass,
+      {
+        hoverEnabled,
+        hoverBgColor,
+        hoverTextColor,
+        hoverBorderColor,
+        hoverOpacity,
+        hoverScale,
+        hoverTranslateX,
+        hoverTranslateY,
+        hoverRotate,
+        hoverShadow,
+        hoverGrayscaleToColor,
+        hoverTransitionMs,
+      },
+      themeColors,
+    );
+
     return (
       <>
-        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
+        <ResponsiveStyle
+          className={wrapClass}
+          entries={alignToJustifyEntries(blockAlign)}
+        />
         <ResponsiveStyle
           className={scopedClass}
-          entries={[...spacingBoxToEntries("padding", padding), ...spacingBoxToEntries("margin", margin)]}
+          entries={[
+            ...spacingBoxToEntries("padding", padding),
+            ...spacingBoxToEntries("margin", margin),
+            ...borderToEntries({
+              borderWidth,
+              borderStyle,
+              borderColor,
+              borderRadius,
+            }),
+          ]}
         />
+        {hoverCss && <style>{hoverCss}</style>}
         <div className={wrapClass}>
           <div className={scopedClass}>
             {hasContainer ? (
-              <div className={`${dims.box} rounded-full ${containerClasses[containerStyle]} flex items-center justify-center`}>
-                <i className={`ti ${icon} ${dims.text}`} style={{ color }} />
+              <div
+                className={`${dims.box} rounded-full ${containerClasses[containerStyle]} flex items-center justify-center`}
+              >
+                <i
+                  className={`ti ${icon} ${dims.text}`}
+                  style={{ color: resolvedColor }}
+                />
               </div>
             ) : (
-              <i className={`ti ${icon} ${size}`} style={{ color }} />
+              <i
+                className={`ti ${icon} ${size}`}
+                style={{ color: resolvedColor }}
+              />
             )}
           </div>
         </div>

@@ -146,3 +146,19 @@ export const INLINE_WIDTH_PRESETS = [
   { label: "X-Wide (40rem / ~640px)", value: "40rem" },
   { label: "Full", value: "none" },
 ];
+
+export const BORDER_WIDTH_PRESETS = [
+  { label: "None", value: "0px" },
+  { label: "Thin (1px)", value: "1px" },
+  { label: "Medium (2px)", value: "2px" },
+  { label: "Thick (4px)", value: "4px" },
+];
+
+export const RADIUS_PRESETS = [
+  { label: "None", value: "0px" },
+  { label: "Small (4px)", value: "4px" },
+  { label: "Medium (8px)", value: "8px" },
+  { label: "Large (16px)", value: "16px" },
+  { label: "X-Large (24px)", value: "24px" },
+  { label: "Full (pill/circle)", value: "9999px" },
+];

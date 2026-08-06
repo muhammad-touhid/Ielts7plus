@@ -10,25 +10,21 @@ import { config } from "@/lib/pageBuilder/config";
 import TemplatesSection from "./TemplatesSection";
 import CollapsibleSection from "./CollapsibleSection";
 import HeaderActions from "./HeaderActions";
+import OutlineSidebar from "./OutlineSidebar";
 import { PUCK_VIEWPORTS } from "@/lib/pageBuilder/fields/breakpoints";
+import { ThemeColorsProvider } from "@/lib/pageBuilder/theme/ThemeColorsContext";
 
 export default function PuckEditorClient({ page }) {
   const router = useRouter();
   const [status, setStatus] = useState(page.status);
   const [saving, setSaving] = useState(false);
 
-  // Resume editing wherever you left off: prefer the pending draft if one
-  // exists, otherwise start from the live published content.
-  const initialContent = page.draftData || page.data || { content: [], root: {}, zones: {} };
+  const initialContent = page.draftData ||
+    page.data || { content: [], root: {}, zones: {} };
   const [pageData, setPageData] = useState(initialContent);
 
-  // Forces <Puck> to fully remount, which is how it picks up `pageData`
-  // after we mutate it from outside the editor (Insert Template flow).
   const [remountKey, setRemountKey] = useState(0);
 
-  // Tracks the last successfully-saved JSON (draft OR published, whichever
-  // happened most recently), so the buttons can tell "nothing to save"
-  // apart from "there are unsaved changes".
   const lastSavedRef = useRef(JSON.stringify(initialContent));
 
   async function persist(content, action) {
@@ -46,8 +42,6 @@ export default function PuckEditorClient({ page }) {
     }
   }
 
-  // No autosave — the canvas only changes locally as you edit. Nothing
-  // reaches the database until Save Draft or Publish/Update is clicked.
   function handleChange(data) {
     setPageData(data);
   }
@@ -60,9 +54,6 @@ export default function PuckEditorClient({ page }) {
     persist(data, "publish");
   }
 
-  // Merge a template fragment (real component data) into the current
-  // page, then remount Puck so it renders the new layers as separate,
-  // editable components. Not saved until Save Draft/Publish is clicked.
   function handleInsertTemplate(fragment) {
     const next = {
       ...pageData,
@@ -74,55 +65,59 @@ export default function PuckEditorClient({ page }) {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/pages" className="text-sm text-gray-500 hover:text-gray-800">
-            ← All Pages
-          </Link>
-          <span className="text-sm font-medium text-gray-900">{page.title}</span>
-          {page.draftData && status === "published" && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-              Draft changes pending
+    <ThemeColorsProvider>
+      <div className="h-screen flex flex-col">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/pages"
+              className="text-sm text-gray-500 hover:text-gray-800"
+            >
+              ← All Pages
+            </Link>
+            <span className="text-sm font-medium text-gray-900">
+              {page.title}
             </span>
-          )}
+            {page.draftData && status === "published" && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                Draft changes pending
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden">
+          <Puck
+            key={remountKey}
+            config={config}
+            data={pageData}
+            onChange={handleChange}
+            viewports={PUCK_VIEWPORTS}
+            overrides={{
+              drawer: ({ children }) => (
+                <div>
+                  <CollapsibleSection title="Templates" defaultOpen={true}>
+                    <TemplatesSection onInsert={handleInsertTemplate} />
+                  </CollapsibleSection>
+                  <CollapsibleSection title="Elements" defaultOpen={true}>
+                    {children}
+                  </CollapsibleSection>
+                </div>
+              ),
+              outline: () => <OutlineSidebar />,
+              headerActions: () => (
+                <HeaderActions
+                  status={status}
+                  saving={saving}
+                  lastSavedRef={lastSavedRef}
+                  onSaveDraft={handleSaveDraft}
+                  onPublish={handlePublishClick}
+                />
+              ),
+            }}
+          />
         </div>
       </div>
-
-      <div className="flex-1 overflow-hidden">
-        <Puck
-          key={remountKey}
-          config={config}
-          data={pageData}
-          onChange={handleChange}
-          viewports={PUCK_VIEWPORTS}
-          overrides={{
-            // Consolidates everything into Puck's ONE native left sidebar:
-            // Templates (custom, top) + Elements (Puck's own drag
-            // palette, passed through as `children`) — both collapsible.
-            // Puck's "Outline" section stacks below this automatically.
-            drawer: ({ children }) => (
-              <div>
-                <CollapsibleSection title="Templates" defaultOpen={true}>
-                  <TemplatesSection onInsert={handleInsertTemplate} />
-                </CollapsibleSection>
-                <CollapsibleSection title="Elements" defaultOpen={true}>
-                  {children}
-                </CollapsibleSection>
-              </div>
-            ),
-            headerActions: () => (
-              <HeaderActions
-                status={status}
-                saving={saving}
-                lastSavedRef={lastSavedRef}
-                onSaveDraft={handleSaveDraft}
-                onPublish={handlePublishClick}
-              />
-            ),
-          }}
-        />
-      </div>
-    </div>
+    </ThemeColorsProvider>
   );
 }

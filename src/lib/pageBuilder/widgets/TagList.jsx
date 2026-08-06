@@ -4,11 +4,28 @@
 import Link from "next/link";
 import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
-import { ResponsiveStyle, alignToJustifyEntries } from "../fields/responsiveStyle";
-import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
+import {
+  borderFieldSet,
+  borderDefaultProps,
+  borderToEntries,
+} from "../fields/borderFields";
+import {
+  ResponsiveStyle,
+  alignToJustifyEntries,
+} from "../fields/responsiveStyle";
+import {
+  spacingBoxField,
+  spacingBoxToEntries,
+} from "../fields/spacingBoxField";
+import {
+  hoverFieldSet,
+  hoverDefaultProps,
+  buildHoverCss,
+} from "../fields/hoverField";
+import { useThemeColors } from "../theme/ThemeColorsContext";
 
-// Row of pill-shaped links — quick topic/tag navigation, commonly used
-// under a hero heading or search bar.
+// Hover applies per-pill (pillClass), not the row — that's the
+// meaningful interactive target, matching how border/radius already work here.
 export const TagList = {
   label: "Tag List",
   fields: {
@@ -30,8 +47,13 @@ export const TagList = {
         { label: "Light (for light backgrounds)", value: "light" },
       ],
     },
-    blockAlign: responsiveField("Block Alignment (position within column)", TEXT_ALIGN_PRESETS),
+    blockAlign: responsiveField(
+      "Block Alignment (position within column)",
+      TEXT_ALIGN_PRESETS,
+    ),
     margin: spacingBoxField("Margin"),
+    ...borderFieldSet(),
+    ...hoverFieldSet(),
   },
   defaultProps: {
     id: "taglist-default",
@@ -45,31 +67,103 @@ export const TagList = {
     style: "translucent",
     blockAlign: { desktop: "left" },
     margin: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "0px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0" },
+      left: { desktop: "0" },
       linked: false,
+      unit: "px",
     },
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: "#e5e7eb",
+    borderRadius: {
+      topLeft: { desktop: "9999px" },
+      topRight: { desktop: "9999px" },
+      bottomRight: { desktop: "9999px" },
+      bottomLeft: { desktop: "9999px" },
+      linked: true,
+    },
+    ...hoverDefaultProps(),
   },
-  render: ({ id, items, style, blockAlign, margin }) => {
+  render: ({
+    id,
+    items,
+    style,
+    blockAlign,
+    margin,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    borderRadius,
+    hoverEnabled,
+    hoverBgColor,
+    hoverTextColor,
+    hoverBorderColor,
+    hoverOpacity,
+    hoverScale,
+    hoverTranslateX,
+    hoverTranslateY,
+    hoverRotate,
+    hoverShadow,
+    hoverGrayscaleToColor,
+    hoverTransitionMs,
+  }) => {
+    const { themeColors } = useThemeColors();
     const scopedClass = `pb-taglist-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
+    const pillClass = `${scopedClass}-pill`;
     const styleClasses =
       style === "translucent"
-        ? "border border-white/25 bg-white/10 text-white/85 hover:bg-white/20"
-        : "border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100";
+        ? "text-white/85 bg-white/10 hover:bg-white/20"
+        : "text-gray-600 bg-gray-50 hover:bg-gray-100";
+
+    const hoverCss = buildHoverCss(
+      pillClass,
+      {
+        hoverEnabled,
+        hoverBgColor,
+        hoverTextColor,
+        hoverBorderColor,
+        hoverOpacity,
+        hoverScale,
+        hoverTranslateX,
+        hoverTranslateY,
+        hoverRotate,
+        hoverShadow,
+        hoverGrayscaleToColor,
+        hoverTransitionMs,
+      },
+      themeColors,
+    );
+
     return (
       <>
-        <ResponsiveStyle className={wrapClass} entries={alignToJustifyEntries(blockAlign)} />
-        <ResponsiveStyle className={scopedClass} entries={spacingBoxToEntries("margin", margin)} />
+        <ResponsiveStyle
+          className={wrapClass}
+          entries={alignToJustifyEntries(blockAlign)}
+        />
+        <ResponsiveStyle
+          className={scopedClass}
+          entries={spacingBoxToEntries("margin", margin)}
+        />
+        <ResponsiveStyle
+          className={pillClass}
+          entries={borderToEntries({
+            borderWidth,
+            borderStyle,
+            borderColor,
+            borderRadius,
+          })}
+        />
+        {hoverCss && <style>{hoverCss}</style>}
         <div className={wrapClass}>
           <div className={`flex flex-wrap gap-2 ${scopedClass}`}>
             {items.map((item, i) => (
               <Link
                 key={i}
                 href={item.href || "#"}
-                className={`rounded-full px-4 py-1.5 text-sm transition-colors ${styleClasses}`}
+                className={`px-4 py-1.5 text-sm transition-colors ${hoverEnabled ? "" : styleClasses} ${pillClass}`}
               >
                 {item.text}
               </Link>

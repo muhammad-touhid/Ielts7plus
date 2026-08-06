@@ -4,22 +4,58 @@
 import { DropZone } from "@measured/puck";
 import ImageUpload from "@/app/admin/ImageUpload";
 import { withLabel } from "../fields/withLabel";
-import { flexibleSizeField, HEIGHT_PRESETS, GAP_PRESETS, CONTENT_WIDTH_PRESETS } from "../fields/flexibleSize";
+import {
+  flexibleSizeField,
+  HEIGHT_PRESETS,
+  GAP_PRESETS,
+  CONTENT_WIDTH_PRESETS,
+} from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
+import {
+  borderFieldSet,
+  borderDefaultProps,
+  borderToEntries,
+} from "../fields/borderFields";
 import { ResponsiveStyle } from "../fields/responsiveStyle";
-import { spacingBoxField, spacingBoxToEntries } from "../fields/spacingBoxField";
+import {
+  spacingBoxField,
+  spacingBoxToEntries,
+} from "../fields/spacingBoxField";
+import { colorField, resolveColor } from "../fields/colorField";
+import {
+  hoverFieldSet,
+  hoverDefaultProps,
+  buildHoverCss,
+} from "../fields/hoverField";
+import { useThemeColors } from "../theme/ThemeColorsContext";
 
-// Each layout defines a real, literal Tailwind class string (not built
-// dynamically from a variable) so Tailwind's build-time scanner can see
-// and compile it. Every layout stacks to 1 column below the `md`
-// breakpoint and only expands to the full split on tablet/desktop.
 const COLUMN_LAYOUTS = {
-  "1": { label: "1 Column", className: "grid-cols-1", count: 1 },
-  "2-equal": { label: "2 Columns (50 / 50)", className: "grid-cols-1 md:grid-cols-2", count: 2 },
-  "2-narrow-wide": { label: "2 Columns (30 / 70)", className: "grid-cols-1 md:grid-cols-[3fr_7fr]", count: 2 },
-  "2-wide-narrow": { label: "2 Columns (70 / 30)", className: "grid-cols-1 md:grid-cols-[7fr_3fr]", count: 2 },
-  "3-equal": { label: "3 Columns (equal)", className: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3", count: 3 },
-  "4-equal": { label: "4 Columns (equal)", className: "grid-cols-1 sm:grid-cols-2 md:grid-cols-4", count: 4 },
+  1: { label: "1 Column", className: "grid-cols-1", count: 1 },
+  "2-equal": {
+    label: "2 Columns (50 / 50)",
+    className: "grid-cols-1 md:grid-cols-2",
+    count: 2,
+  },
+  "2-narrow-wide": {
+    label: "2 Columns (30 / 70)",
+    className: "grid-cols-1 md:grid-cols-[3fr_7fr]",
+    count: 2,
+  },
+  "2-wide-narrow": {
+    label: "2 Columns (70 / 30)",
+    className: "grid-cols-1 md:grid-cols-[7fr_3fr]",
+    count: 2,
+  },
+  "3-equal": {
+    label: "3 Columns (equal)",
+    className: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
+    count: 3,
+  },
+  "4-equal": {
+    label: "4 Columns (equal)",
+    className: "grid-cols-1 sm:grid-cols-2 md:grid-cols-4",
+    count: 4,
+  },
 };
 
 const GRADIENT_DIRECTIONS = {
@@ -30,9 +66,6 @@ const GRADIENT_DIRECTIONS = {
   "to left": "to left",
 };
 
-// Tailwind only ships a fixed set of `bg-gradient-to-*` utility classes —
-// literal strings here (not built dynamically) so the build-time scanner
-// can see and compile them, same reasoning as the column layout classes.
 const BG_GRADIENT_DIRECTION_CLASS = {
   "to right": "bg-gradient-to-r",
   "to bottom right": "bg-gradient-to-br",
@@ -47,7 +80,10 @@ export const Section = {
     columns: {
       type: "select",
       label: "Column Layout",
-      options: Object.entries(COLUMN_LAYOUTS).map(([value, { label }]) => ({ label, value })),
+      options: Object.entries(COLUMN_LAYOUTS).map(([value, { label }]) => ({
+        label,
+        value,
+      })),
     },
     columnGap: flexibleSizeField("Column Gap", GAP_PRESETS),
     bgType: {
@@ -59,25 +95,26 @@ export const Section = {
         { label: "Brand Gradient", value: "gradient" },
       ],
     },
-    bgColor: {
-      type: "select",
-      label: "Background Color",
-      options: [
-        { label: "White", value: "#ffffff" },
-        { label: "Light gray", value: "#f9fafb" },
-        { label: "Dark", value: "#111827" },
-        { label: "Brand blue", value: "#354e98" },
-      ],
-    },
+    bgColor: colorField("Background Color", [
+      { label: "White", value: "#ffffff" },
+      { label: "Light gray", value: "#f9fafb" },
+      { label: "Dark", value: "#111827" },
+      { label: "Brand blue", value: "#354e98" },
+    ]),
     bgImage: {
       type: "custom",
       label: "Background Image",
-      render: withLabel(({ value, onChange }) => <ImageUpload value={value} onChange={(url) => onChange(url)} />),
+      render: withLabel(({ value, onChange }) => (
+        <ImageUpload value={value} onChange={(url) => onChange(url)} />
+      )),
     },
     bgGradientDirection: {
       type: "select",
       label: "Background Gradient Direction",
-      options: Object.keys(GRADIENT_DIRECTIONS).map((k) => ({ label: k, value: k })),
+      options: Object.keys(GRADIENT_DIRECTIONS).map((k) => ({
+        label: k,
+        value: k,
+      })),
     },
     decorative: {
       type: "radio",
@@ -97,40 +134,31 @@ export const Section = {
         { label: "Gradient (2 colors)", value: "gradient" },
       ],
     },
-    overlayColor: {
-      type: "select",
-      label: "Overlay Color",
-      options: [
-        { label: "Black", value: "#000000" },
-        { label: "White", value: "#ffffff" },
-        { label: "Brand blue", value: "#354e98" },
-        { label: "Dark navy", value: "#0f172a" },
-      ],
-    },
-    overlayColorFrom: {
-      type: "select",
-      label: "Overlay Gradient — From",
-      options: [
-        { label: "Navy (blue-900)", value: "#1e3a8a" },
-        { label: "Brand blue", value: "#354e98" },
-        { label: "Black", value: "#000000" },
-        { label: "Dark navy", value: "#0f172a" },
-      ],
-    },
-    overlayColorTo: {
-      type: "select",
-      label: "Overlay Gradient — To",
-      options: [
-        { label: "Blue (blue-700)", value: "#1d4ed8" },
-        { label: "Brand blue light", value: "#4a71df" },
-        { label: "Transparent-ish black", value: "#111827" },
-        { label: "Dark navy", value: "#0f172a" },
-      ],
-    },
+    overlayColor: colorField("Overlay Color", [
+      { label: "Black", value: "#000000" },
+      { label: "White", value: "#ffffff" },
+      { label: "Brand blue", value: "#354e98" },
+      { label: "Dark navy", value: "#0f172a" },
+    ]),
+    overlayColorFrom: colorField("Overlay Gradient — From", [
+      { label: "Navy (blue-900)", value: "#1e3a8a" },
+      { label: "Brand blue", value: "#354e98" },
+      { label: "Black", value: "#000000" },
+      { label: "Dark navy", value: "#0f172a" },
+    ]),
+    overlayColorTo: colorField("Overlay Gradient — To", [
+      { label: "Blue (blue-700)", value: "#1d4ed8" },
+      { label: "Brand blue light", value: "#4a71df" },
+      { label: "Transparent-ish black", value: "#111827" },
+      { label: "Dark navy", value: "#0f172a" },
+    ]),
     overlayDirection: {
       type: "select",
       label: "Overlay Gradient Direction",
-      options: Object.keys(GRADIENT_DIRECTIONS).map((k) => ({ label: k, value: k })),
+      options: Object.keys(GRADIENT_DIRECTIONS).map((k) => ({
+        label: k,
+        value: k,
+      })),
     },
     overlayOpacity: {
       type: "select",
@@ -153,10 +181,10 @@ export const Section = {
       ],
     },
     contentWidth: responsiveField("Content Width", CONTENT_WIDTH_PRESETS),
-    // Compact Elementor-style spacing boxes — replaces 4 separate
-    // paddingTop/Bottom/Left/Right fields with one grouped control.
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
+    ...borderFieldSet(),
+    ...hoverFieldSet(),
   },
   defaultProps: {
     id: "section-default",
@@ -190,6 +218,8 @@ export const Section = {
       left: { desktop: "0px" },
       linked: false,
     },
+    ...borderDefaultProps(),
+    ...hoverDefaultProps(),
   },
   render: ({
     id,
@@ -211,24 +241,66 @@ export const Section = {
     contentWidth,
     padding,
     margin,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    borderRadius,
+    hoverEnabled,
+    hoverBgColor,
+    hoverTextColor,
+    hoverBorderColor,
+    hoverOpacity,
+    hoverScale,
+    hoverTranslateX,
+    hoverTranslateY,
+    hoverRotate,
+    hoverShadow,
+    hoverGrayscaleToColor,
+    hoverTransitionMs,
   }) => {
+    const { themeColors } = useThemeColors();
     const layout = COLUMN_LAYOUTS[columns] || COLUMN_LAYOUTS["1"];
     const count = layout.count;
     const scopedClass = `pb-section-${id}`;
+
+    const hoverCss = buildHoverCss(
+      scopedClass,
+      {
+        hoverEnabled,
+        hoverBgColor,
+        hoverTextColor,
+        hoverBorderColor,
+        hoverOpacity,
+        hoverScale,
+        hoverTranslateX,
+        hoverTranslateY,
+        hoverRotate,
+        hoverShadow,
+        hoverGrayscaleToColor,
+        hoverTransitionMs,
+      },
+      themeColors,
+    );
+
+    const resolvedBgColor = resolveColor(bgColor, themeColors);
 
     let overlayStyle = null;
     if (bgType === "image" && bgImage && overlayType !== "none") {
       if (overlayType === "gradient") {
         overlayStyle = {
-          backgroundImage: `linear-gradient(${overlayDirection}, ${overlayColorFrom}, ${overlayColorTo})`,
+          backgroundImage: `linear-gradient(${overlayDirection}, ${resolveColor(overlayColorFrom, themeColors)}, ${resolveColor(overlayColorTo, themeColors)})`,
           opacity: parseFloat(overlayOpacity),
         };
       } else {
-        overlayStyle = { backgroundColor: overlayColor, opacity: parseFloat(overlayOpacity) };
+        overlayStyle = {
+          backgroundColor: resolveColor(overlayColor, themeColors),
+          opacity: parseFloat(overlayOpacity),
+        };
       }
     }
 
-    const gradientClass = BG_GRADIENT_DIRECTION_CLASS[bgGradientDirection] || "bg-gradient-to-br";
+    const gradientClass =
+      BG_GRADIENT_DIRECTION_CLASS[bgGradientDirection] || "bg-gradient-to-br";
 
     return (
       <section
@@ -236,18 +308,32 @@ export const Section = {
         style={{
           minHeight: minHeight === "auto" ? undefined : minHeight,
           display: "flex",
+          overflow: "hidden",
           alignItems: verticalAlign,
-          backgroundColor: bgType === "color" ? bgColor : undefined,
-          backgroundImage: bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
+          backgroundColor: bgType === "color" ? resolvedBgColor : undefined,
+          backgroundImage:
+            bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
         <ResponsiveStyle
           className={scopedClass}
-          entries={[...spacingBoxToEntries("padding", padding), ...spacingBoxToEntries("margin", margin)]}
+          entries={[
+            ...spacingBoxToEntries("padding", padding),
+            ...spacingBoxToEntries("margin", margin),
+            ...borderToEntries({
+              borderWidth,
+              borderStyle,
+              borderColor,
+              borderRadius,
+            }),
+          ]}
         />
-        {overlayStyle && <div className="absolute inset-0" style={overlayStyle} />}
+        {hoverCss && <style>{hoverCss}</style>}
+        {overlayStyle && (
+          <div className="absolute inset-0" style={overlayStyle} />
+        )}
 
         {(decorative === "grid" || decorative === "grid-blobs") && (
           <div
@@ -270,7 +356,10 @@ export const Section = {
           className={`relative mx-auto grid w-full ${layout.className} ${scopedClass}-content`}
           style={{ gap: columnGap }}
         >
-          <ResponsiveStyle className={`${scopedClass}-content`} entries={[{ property: "max-width", value: contentWidth }]} />
+          <ResponsiveStyle
+            className={`${scopedClass}-content`}
+            entries={[{ property: "max-width", value: contentWidth }]}
+          />
           {Array.from({ length: count }).map((_, i) => (
             <div key={i} className="min-w-0">
               <DropZone zone={`col-${i}`} />

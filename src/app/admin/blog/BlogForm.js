@@ -1,7 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import "react-quill-new/dist/quill.snow.css";
 import ImageUpload from "../ImageUpload";
 import { QuillEditor } from "@/components/QuillEditor";
 

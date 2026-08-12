@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TEXT_SIZE_PRESETS, TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
 import { colorField, resolveColor, hexToRgba } from "../fields/colorField";
+import { fontField, resolveFont } from "../fields/fontField";
 import {
   borderFieldSet,
   borderDefaultProps,
@@ -22,6 +23,12 @@ import {
 } from "../fields/hoverField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
+
 export const ButtonBlock = {
   label: "Button",
   fields: {
@@ -38,6 +45,7 @@ export const ButtonBlock = {
         },
       ],
     },
+    font: fontField("Font", "button"),
     bgColor: colorField("Background Color", [
       { label: "Brand blue", value: "#2563eb" },
       { label: "Dark", value: "#111827" },
@@ -70,6 +78,16 @@ export const ButtonBlock = {
         { label: "Extra Bold", value: "font-extrabold" },
       ],
     },
+    textCase: {
+      type: "select",
+      label: "Text Case",
+      options: [
+        { label: "None", value: "none" },
+        { label: "UPPERCASE", value: "uppercase" },
+        { label: "lowercase", value: "lowercase" },
+        { label: "Capitalize", value: "capitalize" },
+      ],
+    },
     icon: {
       type: "text",
       label: "Icon Class (blank = no icon, e.g. ti-arrow-right)",
@@ -95,6 +113,7 @@ export const ButtonBlock = {
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -102,10 +121,12 @@ export const ButtonBlock = {
     text: "Get Started",
     href: "/",
     variant: "filled",
+    font: { type: "theme", token: "button" },
     bgColor: "#2563eb",
     bgOpacity: "100",
     textColor: "#ffffff",
     weight: "font-medium",
+    textCase: "none",
     icon: "",
     iconPosition: "right",
     width: "inline-block",
@@ -129,16 +150,19 @@ export const ButtonBlock = {
     },
     ...borderDefaultProps(),
     ...hoverDefaultProps(),
+    ...shadowDefaultProps(),
   },
   render: ({
     id,
     text,
     href,
     variant,
+    font,
     bgColor,
     bgOpacity,
     textColor,
     weight,
+    textCase,
     icon,
     iconPosition,
     width,
@@ -162,8 +186,9 @@ export const ButtonBlock = {
     hoverShadow,
     hoverGrayscaleToColor,
     hoverTransitionMs,
+    shadow,
   }) => {
-    const { themeColors } = useThemeColors();
+    const { themeColors, themeFonts } = useThemeColors();
     const scopedClass = `pb-button-${id}`;
     const resolvedBgHex = resolveColor(bgColor, themeColors);
     const resolvedTextHex = resolveColor(textColor, themeColors);
@@ -171,6 +196,7 @@ export const ButtonBlock = {
       variant === "filled"
         ? hexToRgba(resolvedBgHex, parseInt(bgOpacity, 10))
         : "transparent";
+    const resolvedFont = resolveFont(font, themeFonts);
 
     const hoverCss = buildHoverCss(
       scopedClass,
@@ -215,7 +241,15 @@ export const ButtonBlock = {
         <Link
           href={href || "#"}
           className={`${width} ${weight} ${scopedClass} inline-flex items-center justify-center gap-2`}
-          style={{ backgroundColor: resolvedBg, color: resolvedTextHex }}
+          style={{
+            backgroundColor: resolvedBg,
+            color: resolvedTextHex,
+            textTransform: textCase,
+            fontFamily: resolvedFont
+              ? `'${resolvedFont}', sans-serif`
+              : undefined,
+            boxShadow: resolveShadow(shadow) || undefined,
+          }}
         >
           {icon && iconPosition === "left" && <i className={`ti ${icon}`} />}
           {text}

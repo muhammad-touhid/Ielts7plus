@@ -3,6 +3,7 @@
 
 import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
+import { fontField, resolveFont } from "../fields/fontField";
 import {
   borderFieldSet,
   borderDefaultProps,
@@ -27,6 +28,7 @@ export const Badge = {
   label: "Badge",
   fields: {
     text: { type: "text", label: "Text" },
+    font: fontField("Font", "badge"),
     style: {
       type: "radio",
       label: "Style",
@@ -48,6 +50,7 @@ export const Badge = {
   defaultProps: {
     id: "badge-default",
     text: "★ #1 IELTS Preparation Platform",
+    font: { type: "theme", token: "badge" },
     style: "translucent",
     blockAlign: { desktop: "left" },
     padding: {
@@ -79,6 +82,7 @@ export const Badge = {
   render: ({
     id,
     text,
+    font,
     style,
     blockAlign,
     padding,
@@ -100,9 +104,10 @@ export const Badge = {
     hoverGrayscaleToColor,
     hoverTransitionMs,
   }) => {
-    const { themeColors } = useThemeColors();
+    const { themeColors, themeFonts } = useThemeColors();
     const scopedClass = `pb-badge-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
+    const resolvedFont = resolveFont(font, themeFonts);
     const styleClasses = {
       translucent: "text-white/80 bg-white/15",
       light: "text-gray-600 bg-gray-100",
@@ -151,6 +156,11 @@ export const Badge = {
         <div className={wrapClass}>
           <div
             className={`text-xs font-bold tracking-widest uppercase ${styleClasses[style]} ${scopedClass}`}
+            style={{
+              fontFamily: resolvedFont
+                ? `'${resolvedFont}', sans-serif`
+                : undefined,
+            }}
           >
             {text}
           </div>

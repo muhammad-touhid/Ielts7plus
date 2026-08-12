@@ -89,7 +89,7 @@ export function hoverFieldSet() {
     hoverBorderColor: colorField("Hover Border Color"),
     hoverOpacity: {
       type: "number",
-      label: "Hover Opacity (0–1, blank = no change)",
+      label: "Hover Opacity (0–1, blank = auto)",
     },
     hoverScale: {
       type: "number",
@@ -144,7 +144,9 @@ function resolveShadow(value) {
 }
 
 // Builds a complete, ready-to-render CSS string scoped to the widget's
-// own class. Returns "" when hover is off or nothing is actually set.
+// own class. Returns "" only when hover is fully off — if it's enabled
+// but nothing specific was configured, falls back to a subtle opacity
+// dim so "Hover Effect: On" always visibly does something immediately.
 export function buildHoverCss(scopedClass, props, themeColors) {
   if (!props?.hoverEnabled) return "";
 
@@ -182,7 +184,12 @@ export function buildHoverCss(scopedClass, props, themeColors) {
   const shadowCss = resolveShadow(props.hoverShadow);
   if (shadowCss) hoverDecls.push(`box-shadow: ${shadowCss};`);
 
-  if (hoverDecls.length === 0 && !props.hoverGrayscaleToColor) return "";
+  // Nothing configured at all, but hover is toggled On — fall back to a
+  // gentle dim, same role your old hard-coded `hover:opacity-90` used
+  // to play, so the toggle is never a silent no-op.
+  if (hoverDecls.length === 0 && !props.hoverGrayscaleToColor) {
+    hoverDecls.push("opacity: 0.9;");
+  }
 
   const ms = props.hoverTransitionMs || "200";
   const baseFilter = props.hoverGrayscaleToColor ? "filter: grayscale(1);" : "";

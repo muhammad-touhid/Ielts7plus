@@ -1,6 +1,7 @@
 // src/app/api/pages/[id]/route.js
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,10 @@ export async function PUT(req, { params }) {
   const { content, action, title } = body;
 
   if (!content || !["draft", "publish"].includes(action)) {
-    return NextResponse.json({ error: "content and a valid action are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "content and a valid action are required" },
+      { status: 400 },
+    );
   }
 
   const updateData =
@@ -44,7 +48,23 @@ export async function PUT(req, { params }) {
 
 // DELETE /api/pages/:id
 export async function DELETE(req, { params }) {
+  const session = await auth();
+  if (
+    !session ||
+    !["admin", "teacher", "moderator"].includes(session.user.role)
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
-  await prisma.page.delete({ where: { id } });
-  return NextResponse.json({ success: true });
+
+  try {
+    await prisma.page.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Page not found or already deleted" },
+      { status: 404 },
+    );
+  }
 }

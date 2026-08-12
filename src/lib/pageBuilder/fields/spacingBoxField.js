@@ -60,11 +60,27 @@ export function spacingBoxField(label) {
       const linked = !!obj.linked;
       const unit = obj.unit || "px";
 
-      function handleBlur(side, e) {
-        const val = e.target.value.trim();
+      // Controlled — fires on every keystroke, so the canvas updates
+      // live instead of waiting for blur. This also fixes the old
+      // linked-toggle sync bug as a side effect: a controlled input
+      // always reflects the current value, no remount trick needed.
+      function handleInput(side, e) {
+        const val = e.target.value;
         const next = linked
           ? writeAllSides(obj, device, val)
           : writeSide(obj, side, device, val);
+        onChange(next);
+      }
+
+      function handleKeyDown(side, e) {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        const current = parseFloat(readSide(obj, side, device)) || 0;
+        const step = e.shiftKey ? 10 : 1;
+        const nextVal = current + (e.key === "ArrowUp" ? step : -step);
+        const next = linked
+          ? writeAllSides(obj, device, String(nextVal))
+          : writeSide(obj, side, device, String(nextVal));
         onChange(next);
       }
 
@@ -79,12 +95,6 @@ export function spacingBoxField(label) {
 
       const cell =
         "w-full border border-gray-300 rounded px-1 py-1 text-xs text-center bg-white";
-
-      // Keying off the side's own current value (not just device) forces
-      // the uncontrolled input to remount — and pick up its new
-      // defaultValue — exactly when linked-writes change it elsewhere.
-      const sideKey = (side) =>
-        `${side}-${device}-${readSide(obj, side, device)}`;
 
       return (
         <div className="border border-gray-200 rounded-md p-2 bg-gray-50/60">
@@ -135,18 +145,20 @@ export function spacingBoxField(label) {
               <input
                 className={cell}
                 placeholder="Top"
-                defaultValue={readSide(obj, "top", device)}
-                onBlur={(e) => handleBlur("top", e)}
-                key={sideKey("top")}
+                value={readSide(obj, "top", device)}
+                onChange={(e) => handleInput("top", e)}
+                onKeyDown={(e) => handleKeyDown("top", e)}
+                key={`top-${device}`}
               />
             </div>
             <div style={{ gridArea: "left" }}>
               <input
                 className={cell}
                 placeholder="Left"
-                defaultValue={readSide(obj, "left", device)}
-                onBlur={(e) => handleBlur("left", e)}
-                key={sideKey("left")}
+                value={readSide(obj, "left", device)}
+                onChange={(e) => handleInput("left", e)}
+                onKeyDown={(e) => handleKeyDown("left", e)}
+                key={`left-${device}`}
               />
             </div>
             <div
@@ -159,18 +171,20 @@ export function spacingBoxField(label) {
               <input
                 className={cell}
                 placeholder="Right"
-                defaultValue={readSide(obj, "right", device)}
-                onBlur={(e) => handleBlur("right", e)}
-                key={sideKey("right")}
+                value={readSide(obj, "right", device)}
+                onChange={(e) => handleInput("right", e)}
+                onKeyDown={(e) => handleKeyDown("right", e)}
+                key={`right-${device}`}
               />
             </div>
             <div style={{ gridArea: "bottom" }}>
               <input
                 className={cell}
                 placeholder="Bottom"
-                defaultValue={readSide(obj, "bottom", device)}
-                onBlur={(e) => handleBlur("bottom", e)}
-                key={sideKey("bottom")}
+                value={readSide(obj, "bottom", device)}
+                onChange={(e) => handleInput("bottom", e)}
+                onKeyDown={(e) => handleKeyDown("bottom", e)}
+                key={`bottom-${device}`}
               />
             </div>
           </div>
@@ -192,15 +206,11 @@ function withUnit(perDeviceObj, unit) {
   Object.entries(perDeviceObj).forEach(([device, val]) => {
     if (val === "" || val === undefined || val === null) return;
     const isNumeric = /^-?\d+(\.\d+)?$/.test(String(val).trim());
-    out[device] = isNumeric ? `${val}${unit}` : val; // lets "auto"/"0" pass through untouched
+    out[device] = isNumeric ? `${val}${unit}` : val;
   });
   return out;
 }
 
-// Converts a spacingBoxField value into the 4 entries buildResponsiveCSS
-// expects, prefixed with whatever CSS property base you need
-// ("padding" or "margin"). Applies the box's chosen unit here so every
-// consumer keeps working without changes.
 export function spacingBoxToEntries(prefix, value) {
   if (!value) return [];
   const unit = value.unit || "px";

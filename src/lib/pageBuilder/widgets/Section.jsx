@@ -27,6 +27,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 const COLUMN_LAYOUTS = {
@@ -185,6 +190,7 @@ export const Section = {
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
     ...hoverFieldSet(),
+    shadow: shadowField(),
   },
   defaultProps: {
     id: "section-default",
@@ -205,21 +211,24 @@ export const Section = {
     verticalAlign: "flex-start",
     contentWidth: { desktop: "72rem" },
     padding: {
-      top: { desktop: "64px", tablet: "40px", mobile: "32px" },
-      right: { desktop: "24px" },
-      bottom: { desktop: "64px", tablet: "40px", mobile: "32px" },
-      left: { desktop: "24px" },
+      top: { desktop: "64", tablet: "40", mobile: "32" },
+      right: { desktop: "24" },
+      bottom: { desktop: "64", tablet: "40", mobile: "32" },
+      left: { desktop: "24" },
       linked: false,
+      unit: "px",
     },
     margin: {
-      top: { desktop: "0px" },
-      right: { desktop: "0px" },
-      bottom: { desktop: "0px" },
-      left: { desktop: "0px" },
+      top: { desktop: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0" },
+      left: { desktop: "0" },
       linked: false,
+      unit: "px",
     },
     ...borderDefaultProps(),
     ...hoverDefaultProps(),
+    ...shadowDefaultProps(),
   },
   render: ({
     id,
@@ -257,6 +266,7 @@ export const Section = {
     hoverShadow,
     hoverGrayscaleToColor,
     hoverTransitionMs,
+    shadow,
   }) => {
     const { themeColors } = useThemeColors();
     const layout = COLUMN_LAYOUTS[columns] || COLUMN_LAYOUTS["1"];
@@ -315,6 +325,7 @@ export const Section = {
             bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          boxShadow: resolveShadow(shadow) || undefined,
         }}
       >
         <ResponsiveStyle

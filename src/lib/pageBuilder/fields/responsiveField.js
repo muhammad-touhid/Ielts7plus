@@ -36,10 +36,15 @@ export function responsiveField(label, presets) {
       const width = appState?.ui?.viewports?.current?.width ?? 1440;
       const device = getActiveDevice(width);
 
-      const obj = value && typeof value === "object" ? value : { desktop: value || presets[0].value };
+      const obj =
+        value && typeof value === "object"
+          ? value
+          : { desktop: value || presets[0].value };
       const isDesktop = device === "desktop";
       const rawCurrent = obj[device];
-      const hasOverride = isDesktop || (rawCurrent !== undefined && rawCurrent !== null && rawCurrent !== "");
+      const hasOverride =
+        isDesktop ||
+        (rawCurrent !== undefined && rawCurrent !== null && rawCurrent !== "");
       const matched = presets.find((p) => p.value === rawCurrent);
 
       // Tracks "the person explicitly picked Custom... from the dropdown"
@@ -68,7 +73,8 @@ export function responsiveField(label, presets) {
         setForceCustom(false);
       }
 
-      const inherited = !isDesktop && !hasOverride ? resolveInherited(obj, device) : null;
+      const inherited =
+        !isDesktop && !hasOverride ? resolveInherited(obj, device) : null;
 
       return (
         <div className="space-y-1.5 border border-gray-100 rounded-md p-2 bg-gray-50/60">
@@ -81,7 +87,11 @@ export function responsiveField(label, presets) {
               <input
                 type="checkbox"
                 checked={hasOverride}
-                onChange={(e) => (e.target.checked ? setValue(presets[0].value) : clearOverride())}
+                onChange={(e) =>
+                  e.target.checked
+                    ? setValue(presets[0].value)
+                    : clearOverride()
+                }
               />
               Override for {DEVICE_LABELS[device]}
             </label>

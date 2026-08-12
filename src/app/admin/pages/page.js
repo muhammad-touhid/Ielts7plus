@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import NewPageForm from "./NewPageForm";
+import DeletePageButton from "./DeletePageButton";
 
 export default async function AdminPagesList() {
   const pages = await prisma.page.findMany({ orderBy: { updatedAt: "desc" } });
@@ -44,7 +45,7 @@ export default async function AdminPagesList() {
                 )}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
               <Link
                 href={`/admin/pages/${page.id}/edit`}
                 className="text-blue-600 hover:underline text-sm font-medium"
@@ -60,6 +61,7 @@ export default async function AdminPagesList() {
                   View
                 </Link>
               )}
+              <DeletePageButton pageId={page.id} pageTitle={page.title} />
             </div>
           </div>
         ))}

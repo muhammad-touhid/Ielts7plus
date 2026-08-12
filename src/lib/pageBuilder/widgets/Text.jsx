@@ -8,6 +8,7 @@ import {
 } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
 import { colorField, resolveColor } from "../fields/colorField";
+import { fontField, resolveFont } from "../fields/fontField";
 import {
   borderFieldSet,
   borderDefaultProps,
@@ -32,6 +33,7 @@ export const Text = {
   label: "Text",
   fields: {
     text: { type: "textarea", label: "Text" },
+    font: fontField("Font", "paragraph"),
     color: colorField("Color", [
       { label: "Gray (default)", value: "#4b5563" },
       { label: "Dark", value: "#111827" },
@@ -74,6 +76,7 @@ export const Text = {
   defaultProps: {
     id: "text-default",
     text: "Write your paragraph content here.",
+    font: { type: "theme", token: "paragraph" },
     color: "#4b5563",
     weight: "font-normal",
     textCase: "none",
@@ -103,6 +106,7 @@ export const Text = {
   render: ({
     id,
     text,
+    font,
     color,
     weight,
     textCase,
@@ -129,10 +133,11 @@ export const Text = {
     hoverGrayscaleToColor,
     hoverTransitionMs,
   }) => {
-    const { themeColors } = useThemeColors();
+    const { themeColors, themeFonts } = useThemeColors();
     const scopedClass = `pb-text-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
     const resolvedColor = resolveColor(color, themeColors);
+    const resolvedFont = resolveFont(font, themeFonts);
 
     const hoverCss = buildHoverCss(
       scopedClass,
@@ -179,7 +184,13 @@ export const Text = {
         <div className={wrapClass}>
           <p
             className={`leading-relaxed ${weight} ${scopedClass}`}
-            style={{ color: resolvedColor, textTransform: textCase }}
+            style={{
+              color: resolvedColor,
+              textTransform: textCase,
+              fontFamily: resolvedFont
+                ? `'${resolvedFont}', sans-serif`
+                : undefined,
+            }}
           >
             {text}
           </p>

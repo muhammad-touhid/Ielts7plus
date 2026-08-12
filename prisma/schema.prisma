@@ -235,6 +235,7 @@ model Page {
 
 model SiteTheme {
   id        Int      @id @default(1)
-  colors    Json     // { primary: "#2563eb", secondary: "#f59e0b", text: "#111827", background: "#ffffff" }
+  colors    Json
+  fonts     Json?
   updatedAt DateTime @updatedAt
 }

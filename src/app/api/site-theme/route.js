@@ -14,11 +14,11 @@ export async function PUT(req) {
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  const { colors } = await req.json();
+  const { colors, fonts } = await req.json();
   const row = await prisma.siteTheme.upsert({
     where: { id: 1 },
-    create: { id: 1, colors },
-    update: { colors },
+    create: { id: 1, colors, fonts },
+    update: { colors, fonts },
   });
   return NextResponse.json(row);
 }

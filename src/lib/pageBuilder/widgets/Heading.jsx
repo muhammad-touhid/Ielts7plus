@@ -8,6 +8,7 @@ import {
 } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
 import { colorField, resolveColor } from "../fields/colorField";
+import { fontField, resolveFont } from "../fields/fontField";
 import {
   borderFieldSet,
   borderDefaultProps,
@@ -42,6 +43,7 @@ export const Heading = {
         { label: "H4", value: "h4" },
       ],
     },
+    font: fontField("Font", "heading"),
     color: colorField("Color", [
       { label: "Dark", value: "#111827" },
       { label: "White", value: "#ffffff" },
@@ -84,6 +86,7 @@ export const Heading = {
     id: "heading-default",
     text: "Your Heading Here",
     tag: "h2",
+    font: { type: "theme", token: "heading" },
     color: "#111827",
     weight: "font-bold",
     textCase: "none",
@@ -114,6 +117,7 @@ export const Heading = {
     id,
     text,
     tag: Tag,
+    font,
     color,
     weight,
     textCase,
@@ -140,10 +144,11 @@ export const Heading = {
     hoverGrayscaleToColor,
     hoverTransitionMs,
   }) => {
-    const { themeColors } = useThemeColors();
+    const { themeColors, themeFonts } = useThemeColors();
     const scopedClass = `pb-heading-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
     const resolvedColor = resolveColor(color, themeColors);
+    const resolvedFont = resolveFont(font, themeFonts);
 
     const hoverCss = buildHoverCss(
       scopedClass,
@@ -194,6 +199,9 @@ export const Heading = {
               color: resolvedColor,
               lineHeight: 1.2,
               textTransform: textCase,
+              fontFamily: resolvedFont
+                ? `'${resolvedFont}', sans-serif`
+                : undefined,
             }}
           >
             {text}

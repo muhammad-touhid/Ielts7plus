@@ -34,9 +34,12 @@ export function buildResponsiveCSS(className, entries) {
   });
 
   let css = `.${className} { ${base.join(" ")} }`;
-  if (laptop.length) css += ` @media (max-width: ${MEDIA_MAX.laptop}px) { .${className} { ${laptop.join(" ")} } }`;
-  if (tablet.length) css += ` @media (max-width: ${MEDIA_MAX.tablet}px) { .${className} { ${tablet.join(" ")} } }`;
-  if (mobile.length) css += ` @media (max-width: ${MEDIA_MAX.mobile}px) { .${className} { ${mobile.join(" ")} } }`;
+  if (laptop.length)
+    css += ` @media (max-width: ${MEDIA_MAX.laptop}px) { .${className} { ${laptop.join(" ")} } }`;
+  if (tablet.length)
+    css += ` @media (max-width: ${MEDIA_MAX.tablet}px) { .${className} { ${tablet.join(" ")} } }`;
+  if (mobile.length)
+    css += ` @media (max-width: ${MEDIA_MAX.mobile}px) { .${className} { ${mobile.join(" ")} } }`;
   return css;
 }
 
@@ -56,7 +59,10 @@ function mapJustify(keyword) {
 // reliably regardless of what's around it. Apply the returned entries to
 // a WRAPPER className, and put the actual content inside it.
 export function alignToJustifyEntries(alignValue) {
-  const obj = alignValue && typeof alignValue === "object" ? alignValue : { desktop: alignValue || "left" };
+  const obj =
+    alignValue && typeof alignValue === "object"
+      ? alignValue
+      : { desktop: alignValue || "left" };
   const justify = {};
   for (const device of Object.keys(obj)) {
     if (!obj[device]) continue;

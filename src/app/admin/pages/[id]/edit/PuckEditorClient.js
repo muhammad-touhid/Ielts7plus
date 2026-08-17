@@ -11,6 +11,7 @@ import TemplatesSection from "./TemplatesSection";
 import CollapsibleSection from "./CollapsibleSection";
 import HeaderActions from "./HeaderActions";
 import OutlineSidebar from "./OutlineSidebar";
+import RenamePageForm from "./RenamePageForm";
 import { PUCK_VIEWPORTS } from "@/lib/pageBuilder/fields/breakpoints";
 import { ThemeColorsProvider } from "@/lib/pageBuilder/theme/ThemeColorsContext";
 
@@ -18,6 +19,10 @@ export default function PuckEditorClient({ page }) {
   const router = useRouter();
   const [status, setStatus] = useState(page.status);
   const [saving, setSaving] = useState(false);
+  const [pageMeta, setPageMeta] = useState({
+    title: page.title,
+    slug: page.slug,
+  });
 
   const initialContent = page.draftData ||
     page.data || { content: [], root: {}, zones: {} };
@@ -64,6 +69,11 @@ export default function PuckEditorClient({ page }) {
     setRemountKey((k) => k + 1);
   }
 
+  function handleRenamed(updatedPage) {
+    setPageMeta({ title: updatedPage.title, slug: updatedPage.slug });
+    router.refresh();
+  }
+
   return (
     <ThemeColorsProvider>
       <div className="h-screen flex flex-col">
@@ -75,9 +85,12 @@ export default function PuckEditorClient({ page }) {
             >
               ← All Pages
             </Link>
-            <span className="text-sm font-medium text-gray-900">
-              {page.title}
-            </span>
+            <RenamePageForm
+              pageId={page.id}
+              initialTitle={pageMeta.title}
+              initialSlug={pageMeta.slug}
+              onRenamed={handleRenamed}
+            />
             {page.draftData && status === "published" && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
                 Draft changes pending

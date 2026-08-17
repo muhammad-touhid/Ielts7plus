@@ -1,4 +1,4 @@
-// src/app/(public)/p/[slug]/PageRenderer.js
+// src/app/(public)/PageRenderer.js
 "use client";
 
 import { Render } from "@measured/puck";

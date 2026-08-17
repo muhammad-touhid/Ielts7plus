@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { RESERVED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
 function slugify(str) {
   return str
@@ -22,12 +23,23 @@ export default function NewPageForm() {
   async function handleCreate(e) {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
+    const finalSlug = slug || slugify(title);
+
+    // Client-side check for fast feedback — the server enforces this
+    // too (it's the actual guarantee, this is just nicer UX).
+    if (RESERVED_SLUGS.includes(finalSlug)) {
+      setError(
+        `"${finalSlug}" is reserved and can't be used as a page slug (it already belongs to a real route).`,
+      );
+      return;
+    }
+
+    setLoading(true);
     const res = await fetch("/api/pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, slug: slug || slugify(title) }),
+      body: JSON.stringify({ title, slug: finalSlug }),
     });
 
     const data = await res.json();

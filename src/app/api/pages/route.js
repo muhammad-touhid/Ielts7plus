@@ -1,6 +1,7 @@
 // src/app/api/pages/route.js
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { RESERVED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,20 @@ export async function POST(req) {
     );
   }
 
-  const existing = await prisma.page.findUnique({ where: { slug } });
+  const normalizedSlug = slug.toLowerCase().trim();
+
+  if (RESERVED_SLUGS.includes(normalizedSlug)) {
+    return NextResponse.json(
+      {
+        error: `"${normalizedSlug}" is reserved and can't be used as a page slug`,
+      },
+      { status: 409 },
+    );
+  }
+
+  const existing = await prisma.page.findUnique({
+    where: { slug: normalizedSlug },
+  });
   if (existing) {
     return NextResponse.json(
       { error: "A page with this slug already exists" },
@@ -36,7 +50,7 @@ export async function POST(req) {
   const page = await prisma.page.create({
     data: {
       title,
-      slug,
+      slug: normalizedSlug,
       data: { content: [], root: { props: { title } } },
       status: "draft",
     },

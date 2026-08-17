@@ -1,24 +1,23 @@
-export const revalidate = 300;
-import CTASection from "../../components/shared/CTASection";
-import Hero from "../../components/home/Hero";
-import HowItWorks from "../../components/HowItWorks";
-import OurCourses from "../../components/home/OurCourses";
-import ReviewCarousel from "../../components/shared/ReviewCarousel";
-import StatsSection from "../../components/shared/StatsSection";
-import BatchCarousel from "@/components/shared/batch-schedule/BatchCarousel";
-import UpcomingEvents from "@/components/home/UpcomingEvents";
+// src/app/(public)/page.js
+import prisma from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import PageRenderer from "./PageRenderer";
 
-export default function Home() {
-  return (
-    <main>
-      <Hero />
-      <OurCourses />
-      <BatchCarousel />
-      <UpcomingEvents />
-      <HowItWorks />
-      <StatsSection />
-      <ReviewCarousel />
-      <CTASection />
-    </main>
-  );
+export const dynamic = "force-dynamic";
+
+// "home" is reserved (see reservedSlugs.js) — this is the ONLY Page row
+// that ever renders at "/".
+const HOME_SLUG = "home";
+
+export async function generateMetadata() {
+  const page = await prisma.page.findUnique({ where: { slug: HOME_SLUG } });
+  return { title: page?.title || "IELTS7+" };
+}
+
+export default async function Home() {
+  const page = await prisma.page.findUnique({ where: { slug: HOME_SLUG } });
+
+  if (!page || page.status !== "published") notFound();
+
+  return <PageRenderer data={page.data} />;
 }

@@ -20,51 +20,61 @@ export default async function AdminPagesList() {
             No pages yet. Create your first one above.
           </p>
         )}
-        {pages.map((page) => (
-          <div
-            key={page.id}
-            className="flex items-center justify-between p-4 bg-white"
-          >
-            <div>
-              <p className="font-medium text-gray-900">{page.title}</p>
-              <p className="text-sm text-gray-500">
-                /{page.slug} &middot;{" "}
-                <span
-                  className={
-                    page.status === "published"
-                      ? "text-green-600"
-                      : "text-amber-600"
-                  }
-                >
-                  {page.status}
-                </span>
-                {page.draftData && page.status === "published" && (
-                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                    Draft changes pending
+        {pages.map((page) => {
+          const publicHref = page.slug === "home" ? "/" : `/${page.slug}`;
+          return (
+            <div
+              key={page.id}
+              className="flex items-center justify-between p-4 bg-white"
+            >
+              <div>
+                <p className="font-medium text-gray-900">
+                  {page.title}
+                  {page.slug === "home" && (
+                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                      Homepage
+                    </span>
+                  )}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {publicHref} &middot;{" "}
+                  <span
+                    className={
+                      page.status === "published"
+                        ? "text-green-600"
+                        : "text-amber-600"
+                    }
+                  >
+                    {page.status}
                   </span>
-                )}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/admin/pages/${page.id}/edit`}
-                className="text-blue-600 hover:underline text-sm font-medium"
-              >
-                Edit
-              </Link>
-              {page.status === "published" && (
+                  {page.draftData && page.status === "published" && (
+                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                      Draft changes pending
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
                 <Link
-                  href={`/p/${page.slug}`}
-                  target="_blank"
-                  className="text-gray-500 hover:underline text-sm"
+                  href={`/admin/pages/${page.id}/edit`}
+                  className="text-blue-600 hover:underline text-sm font-medium"
                 >
-                  View
+                  Edit
                 </Link>
-              )}
-              <DeletePageButton pageId={page.id} pageTitle={page.title} />
+                {page.status === "published" && (
+                  <Link
+                    href={publicHref}
+                    target="_blank"
+                    className="text-gray-500 hover:underline text-sm"
+                  >
+                    View
+                  </Link>
+                )}
+                <DeletePageButton pageId={page.id} pageTitle={page.title} />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

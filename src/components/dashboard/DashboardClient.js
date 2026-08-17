@@ -15,7 +15,7 @@ export default function DashboardClient({ user, enrollments, mockResults }) {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#354e98] to-[#4a71df] px-6 py-8">
+      <div className="bg-gradient-to-r from-[#354e98] to-[#4a71df] px-6 py-8 pt-30">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white text-2xl font-extrabold">

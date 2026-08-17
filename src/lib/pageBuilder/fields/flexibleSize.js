@@ -4,10 +4,26 @@
 import { useState } from "react";
 import { withLabel } from "./withLabel";
 
+const CUSTOM_UNITS = ["px", "rem", "em", "%", "vh", "vw"];
+
+// Splits a CSS length string like "24px" or "1.5rem" into { num, unit }.
+// Falls back to unit "px" with an empty number for anything unparseable
+// (blank, or a non-numeric keyword like "auto"/"none" — those live on
+// the preset side, not custom).
+function parseLength(value) {
+  const match = /^(-?\d*\.?\d+)\s*(px|rem|em|%|vh|vw)$/.exec(
+    (value || "").trim(),
+  );
+  if (!match) return { num: "", unit: "px" };
+  return { num: match[1], unit: match[2] };
+}
+
 // A reusable Puck custom field: a dropdown of preset values PLUS a
-// "Custom..." option that reveals a free-text input for any CSS length
-// (e.g. "24px", "2rem", "60vh", "10%"). Used everywhere spacing/height is
-// configurable — Elementor-style "pick a size OR type your own".
+// "Custom..." option. Custom mode is a numeric input + unit dropdown
+// (px/rem/em/%/vh/vw) with arrow-key stepping (↑/↓ ±1, Shift ±10),
+// combined into a single CSS string on change — e.g. typing 24 with
+// unit "px" produces "24px", same shape every preset already uses, so
+// every existing consumer of this field keeps working unchanged.
 //
 // Usage: fields: { marginTop: flexibleSizeField("Margin Top", SPACING_PRESETS) }
 export function flexibleSizeField(label, presets) {
@@ -17,7 +33,35 @@ export function flexibleSizeField(label, presets) {
     render: withLabel(function FlexibleSizeInput({ value, onChange }) {
       const matched = presets.find((p) => p.value === value);
       const [forceCustom, setForceCustom] = useState(false);
-      const showCustom = forceCustom || (!matched && value !== undefined && value !== "");
+      const showCustom =
+        forceCustom || (!matched && value !== undefined && value !== "");
+
+      const { num, unit } = parseLength(showCustom ? value : "");
+
+      function commit(nextNum, nextUnit) {
+        if (nextNum === "" || nextNum === undefined) {
+          onChange("");
+          return;
+        }
+        onChange(`${nextNum}${nextUnit}`);
+      }
+
+      function handleNumberChange(e) {
+        commit(e.target.value, unit);
+      }
+
+      function handleUnitChange(e) {
+        commit(num, e.target.value);
+      }
+
+      function handleKeyDown(e) {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        const current = parseFloat(num) || 0;
+        const step = e.shiftKey ? 10 : 1;
+        const next = current + (e.key === "ArrowUp" ? step : -step);
+        commit(String(next), unit);
+      }
 
       return (
         <div className="space-y-1">
@@ -41,13 +85,27 @@ export function flexibleSizeField(label, presets) {
             <option value="__custom__">Custom...</option>
           </select>
           {showCustom && (
-            <input
-              type="text"
-              placeholder="e.g. 24px, 2rem, 60vh"
-              defaultValue={value || ""}
-              onBlur={(e) => onChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
-            />
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                placeholder="e.g. 24"
+                value={num}
+                onChange={handleNumberChange}
+                onKeyDown={handleKeyDown}
+                className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+              />
+              <select
+                value={unit}
+                onChange={handleUnitChange}
+                className="w-[45px] border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
+              >
+                {CUSTOM_UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
       );
@@ -102,18 +160,14 @@ export const MAX_WIDTH_PRESETS = [
   { label: "X-Wide (72rem / ~1152px)", value: "72rem" },
 ];
 
-// For Section's overall content width. Same idea as MAX_WIDTH_PRESETS but
-// with wider defaults suited to a whole section's content box rather than
-// a single text block, plus a "Full width" option (maxWidth: none).
 export const CONTENT_WIDTH_PRESETS = [
   { label: "Boxed — narrow (48rem / ~768px)", value: "48rem" },
   { label: "Boxed — medium (64rem / ~1024px)", value: "64rem" },
   { label: "Boxed — wide (72rem / ~1152px)", value: "72rem" },
+  { label: "Boxed — xx-wide (80rem / 1280px)", value: "80rem" },
   { label: "Full width", value: "none" },
 ];
 
-// Real CSS font-size values (not Tailwind classes) — needed so size can
-// flow through the same responsive-per-device system as spacing fields.
 export const HEADING_SIZE_PRESETS = [
   { label: "Small", value: "1.5rem" },
   { label: "Medium", value: "1.875rem" },
@@ -129,16 +183,12 @@ export const TEXT_SIZE_PRESETS = [
   { label: "X-Large", value: "1.25rem" },
 ];
 
-// Real CSS text-align keywords (not Tailwind classes), same reasoning.
 export const TEXT_ALIGN_PRESETS = [
   { label: "Left", value: "left" },
   { label: "Center", value: "center" },
   { label: "Right", value: "right" },
 ];
 
-// For elements like Search Bar where "full width" rarely makes sense —
-// narrower range than CONTENT_WIDTH_PRESETS, still with a Custom option
-// via responsiveField/flexibleSizeField.
 export const INLINE_WIDTH_PRESETS = [
   { label: "Narrow (24rem / ~384px)", value: "24rem" },
   { label: "Medium (28rem / ~448px)", value: "28rem" },

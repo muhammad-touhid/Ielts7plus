@@ -6,6 +6,11 @@ import { DropZone } from "@measured/puck";
 
 // Matches the existing IELTS7+ gradient hero pattern:
 // from-[#354e98] to-[#4a71df] with a subtle grid overlay + decorative blobs.
+//
+// NOTE: This monolithic widget is not currently registered in config.js —
+// the live "Hero" in the page builder is heroTemplate() in templates.js,
+// built from atomic Section/Badge/Heading/Text/SearchBar/TagList pieces.
+// This file is kept only in case a fixed-field version is wanted back.
 export const Hero = {
   label: "Hero Section",
   fields: {
@@ -25,14 +30,23 @@ export const Hero = {
   },
   defaultProps: {
     heading: "Master IELTS With Confidence",
-    subheading: "Structured courses, expert mentors, and real mock tests to get the score you need.",
+    subheading:
+      "Structured courses, expert mentors, and real mock tests to get the score you need.",
     ctaText: "Explore Courses",
     ctaHref: "/courses",
     showSecondaryCta: "yes",
     secondaryCtaText: "Take a Free Mock Test",
     secondaryCtaHref: "/mock-test",
   },
-  render: ({ heading, subheading, ctaText, ctaHref, showSecondaryCta, secondaryCtaText, secondaryCtaHref }) => (
+  render: ({
+    heading,
+    subheading,
+    ctaText,
+    ctaHref,
+    showSecondaryCta,
+    secondaryCtaText,
+    secondaryCtaHref,
+  }) => (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#354e98] to-[#4a71df] py-24 px-6">
       {/* grid overlay */}
       <div
@@ -48,8 +62,12 @@ export const Hero = {
       <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
 
       <div className="relative max-w-4xl mx-auto text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">{heading}</h1>
-        <p className="text-lg md:text-xl text-white/85 mb-10 max-w-2xl mx-auto">{subheading}</p>
+        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+          {heading}
+        </h1>
+        <p className="text-lg md:text-xl text-white/85 mb-10 max-w-2xl mx-auto">
+          {subheading}
+        </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href={ctaHref || "#"}
@@ -67,7 +85,7 @@ export const Hero = {
           )}
         </div>
 
-        {/* Redesign this section: drop extra Elements or a Subsection here */}
+        {/* Redesign this section: drop extra Elements here, or nest a Section for a custom sub-layout */}
         <div className="mt-8">
           <DropZone zone="extra" />
         </div>

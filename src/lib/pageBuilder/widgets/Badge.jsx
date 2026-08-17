@@ -22,6 +22,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 export const Badge = {
@@ -45,6 +50,7 @@ export const Badge = {
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -77,6 +83,7 @@ export const Badge = {
       bottomLeft: { desktop: "9999px" },
       linked: true,
     },
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: ({
@@ -91,6 +98,7 @@ export const Badge = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -160,6 +168,7 @@ export const Badge = {
               fontFamily: resolvedFont
                 ? `'${resolvedFont}', sans-serif`
                 : undefined,
+              boxShadow: resolveShadow(shadow) || undefined,
             }}
           >
             {text}

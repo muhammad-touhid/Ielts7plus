@@ -23,6 +23,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 export const ImageBlock = {
@@ -71,6 +76,7 @@ export const ImageBlock = {
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -105,6 +111,7 @@ export const ImageBlock = {
       bottomLeft: { desktop: "8px" },
       linked: true,
     },
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: ({
@@ -121,6 +128,7 @@ export const ImageBlock = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -190,7 +198,11 @@ export const ImageBlock = {
             src={src}
             alt={alt}
             className={`${fit} ${scopedClass}`}
-            style={{ width, height: height === "auto" ? undefined : height }}
+            style={{
+              width,
+              height: height === "auto" ? undefined : height,
+              boxShadow: resolveShadow(shadow) || undefined,
+            }}
           />
         </div>
       </>

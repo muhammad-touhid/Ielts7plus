@@ -101,6 +101,7 @@ export const Section = {
       ],
     },
     bgColor: colorField("Background Color", [
+      { label: "Transparent", value: "transparent" },
       { label: "White", value: "#ffffff" },
       { label: "Light gray", value: "#f9fafb" },
       { label: "Dark", value: "#111827" },
@@ -186,6 +187,15 @@ export const Section = {
       ],
     },
     contentWidth: responsiveField("Content Width", CONTENT_WIDTH_PRESETS),
+    contentAlign: {
+      type: "radio",
+      label: "Content Alignment",
+      options: [
+        { label: "Left", value: "left" },
+        { label: "Center", value: "center" },
+        { label: "Right", value: "right" },
+      ],
+    },
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
@@ -197,7 +207,7 @@ export const Section = {
     columns: "1",
     columnGap: "32px",
     bgType: "color",
-    bgColor: "#ffffff",
+    bgColor: "transparent",
     bgImage: "",
     bgGradientDirection: "to bottom right",
     decorative: "none",
@@ -210,11 +220,12 @@ export const Section = {
     minHeight: "auto",
     verticalAlign: "flex-start",
     contentWidth: { desktop: "72rem" },
+    contentAlign: "center",
     padding: {
-      top: { desktop: "64", tablet: "40", mobile: "32" },
-      right: { desktop: "24" },
-      bottom: { desktop: "64", tablet: "40", mobile: "32" },
-      left: { desktop: "24" },
+      top: { desktop: "0", tablet: "0", mobile: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0", tablet: "0", mobile: "0" },
+      left: { desktop: "0" },
       linked: false,
       unit: "px",
     },
@@ -248,6 +259,7 @@ export const Section = {
     minHeight,
     verticalAlign,
     contentWidth,
+    contentAlign = "center",
     padding,
     margin,
     borderWidth,
@@ -312,6 +324,13 @@ export const Section = {
     const gradientClass =
       BG_GRADIENT_DIRECTION_CLASS[bgGradientDirection] || "bg-gradient-to-br";
 
+    const contentAlignMargin =
+      contentAlign === "left"
+        ? { marginLeft: 0, marginRight: "auto" }
+        : contentAlign === "right"
+          ? { marginLeft: "auto", marginRight: 0 }
+          : { marginLeft: "auto", marginRight: "auto" };
+
     return (
       <section
         className={`relative ${scopedClass} ${bgType === "gradient" ? `${gradientClass} from-[#354e98] to-[#4a71df]` : ""}`}
@@ -364,8 +383,8 @@ export const Section = {
           </>
         )}
         <div
-          className={`relative mx-auto grid w-full ${layout.className} ${scopedClass}-content`}
-          style={{ gap: columnGap }}
+          className={`relative grid w-full ${layout.className} ${scopedClass}-content`}
+          style={{ gap: columnGap, ...contentAlignMargin }}
         >
           <ResponsiveStyle
             className={`${scopedClass}-content`}

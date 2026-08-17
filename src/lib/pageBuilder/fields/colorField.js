@@ -190,7 +190,7 @@ export function colorField(label, extraPresets = []) {
                 onChange={(e) =>
                   onChange({ type: "custom", value: e.target.value })
                 }
-                className="w-9 h-9 border border-gray-300 rounded cursor-pointer shrink-0"
+                className="w-[20%] border border-gray-300 rounded cursor-pointer shrink-0"
               />
               <input
                 type="text"
@@ -201,7 +201,7 @@ export function colorField(label, extraPresets = []) {
                 onBlur={(e) =>
                   onChange({ type: "custom", value: e.target.value })
                 }
-                className="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+                className="w-[80%] border border-gray-300 rounded-md px-2 py-1.5 text-sm"
               />
             </div>
           )}

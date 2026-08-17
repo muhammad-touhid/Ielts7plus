@@ -1,4 +1,3 @@
-// src/lib/pageBuilder/widgets/Icon.jsx
 "use client";
 
 import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
@@ -22,6 +21,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 const CONTAINER_SIZES = {
@@ -58,17 +62,28 @@ export const IconBlock = {
         { label: "Circle — Translucent White", value: "circle-translucent" },
         { label: "Circle — Solid Brand Blue", value: "circle-brand" },
         { label: "Circle — Light Gray", value: "circle-light" },
+        {
+          label: "Custom (background + padding/radius below)",
+          value: "custom",
+        },
       ],
     },
     containerSize: {
       type: "select",
-      label: "Container Size",
+      label: "Container Size (preset circles only)",
       options: [
         { label: "Small", value: "small" },
         { label: "Medium", value: "medium" },
         { label: "Large", value: "large" },
       ],
     },
+    containerBgColor: colorField("Custom Background Color", [
+      { label: "Brand blue", value: "#2563eb" },
+      { label: "White translucent", value: "#ffffff26" },
+      { label: "Dark", value: "#111827" },
+      { label: "Light gray", value: "#f3f4f6" },
+      { label: "White", value: "#ffffff" },
+    ]),
     blockAlign: responsiveField(
       "Block Alignment (position within column)",
       TEXT_ALIGN_PRESETS,
@@ -76,6 +91,7 @@ export const IconBlock = {
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -85,6 +101,7 @@ export const IconBlock = {
     color: "#2563eb",
     containerStyle: "none",
     containerSize: "medium",
+    containerBgColor: "#2563eb",
     blockAlign: { desktop: "left" },
     padding: {
       top: { desktop: "0" },
@@ -103,6 +120,7 @@ export const IconBlock = {
       unit: "px",
     },
     ...borderDefaultProps(),
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: ({
@@ -112,6 +130,7 @@ export const IconBlock = {
     color,
     containerStyle,
     containerSize,
+    containerBgColor,
     blockAlign,
     padding,
     margin,
@@ -119,6 +138,7 @@ export const IconBlock = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -136,13 +156,16 @@ export const IconBlock = {
     const scopedClass = `pb-icon-${id}`;
     const wrapClass = `${scopedClass}-wrap`;
     const resolvedColor = resolveColor(color, themeColors);
+    const resolvedContainerBg = resolveColor(containerBgColor, themeColors);
 
     const containerClasses = {
       "circle-translucent": "bg-white/15",
       "circle-brand": "bg-blue-600",
       "circle-light": "bg-gray-100",
     };
-    const hasContainer = containerStyle !== "none";
+    const isPresetCircle =
+      containerStyle !== "none" && containerStyle !== "custom";
+    const isCustom = containerStyle === "custom";
     const dims = CONTAINER_SIZES[containerSize] || CONTAINER_SIZES.medium;
 
     const hoverCss = buildHoverCss(
@@ -185,8 +208,11 @@ export const IconBlock = {
         />
         {hoverCss && <style>{hoverCss}</style>}
         <div className={wrapClass}>
-          <div className={scopedClass}>
-            {hasContainer ? (
+          {isPresetCircle ? (
+            <div
+              className={scopedClass}
+              style={{ boxShadow: resolveShadow(shadow) || undefined }}
+            >
               <div
                 className={`${dims.box} rounded-full ${containerClasses[containerStyle]} flex items-center justify-center`}
               >
@@ -195,13 +221,35 @@ export const IconBlock = {
                   style={{ color: resolvedColor }}
                 />
               </div>
-            ) : (
+            </div>
+          ) : isCustom ? (
+            // Padding, border, and radius come from the generic
+            // padding/border/borderRadius fields above (already wired to
+            // scopedClass) — background color is the only thing this
+            // mode adds. Size the box by padding, not fixed w/h classes.
+            <div
+              className={`${scopedClass} inline-flex items-center justify-center`}
+              style={{
+                backgroundColor: resolvedContainerBg,
+                boxShadow: resolveShadow(shadow) || undefined,
+              }}
+            >
               <i
                 className={`ti ${icon} ${size}`}
                 style={{ color: resolvedColor }}
               />
-            )}
-          </div>
+            </div>
+          ) : (
+            <div
+              className={scopedClass}
+              style={{ boxShadow: resolveShadow(shadow) || undefined }}
+            >
+              <i
+                className={`ti ${icon} ${size}`}
+                style={{ color: resolvedColor }}
+              />
+            </div>
+          )}
         </div>
       </>
     );

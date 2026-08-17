@@ -26,6 +26,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 export const SearchBar = {
@@ -41,6 +46,7 @@ export const SearchBar = {
     ),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -66,6 +72,7 @@ export const SearchBar = {
       bottomLeft: { desktop: "12px" },
       linked: true,
     },
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: function SearchBarRender({
@@ -80,6 +87,7 @@ export const SearchBar = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -147,6 +155,7 @@ export const SearchBar = {
           <form
             onSubmit={handleSubmit}
             className={`flex items-center bg-white px-4 py-2 w-full ${scopedClass}`}
+            style={{ boxShadow: resolveShadow(shadow) || undefined }}
           >
             <svg
               className="mr-3 h-5 w-5 text-gray-400 shrink-0"

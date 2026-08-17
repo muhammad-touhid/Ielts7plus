@@ -11,9 +11,20 @@
 // separate Section/Heading/Text/Button/Icon layers instead of one
 // fixed-field mega-component. The old widget files are still in this
 // folder if you ever want a monolithic version back.
+//
+// Structure: Subsection was retired — a Section can be nested inside
+// another Section's column, and Section's own "Content Alignment" field
+// (left/center/right) covers the pinned-narrow-block use case Subsection
+// used to handle.
+//
+// Carousel / Grid are generic data-driven widgets — each picks a data
+// source (Batch, Course, Testimonial, or Custom) via a field on the
+// widget itself, rendering through the shared card registry in
+// src/lib/pageBuilder/cards/registry.js. CourseGrid is kept alongside
+// them for now since existing pages already use it; safe to retire once
+// Grid (dataSource: "course") is confirmed to cover the same ground.
 
 import { Section } from "./widgets/Section";
-import { Subsection } from "./widgets/Subsection";
 import { Heading } from "./widgets/Heading";
 import { Text } from "./widgets/Text";
 import { ImageBlock } from "./widgets/Image";
@@ -24,13 +35,14 @@ import { Spacer } from "./widgets/Spacer";
 import { Badge } from "./widgets/Badge";
 import { SearchBar } from "./widgets/SearchBar";
 import { TagList } from "./widgets/TagList";
-import { CourseGrid } from "./widgets/CourseGrid";
+import { Carousel } from "./widgets/Carousel";
+import { Grid } from "./widgets/Grid";
 
 export const config = {
   categories: {
     structure: {
       title: "Structure",
-      components: ["Section", "Subsection"],
+      components: ["Section"],
     },
     elements: {
       title: "Elements",
@@ -49,12 +61,11 @@ export const config = {
     },
     dynamic: {
       title: "Dynamic (Live Data)",
-      components: ["CourseGrid"],
+      components: ["Carousel", "Grid"],
     },
   },
   components: {
     Section,
-    Subsection,
     Heading,
     Text,
     ImageBlock,
@@ -65,6 +76,7 @@ export const config = {
     Badge,
     SearchBar,
     TagList,
-    CourseGrid,
+    Carousel,
+    Grid,
   },
 };

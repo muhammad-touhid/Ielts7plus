@@ -6,6 +6,16 @@ import { usePuck } from "@measured/puck";
 import { withLabel } from "./withLabel";
 import { getActiveDevice, DEVICE_LABELS } from "./breakpoints";
 
+const CUSTOM_UNITS = ["px", "rem", "em", "%", "vh", "vw"];
+
+function parseLength(value) {
+  const match = /^(-?\d*\.?\d+)\s*(px|rem|em|%|vh|vw)$/.exec(
+    (value || "").trim(),
+  );
+  if (!match) return { num: "", unit: "px" };
+  return { num: match[1], unit: match[2] };
+}
+
 function resolveInherited(obj, device) {
   const order = ["mobile", "tablet", "laptop", "desktop"];
   let i = order.indexOf(device) + 1;
@@ -62,6 +72,7 @@ export function responsiveField(label, presets) {
       }
 
       const showCustomInput = hasOverride && (forceCustom || !matched);
+      const { num, unit } = parseLength(showCustomInput ? rawCurrent : "");
 
       function setValue(v) {
         onChange({ ...obj, [device]: v });
@@ -71,6 +82,21 @@ export function responsiveField(label, presets) {
         delete next[device];
         onChange(next);
         setForceCustom(false);
+      }
+      function commitCustom(nextNum, nextUnit) {
+        if (nextNum === "" || nextNum === undefined) {
+          setValue("");
+          return;
+        }
+        setValue(`${nextNum}${nextUnit}`);
+      }
+      function handleKeyDown(e) {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        const current = parseFloat(num) || 0;
+        const step = e.shiftKey ? 10 : 1;
+        const next = current + (e.key === "ArrowUp" ? step : -step);
+        commitCustom(String(next), unit);
       }
 
       const inherited =
@@ -119,13 +145,27 @@ export function responsiveField(label, presets) {
                 <option value="__custom__">Custom...</option>
               </select>
               {showCustomInput && (
-                <input
-                  type="text"
-                  placeholder="e.g. 24px, 2rem, 60vh"
-                  defaultValue={!matched ? rawCurrent || "" : ""}
-                  onBlur={(e) => setValue(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
-                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    placeholder="e.g. 24"
+                    value={num}
+                    onChange={(e) => commitCustom(e.target.value, unit)}
+                    onKeyDown={handleKeyDown}
+                    className="w-[50%] border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
+                  />
+                  <select
+                    value={unit}
+                    onChange={(e) => commitCustom(num, e.target.value)}
+                    className="w-[50%] border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
+                  >
+                    {CUSTOM_UNITS.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
             </>
           )}

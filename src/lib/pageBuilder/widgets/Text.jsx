@@ -27,6 +27,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 export const Text = {
@@ -71,6 +76,7 @@ export const Text = {
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -101,6 +107,7 @@ export const Text = {
       unit: "px",
     },
     ...borderDefaultProps(),
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: ({
@@ -120,6 +127,7 @@ export const Text = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -190,6 +198,7 @@ export const Text = {
               fontFamily: resolvedFont
                 ? `'${resolvedFont}', sans-serif`
                 : undefined,
+              boxShadow: resolveShadow(shadow) || undefined,
             }}
           >
             {text}

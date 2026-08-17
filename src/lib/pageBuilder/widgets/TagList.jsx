@@ -22,10 +22,15 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
-// Hover applies per-pill (pillClass), not the row — that's the
-// meaningful interactive target, matching how border/radius already work here.
+// Shadow, like hover, applies per-pill (pillClass) — same reasoning as
+// border/radius already working this way here.
 export const TagList = {
   label: "Tag List",
   fields: {
@@ -53,6 +58,7 @@ export const TagList = {
     ),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -84,6 +90,7 @@ export const TagList = {
       bottomLeft: { desktop: "9999px" },
       linked: true,
     },
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: ({
@@ -96,6 +103,7 @@ export const TagList = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -117,6 +125,7 @@ export const TagList = {
       style === "translucent"
         ? "text-white/85 bg-white/10 hover:bg-white/20"
         : "text-gray-600 bg-gray-50 hover:bg-gray-100";
+    const resolvedShadow = resolveShadow(shadow) || undefined;
 
     const hoverCss = buildHoverCss(
       pillClass,
@@ -164,6 +173,7 @@ export const TagList = {
                 key={i}
                 href={item.href || "#"}
                 className={`px-4 py-1.5 text-sm transition-colors ${hoverEnabled ? "" : styleClasses} ${pillClass}`}
+                style={{ boxShadow: resolvedShadow }}
               >
                 {item.text}
               </Link>

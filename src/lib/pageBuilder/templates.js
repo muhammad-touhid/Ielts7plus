@@ -1,429 +1,42 @@
 // src/lib/pageBuilder/templates.js
 //
 // Each function returns a { content, zones } fragment built entirely out
-// of the atomic widgets (Section, Subsection, Heading, Text, ImageBlock,
-// ButtonBlock, IconBlock). Clicking "Insert" in the Templates panel merges
-// this fragment into the page — every piece lands on the canvas as its
-// own real, separate component: selectable, editable, and deletable
+// of the atomic widgets (Section, Heading, Text, ImageBlock, ButtonBlock,
+// IconBlock, etc.). Clicking "Insert" in the Templates panel merges this
+// fragment into the page — every piece lands on the canvas as its own
+// real, separate component: selectable, editable, and deletable
 // individually, exactly like any other layer you dragged in by hand.
+//
+// Note: Subsection was retired. Anywhere a template previously nested a
+// Subsection inside a Section for a pinned/narrow content block, it now
+// nests a plain Section instead, using that Section's own
+// "Content Alignment" field (left/center/right) and a transparent
+// background (bgType: "color", bgColor: "transparent").
+//
+// IMPORTANT — template insertion does NOT reliably merge in a widget's
+// defaultProps (confirmed while building the hero template: Badge,
+// SearchBar, and TagList rendered with zero border-radius because their
+// borderRadius was left unset, expecting a defaultProps fallback that
+// never happened). Every field that matters visually — borderRadius,
+// borderWidth/Style/Color, padding, margin — is set EXPLICITLY in every
+// widget below, even when the value matches that widget's own default.
 
 import { genId } from "./genId";
-
-export function heroTemplate() {
-  const sectionId = genId("section");
-  return {
-    content: [
-      {
-        type: "Section",
-        props: {
-          id: sectionId,
-          columns: "1",
-          columnGap: "32px",
-          bgType: "gradient",
-          bgColor: "#354e98",
-          bgImage: "",
-          overlayType: "none",
-          overlayColor: "#000000",
-          overlayColorFrom: "#1e3a8a",
-          overlayColorTo: "#1d4ed8",
-          overlayDirection: "to right",
-          overlayOpacity: "0",
-          minHeight: "75vh",
-          verticalAlign: "center",
-          contentWidth: { desktop: "48rem" },
-          padding: { top: { desktop: "96px" }, right: { desktop: "24px" }, bottom: { desktop: "96px" }, left: { desktop: "24px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ],
-    zones: {
-      [`${sectionId}:col-0`]: [
-        {
-          type: "Heading",
-          props: {
-            id: genId("heading"),
-            text: "Master IELTS With Confidence",
-            tag: "h1",
-            size: { desktop: "3.75rem" },
-            align: { desktop: "center" },
-            color: "#ffffff",
-            weight: "font-extrabold",
-            padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "16px" }, left: { desktop: "0px" }, linked: false },
-          },
-        },
-        {
-          type: "Text",
-          props: {
-            id: genId("text"),
-            text: "Structured courses, expert mentors, and real mock tests to get the score you need.",
-            size: { desktop: "1.125rem" },
-            align: { desktop: "center" },
-            color: "#e5e7eb",
-            maxWidth: { desktop: "42rem" },
-            padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "32px" }, left: { desktop: "0px" }, linked: false },
-          },
-        },
-        {
-          type: "ButtonBlock",
-          props: {
-            id: genId("button"),
-            text: "Explore Courses",
-            href: "/courses",
-            variant: "filled",
-            bgColor: "#ffffff",
-            bgOpacity: "100",
-            textColor: "#2563eb",
-            weight: "font-bold",
-            icon: "",
-            iconPosition: "right",
-            size: { desktop: "1.125rem" },
-            width: "inline-block",
-            align: { desktop: "center" },
-            padding: { top: { desktop: "16px" }, right: { desktop: "32px" }, bottom: { desktop: "16px" }, left: { desktop: "32px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          },
-        },
-      ],
-    },
-  };
-}
-
-export function statsTemplate() {
-  const sectionId = genId("section");
-  const stats = [
-    { number: "1000+", label: "Students Enrolled" },
-    { number: "8.5", label: "Highest Band Score" },
-    { number: "50+", label: "Expert Mentors" },
-    { number: "95%", label: "Success Rate" },
-  ];
-
-  const zones = {};
-  stats.forEach((stat, i) => {
-    zones[`${sectionId}:col-${i}`] = [
-      {
-        type: "Heading",
-        props: {
-          id: genId("heading"),
-          text: stat.number,
-          tag: "h3",
-          size: { desktop: "2.25rem" },
-          align: { desktop: "center" },
-          color: "#2563eb",
-          weight: "font-bold",
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "4px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-      {
-        type: "Text",
-        props: {
-          id: genId("text"),
-          text: stat.label,
-          size: { desktop: "0.875rem" },
-          align: { desktop: "center" },
-          color: "#6b7280",
-          maxWidth: { desktop: "none" },
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ];
-  });
-
-  return {
-    content: [
-      {
-        type: "Section",
-        props: {
-          id: sectionId,
-          columns: "4-equal",
-          columnGap: "32px",
-          bgType: "color",
-          bgColor: "#ffffff",
-          bgImage: "",
-          overlayType: "none",
-          overlayColor: "#000000",
-          overlayColorFrom: "#1e3a8a",
-          overlayColorTo: "#1d4ed8",
-          overlayDirection: "to right",
-          overlayOpacity: "0",
-          minHeight: "auto",
-          verticalAlign: "flex-start",
-          contentWidth: { desktop: "72rem" },
-          padding: { top: { desktop: "64px" }, right: { desktop: "24px" }, bottom: { desktop: "64px" }, left: { desktop: "24px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ],
-    zones,
-  };
-}
-
-export function testimonialTemplate() {
-  const headingSectionId = genId("section");
-  const cardsSectionId = genId("section");
-  const testimonials = [
-    { quote: "This platform completely changed how I prepared for IELTS.", name: "Ayesha Rahman", role: "Band 8.0" },
-    { quote: "The mock tests felt exactly like the real exam.", name: "Tanvir Ahmed", role: "Band 7.5" },
-  ];
-
-  const zones = {};
-  testimonials.forEach((t, i) => {
-    const subsectionId = genId("subsection");
-    zones[`${cardsSectionId}:col-${i}`] = [
-      {
-        type: "Subsection",
-        props: {
-          id: subsectionId,
-          bgType: "color",
-          bgColor: "#f9fafb",
-          bgImage: "",
-          minHeight: "auto",
-          padding: { top: { desktop: "32px" }, right: { desktop: "32px" }, bottom: { desktop: "32px" }, left: { desktop: "32px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          borderRadius: { topLeft: { desktop: "8px" }, topRight: { desktop: "8px" }, bottomRight: { desktop: "8px" }, bottomLeft: { desktop: "8px" }, linked: true },
-        },
-      },
-    ];
-    zones[`${subsectionId}:content`] = [
-      {
-        type: "Text",
-        props: {
-          id: genId("text"),
-          text: `“${t.quote}”`,
-          size: { desktop: "1rem" },
-          align: { desktop: "left" },
-          color: "#374151",
-          maxWidth: { desktop: "none" },
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "16px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-      {
-        type: "Heading",
-        props: {
-          id: genId("heading"),
-          text: t.name,
-          tag: "h4",
-          size: { desktop: "1.5rem" },
-          align: { desktop: "left" },
-          color: "#111827",
-          weight: "font-medium",
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-      {
-        type: "Text",
-        props: {
-          id: genId("text"),
-          text: t.role,
-          size: { desktop: "0.875rem" },
-          align: { desktop: "left" },
-          color: "#6b7280",
-          maxWidth: { desktop: "none" },
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ];
-  });
-
-  return {
-    content: [
-      {
-        type: "Section",
-        props: {
-          id: headingSectionId,
-          columns: "1",
-          columnGap: "32px",
-          bgType: "color",
-          bgColor: "#ffffff",
-          bgImage: "",
-          overlayType: "none",
-          overlayColor: "#000000",
-          overlayColorFrom: "#1e3a8a",
-          overlayColorTo: "#1d4ed8",
-          overlayDirection: "to right",
-          overlayOpacity: "0",
-          minHeight: "auto",
-          verticalAlign: "flex-start",
-          contentWidth: { desktop: "72rem" },
-          padding: { top: { desktop: "32px" }, right: { desktop: "24px" }, bottom: { desktop: "32px" }, left: { desktop: "24px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-      {
-        type: "Section",
-        props: {
-          id: cardsSectionId,
-          columns: "2-equal",
-          columnGap: "32px",
-          bgType: "color",
-          bgColor: "#ffffff",
-          bgImage: "",
-          overlayType: "none",
-          overlayColor: "#000000",
-          overlayColorFrom: "#1e3a8a",
-          overlayColorTo: "#1d4ed8",
-          overlayDirection: "to right",
-          overlayOpacity: "0",
-          minHeight: "auto",
-          verticalAlign: "flex-start",
-          contentWidth: { desktop: "72rem" },
-          padding: { top: { desktop: "32px" }, right: { desktop: "24px" }, bottom: { desktop: "32px" }, left: { desktop: "24px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ],
-    zones: {
-      [`${headingSectionId}:col-0`]: [
-        {
-          type: "Heading",
-          props: {
-            id: genId("heading"),
-            text: "What Our Students Say",
-            tag: "h2",
-            size: { desktop: "2.25rem" },
-            align: { desktop: "center" },
-            color: "#111827",
-            weight: "font-bold",
-            padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          },
-        },
-      ],
-      ...zones,
-    },
-  };
-}
-
-export function featureGridTemplate() {
-  const sectionId = genId("section");
-  const features = [
-    { icon: "ti-headphones", title: "Listening", text: "4-section practice with real exam audio." },
-    { icon: "ti-book", title: "Reading", text: "3 passages covering every question type." },
-    { icon: "ti-pencil", title: "Writing", text: "Task 1 & 2 with structured feedback." },
-    { icon: "ti-microphone", title: "Speaking", text: "Real recorded mock interviews." },
-  ];
-
-  const zones = {};
-  features.forEach((f, i) => {
-    const subsectionId = genId("subsection");
-    zones[`${sectionId}:col-${i}`] = [
-      {
-        type: "Subsection",
-        props: {
-          id: subsectionId,
-          bgType: "color",
-          bgColor: "#ffffff",
-          bgImage: "",
-          minHeight: "auto",
-          padding: { top: { desktop: "24px" }, right: { desktop: "24px" }, bottom: { desktop: "24px" }, left: { desktop: "24px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          borderRadius: { topLeft: { desktop: "8px" }, topRight: { desktop: "8px" }, bottomRight: { desktop: "8px" }, bottomLeft: { desktop: "8px" }, linked: true },
-        },
-      },
-    ];
-    zones[`${subsectionId}:content`] = [
-      {
-        type: "IconBlock",
-        props: {
-          id: genId("icon"),
-          icon: f.icon,
-          size: "text-3xl",
-          color: "#2563eb",
-          padding: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
-            linked: false,
-          },
-          margin: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "8px" },
-            left: { desktop: "0px" },
-            linked: false,
-          },
-        },
-      },
-      {
-        type: "Heading",
-        props: {
-          id: genId("heading"),
-          text: f.title,
-          tag: "h4",
-          size: { desktop: "1.5rem" },
-          align: { desktop: "left" },
-          color: "#111827",
-          weight: "font-medium",
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "8px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-      {
-        type: "Text",
-        props: {
-          id: genId("text"),
-          text: f.text,
-          size: { desktop: "0.875rem" },
-          align: { desktop: "left" },
-          color: "#6b7280",
-          maxWidth: { desktop: "none" },
-          padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ];
-  });
-
-  return {
-    content: [
-      {
-        type: "Section",
-        props: {
-          id: sectionId,
-          columns: "4-equal",
-          columnGap: "24px",
-          bgType: "color",
-          bgColor: "#f9fafb",
-          bgImage: "",
-          overlayType: "none",
-          overlayColor: "#000000",
-          overlayColorFrom: "#1e3a8a",
-          overlayColorTo: "#1d4ed8",
-          overlayDirection: "to right",
-          overlayOpacity: "0",
-          minHeight: "auto",
-          verticalAlign: "flex-start",
-          contentWidth: { desktop: "72rem" },
-          padding: { top: { desktop: "64px" }, right: { desktop: "24px" }, bottom: { desktop: "64px" }, left: { desktop: "24px" }, linked: false },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-        },
-      },
-    ],
-    zones,
-  };
-}
 
 // Built directly from the real, existing Hero component (full-screen
 // background image, navy-to-blue gradient overlay, badge, heading, text,
 // search bar, and tag pills) — not a generic approximation. Same idea as
 // the other templates: every piece lands as a separate, editable layer.
 //
-// Structure matches the original markup's intent: the Section itself is
+// Structure matches the original markup's intent: the outer Section is
 // FULL WIDTH (no outer max-width bounding it, background spans edge to
 // edge, matching the original's `w-full`), vertically centered (matching
-// `flex items-center`), with a single Subsection constraining just the
-// TEXT content to a readable max-width and pinning it to the left
+// `flex items-center`), with a single nested Section constraining just
+// the TEXT content to a readable max-width and pinning it to the left
 // (matching the original's `max-w-2xl` div inside a full-bleed section).
-export function realHeroTemplate() {
+export function heroTemplate() {
   const sectionId = genId("section");
-  const contentSubsectionId = genId("subsection");
+  const contentSectionId = genId("section");
 
   return {
     content: [
@@ -438,62 +51,112 @@ export function realHeroTemplate() {
           bgImage: "/images/hero-bg.jpg",
           overlayType: "gradient",
           overlayColor: "#000000",
-          overlayColorFrom: "#1e3a8a", // blue-900
-          overlayColorTo: "#1d4ed8", // blue-700
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
           overlayDirection: "to right",
           overlayOpacity: "0.85",
           minHeight: "100vh",
-          verticalAlign: "center", // matches original's `flex items-center`
-          contentWidth: { desktop: "none" }, // full width, matches original's `w-full` — no outer bounding
+          verticalAlign: "center",
+          contentWidth: { desktop: "none" },
+          contentAlign: "center",
           padding: {
-            top: { desktop: "48px" },
-            right: { desktop: "24px" }, // matches original's container `px-6`
-            bottom: { desktop: "48px" },
-            left: { desktop: "24px" },
+            top: { desktop: "48" },
+            right: { desktop: "24" },
+            bottom: { desktop: "48" },
+            left: { desktop: "24" },
             linked: false,
+            unit: "px",
           },
-          margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
         },
       },
     ],
     zones: {
       [`${sectionId}:col-0`]: [
         {
-          type: "Subsection",
+          type: "Section",
           props: {
-            id: contentSubsectionId,
-            maxWidth: { desktop: "42rem" }, // matches original's `max-w-2xl`
-            align: "left", // pinned left, not centered, within the full-width section
-            bgType: "none",
-            bgColor: "#ffffff",
+            id: contentSectionId,
+            columns: "1",
+            columnGap: "0px",
+            bgType: "color",
+            bgColor: "transparent",
             bgImage: "",
+            overlayType: "none",
+            overlayColor: "#000000",
+            overlayColorFrom: "#1e3a8a",
+            overlayColorTo: "#1d4ed8",
+            overlayDirection: "to right",
+            overlayOpacity: "0",
             minHeight: "auto",
-            padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            borderRadius: { topLeft: { desktop: "0px" }, topRight: { desktop: "0px" }, bottomRight: { desktop: "0px" }, bottomLeft: { desktop: "0px" }, linked: true },
+            verticalAlign: "flex-start",
+            contentWidth: { desktop: "42rem" },
+            contentAlign: "left",
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
           },
         },
       ],
-      [`${contentSubsectionId}:content`]: [
+      [`${contentSectionId}:col-0`]: [
         {
           type: "Badge",
           props: {
             id: genId("badge"),
             text: "★ #1 IELTS Preparation Platform",
             style: "translucent",
+            borderRadius: {
+              topLeft: { desktop: "9999px" },
+              topRight: { desktop: "9999px" },
+              bottomRight: { desktop: "9999px" },
+              bottomLeft: { desktop: "9999px" },
+              linked: true,
+            },
             padding: {
-              top: { desktop: "8px" },
-              right: { desktop: "20px" },
-              bottom: { desktop: "8px" },
-              left: { desktop: "20px" },
+              top: { desktop: "8" },
+              right: { desktop: "20" },
+              bottom: { desktop: "8" },
+              left: { desktop: "20" },
               linked: false,
+              unit: "px",
             },
             margin: {
-              top: { desktop: "0px" },
-              right: { desktop: "0px" },
-              bottom: { desktop: "20px" },
-              left: { desktop: "0px" },
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "20" },
+              left: { desktop: "0" },
               linked: false,
+              unit: "px",
             },
           },
         },
@@ -507,8 +170,22 @@ export function realHeroTemplate() {
             align: { desktop: "left" },
             color: "#ffffff",
             weight: "font-extrabold",
-            padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "16px" }, left: { desktop: "0px" }, linked: false },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "16" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
           },
         },
         {
@@ -518,10 +195,24 @@ export function realHeroTemplate() {
             text: "Receive expert tutoring for an excellent IELTS score through personalized mentorship.",
             size: { desktop: "1.125rem" },
             align: { desktop: "left" },
-            color: "#dbeafe", // blue-100
+            color: "#dbeafe",
             maxWidth: { desktop: "none" },
-            padding: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "0px" }, left: { desktop: "0px" }, linked: false },
-            margin: { top: { desktop: "0px" }, right: { desktop: "0px" }, bottom: { desktop: "32px" }, left: { desktop: "0px" }, linked: false },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "32" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
           },
         },
         {
@@ -532,12 +223,20 @@ export function realHeroTemplate() {
             buttonText: "Search",
             searchPath: "/search",
             width: { desktop: "32rem" },
+            borderRadius: {
+              topLeft: { desktop: "12px" },
+              topRight: { desktop: "12px" },
+              bottomRight: { desktop: "12px" },
+              bottomLeft: { desktop: "12px" },
+              linked: true,
+            },
             margin: {
-              top: { desktop: "0px" },
-              right: { desktop: "0px" },
-              bottom: { desktop: "20px" },
-              left: { desktop: "0px" },
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "20" },
+              left: { desktop: "0" },
               linked: false,
+              unit: "px",
             },
           },
         },
@@ -549,16 +248,30 @@ export function realHeroTemplate() {
               { text: "Writing Task 2", href: "/search?q=Writing Task 2" },
               { text: "Speaking Band 7", href: "/search?q=Speaking Band 7" },
               { text: "Listening Tips", href: "/search?q=Listening Tips" },
-              { text: "Reading Strategies", href: "/search?q=Reading Strategies" },
+              {
+                text: "Reading Strategies",
+                href: "/search?q=Reading Strategies",
+              },
               { text: "Mock Tests", href: "/search?q=Mock Tests" },
             ],
             style: "translucent",
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: "#e5e7eb",
+            borderRadius: {
+              topLeft: { desktop: "9999px" },
+              topRight: { desktop: "9999px" },
+              bottomRight: { desktop: "9999px" },
+              bottomLeft: { desktop: "9999px" },
+              linked: true,
+            },
             margin: {
-              top: { desktop: "0px" },
-              right: { desktop: "0px" },
-              bottom: { desktop: "0px" },
-              left: { desktop: "0px" },
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
               linked: false,
+              unit: "px",
             },
           },
         },
@@ -571,7 +284,7 @@ export function realHeroTemplate() {
 // background (left-to-right, not the generic diagonal), grid pattern +
 // decorative blobs, and 4 stat cards each with a circular icon badge,
 // a big number, a bold label, and supporting text.
-export function statsRealTemplate() {
+export function statsTemplate() {
   const sectionId = genId("section");
   const items = [
     {
@@ -613,19 +326,31 @@ export function statsRealTemplate() {
           containerStyle: "circle-translucent",
           containerSize: "medium",
           blockAlign: { desktop: "center" },
-          padding: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
             linked: true,
           },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
           margin: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "20px" },
-            left: { desktop: "0px" },
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "20" },
+            left: { desktop: "0" },
             linked: false,
+            unit: "px",
           },
         },
       },
@@ -641,19 +366,31 @@ export function statsRealTemplate() {
           blockAlign: { desktop: "center" },
           color: "#ffffff",
           weight: "font-extrabold",
-          padding: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
             linked: true,
           },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
           margin: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "8px" },
-            left: { desktop: "0px" },
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "8" },
+            left: { desktop: "0" },
             linked: false,
+            unit: "px",
           },
         },
       },
@@ -669,19 +406,31 @@ export function statsRealTemplate() {
           blockAlign: { desktop: "center" },
           color: "#ffffff",
           weight: "font-bold",
-          padding: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
             linked: true,
           },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
           margin: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "4px" },
-            left: { desktop: "0px" },
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "4" },
+            left: { desktop: "0" },
             linked: false,
+            unit: "px",
           },
         },
       },
@@ -695,19 +444,31 @@ export function statsRealTemplate() {
           maxWidth: { desktop: "none" },
           blockAlign: { desktop: "center" },
           color: "#dbeafe",
-          padding: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
             linked: true,
           },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
           margin: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
             linked: false,
+            unit: "px",
           },
         },
       },
@@ -736,19 +497,32 @@ export function statsRealTemplate() {
           minHeight: "auto",
           verticalAlign: "flex-start",
           contentWidth: { desktop: "72rem" },
+          contentAlign: "center",
           padding: {
-            top: { desktop: "64px" },
-            right: { desktop: "20px" },
-            bottom: { desktop: "64px" },
-            left: { desktop: "20px" },
+            top: { desktop: "64" },
+            right: { desktop: "20" },
+            bottom: { desktop: "64" },
+            left: { desktop: "20" },
             linked: false,
+            unit: "px",
           },
           margin: {
-            top: { desktop: "0px" },
-            right: { desktop: "0px" },
-            bottom: { desktop: "0px" },
-            left: { desktop: "0px" },
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
             linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
           },
         },
       },
@@ -757,11 +531,424 @@ export function statsRealTemplate() {
   };
 }
 
+// Built directly from the real, existing CTA component — full-bleed
+// brand gradient (matches Section's "grid-blobs" decorative option
+// exactly: same blob positions/sizes/colors and grid pattern), eyebrow
+// badge, headline, paragraph, two buttons, and a small avatar-row social
+// proof line.
+//
+// KNOWN GAPS vs the original CTASection.jsx — no current widget covers
+// these exactly, so they're approximated. See notes below:
+//   1. Eyebrow badge uses ButtonBlock (for its icon slot) instead of
+//      Badge. Original colors the icon amber separately from white
+//      text — ButtonBlock has one textColor for both, so no two-tone.
+//   2. The hand-drawn SVG squiggle under "Starts Today" — Heading is
+//      plain text only, squiggle dropped, both lines merged into one
+//      heading string.
+//   3. Avatar row uses 4 ImageBlocks in a narrow nested Section to fake
+//      fixed ~32px circles (ImageBlock's width field is percentage-only,
+//      not px) with negative left margin for the overlap — assumes the
+//      margin field accepts negative numbers. If the editor clamps to
+//      0+, avatars will render with gaps instead of overlapping.
+// Buttons are approximated as a 2-column Section (not a true flex row),
+// since none of the current widgets do inline flex-wrap of siblings.
+export function ctaTemplate() {
+  const sectionId = genId("section");
+  const buttonRowId = genId("section");
+
+  return {
+    content: [
+      {
+        type: "Section",
+        props: {
+          id: sectionId,
+          columns: "1",
+          columnGap: "0px",
+          bgType: "gradient",
+          bgColor: "#ffffff",
+          bgImage: "",
+          bgGradientDirection: "to bottom right",
+          decorative: "grid-blobs",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "center",
+          contentWidth: { desktop: "48rem" },
+          contentAlign: "center",
+          padding: {
+            top: { desktop: "112" },
+            right: { desktop: "20" },
+            bottom: { desktop: "112" },
+            left: { desktop: "20" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
+      },
+    ],
+    zones: {
+      [`${sectionId}:col-0`]: [
+        {
+          type: "ButtonBlock",
+          props: {
+            id: genId("button"),
+            text: "Limited Seats Available — Batch Starting Soon",
+            href: "",
+            variant: "transparent",
+            bgColor: "#ffffff",
+            bgOpacity: "15",
+            textColor: "#ffffff",
+            weight: "font-bold",
+            textCase: "uppercase",
+            icon: "ti-clock-hour-4",
+            iconPosition: "left",
+            width: "inline-block",
+            size: { desktop: "0.75rem" },
+            align: { desktop: "center" },
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: "#ffffff33",
+            borderRadius: {
+              topLeft: { desktop: "9999px" },
+              topRight: { desktop: "9999px" },
+              bottomRight: { desktop: "9999px" },
+              bottomLeft: { desktop: "9999px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "8" },
+              right: { desktop: "20" },
+              bottom: { desktop: "8" },
+              left: { desktop: "20" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "24" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "Heading",
+          props: {
+            id: genId("heading"),
+            text: "Your Band 7+ Journey Starts Today",
+            tag: "h1",
+            size: { desktop: "2.25rem" },
+            align: { desktop: "center" },
+            maxWidth: { desktop: "none" },
+            blockAlign: { desktop: "center" },
+            color: "#ffffff",
+            weight: "font-bold",
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "24" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "Text",
+          props: {
+            id: genId("text"),
+            text: "Join over 5,000 students who achieved their target IELTS score with expert-led coaching, structured practice, and personalised feedback — all designed to get you to Band 7+ faster.",
+            size: { desktop: "1.125rem" },
+            align: { desktop: "center" },
+            color: "#dbeafe",
+            maxWidth: { desktop: "36rem" },
+            blockAlign: { desktop: "center" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "32" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "Section",
+          props: {
+            id: buttonRowId,
+            columns: "2-equal",
+            columnGap: "5px",
+            bgType: "color",
+            bgColor: "transparent",
+            bgImage: "",
+            overlayType: "none",
+            overlayColor: "#000000",
+            overlayColorFrom: "#1e3a8a",
+            overlayColorTo: "#1d4ed8",
+            overlayDirection: "to right",
+            overlayOpacity: "0",
+            minHeight: "auto",
+            verticalAlign: "center",
+            contentWidth: { desktop: "36rem" },
+            contentAlign: "center",
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "16" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+          },
+        },
+        {
+          type: "HtmlBlock",
+          props: {
+            id: genId("html"),
+            // Real flexbox row + inline styles, not Tailwind classes —
+            // this HTML is stored in the DB and served via
+            // dangerouslySetInnerHTML, so Tailwind's build-time JIT
+            // scanner never sees it and won't generate any classes
+            // referenced here (same purge risk flagged earlier for the
+            // HowItWorks card HTML). Inline styles sidestep that
+            // entirely. Edit the html string directly to change avatar
+            // count, size, overlap, ring color, or label text.
+            html: `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+  <div style="display:flex;align-items:center;">
+    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="student" style="width:32px;height:32px;border-radius:9999px;object-fit:cover;display:block;box-shadow:0 0 0 2px #2563eb;margin-left:0;" />
+    <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="student" style="width:32px;height:32px;border-radius:9999px;object-fit:cover;display:block;box-shadow:0 0 0 2px #2563eb;margin-left:-10px;" />
+    <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="student" style="width:32px;height:32px;border-radius:9999px;object-fit:cover;display:block;box-shadow:0 0 0 2px #2563eb;margin-left:-10px;" />
+    <img src="https://randomuser.me/api/portraits/women/75.jpg" alt="student" style="width:32px;height:32px;border-radius:9999px;object-fit:cover;display:block;box-shadow:0 0 0 2px #2563eb;margin-left:-10px;" />
+  </div>
+  <p style="margin:0;color:#bfdbfe;font-size:0.875rem;">
+    <span style="font-weight:700;color:#ffffff;">2,400+ students</span> enrolled this month
+  </p>
+</div>`,
+            blockAlign: { desktop: "center" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${buttonRowId}:col-0`]: [
+        {
+          type: "ButtonBlock",
+          props: {
+            id: genId("button"),
+            text: "Book a Free Consultation",
+            href: "/contact",
+            variant: "filled",
+            bgColor: "#ffffff",
+            bgOpacity: "100",
+            textColor: "#2563eb",
+            weight: "font-bold",
+            textCase: "none",
+            icon: "ti-calendar-event",
+            iconPosition: "left",
+            width: "inline-block",
+            size: { desktop: "0.875rem" },
+            align: { desktop: "center" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "9999px" },
+              topRight: { desktop: "9999px" },
+              bottomRight: { desktop: "9999px" },
+              bottomLeft: { desktop: "9999px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "16" },
+              right: { desktop: "32" },
+              bottom: { desktop: "16" },
+              left: { desktop: "32" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${buttonRowId}:col-1`]: [
+        {
+          type: "ButtonBlock",
+          props: {
+            id: genId("button"),
+            text: "Explore Courses",
+            href: "/courses",
+            variant: "transparent",
+            bgColor: "#ffffff",
+            bgOpacity: "10",
+            textColor: "#ffffff",
+            weight: "font-bold",
+            textCase: "none",
+            icon: "ti-books",
+            iconPosition: "left",
+            width: "inline-block",
+            size: { desktop: "0.875rem" },
+            align: { desktop: "center" },
+            borderWidth: "2px",
+            borderStyle: "solid",
+            borderColor: "#ffffff66",
+            borderRadius: {
+              topLeft: { desktop: "9999px" },
+              topRight: { desktop: "9999px" },
+              bottomRight: { desktop: "9999px" },
+              bottomLeft: { desktop: "9999px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "16" },
+              right: { desktop: "32" },
+              bottom: { desktop: "16" },
+              left: { desktop: "32" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+    },
+  };
+}
+
 export const templates = [
-  { key: "realHero", label: "Hero (Real)", description: "Your actual homepage hero — bg image, badge, search, tags", build: realHeroTemplate },
-  { key: "realStats", label: "Stats (Real)", description: "Your actual stats section — gradient, blobs, 4 icon cards", build: statsRealTemplate },
-  { key: "hero", label: "Hero (Generic)", description: "Full-width gradient hero with heading, text, button", build: heroTemplate },
-  { key: "stats", label: "Stats Row (Generic)", description: "4-column stat numbers", build: statsTemplate },
-  { key: "testimonials", label: "Testimonials", description: "Heading + 2 testimonial cards", build: testimonialTemplate },
-  { key: "features", label: "Feature Grid", description: "4-column icon + title + text cards", build: featureGridTemplate },
+  {
+    key: "hero",
+    label: "Hero",
+    description: "Your actual homepage hero — bg image, badge, search, tags",
+    build: heroTemplate,
+  },
+  {
+    key: "stats",
+    label: "Stats",
+    description: "Your actual stats section — gradient, blobs, 4 icon cards",
+    build: statsTemplate,
+  },
+  {
+    key: "cta",
+    label: "CTA",
+    description:
+      "Your actual CTA section — gradient, badge, headline, buttons, avatars",
+    build: ctaTemplate,
+  },
 ];

@@ -21,6 +21,11 @@ import {
   hoverDefaultProps,
   buildHoverCss,
 } from "../fields/hoverField";
+import {
+  shadowField,
+  shadowDefaultProps,
+  resolveShadow,
+} from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
 export const HtmlBlock = {
@@ -34,6 +39,7 @@ export const HtmlBlock = {
     padding: spacingBoxField("Padding"),
     margin: spacingBoxField("Margin"),
     ...borderFieldSet(),
+    shadow: shadowField(),
     ...hoverFieldSet(),
   },
   defaultProps: {
@@ -57,6 +63,7 @@ export const HtmlBlock = {
       unit: "px",
     },
     ...borderDefaultProps(),
+    ...shadowDefaultProps(),
     ...hoverDefaultProps(),
   },
   render: ({
@@ -69,6 +76,7 @@ export const HtmlBlock = {
     borderStyle,
     borderColor,
     borderRadius,
+    shadow,
     hoverEnabled,
     hoverBgColor,
     hoverTextColor,
@@ -128,6 +136,7 @@ export const HtmlBlock = {
         <div className={wrapClass}>
           <div
             className={scopedClass}
+            style={{ boxShadow: resolveShadow(shadow) || undefined }}
             dangerouslySetInnerHTML={{ __html: html }}
           />
         </div>

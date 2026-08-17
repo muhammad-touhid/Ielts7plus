@@ -40,7 +40,22 @@ export default async function CoursePage({ params }) {
     { icon: "ti ti-users", label: "Batch Size", value: course.batchSize },
     { icon: "ti ti-calendar-event", label: "Classes", value: course.classes },
     { icon: "ti ti-signal", label: "Level", value: course.level },
-    { icon: "ti ti-tag", label: "Course Fee", value: course.price },
+    {
+      icon: "ti ti-tag",
+      label: "Course Fee",
+      // If salePrice is set, render both prices; otherwise just the
+      // regular price, exactly as before.
+      value: course.salePrice ? (
+        <span className="inline-flex items-center gap-2">
+          <span className="text-slate-400 line-through font-medium">
+            {course.price}
+          </span>
+          <span className="text-blue-600">{course.salePrice}</span>
+        </span>
+      ) : (
+        course.price
+      ),
+    },
   ];
 
   const whatYouWillLearn = Array.isArray(course.whatYouWillLearn)

@@ -24,6 +24,7 @@ model Course {
   icon             String
   coverImage String?
   price            String
+  salePrice        String?
   duration         String
   batchSize        String
   classes          String
@@ -36,6 +37,7 @@ model Course {
   createdAt        DateTime @default(now())
   batches          Batch[]
 }
+
 
 model Batch {
   id          String       @id @default(cuid())

@@ -33,7 +33,9 @@ export async function POST(req) {
         tagline: body.tagline,
         description: body.description,
         icon: body.icon,
+        coverImage: body.coverImage || null, // was missing entirely before — create never saved a cover image
         price: body.price,
+        salePrice: body.salePrice || null,
         duration: body.duration,
         batchSize: body.batchSize,
         classes: body.classes,

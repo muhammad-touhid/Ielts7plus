@@ -8,8 +8,6 @@ export default async function CoursesPage() {
     orderBy: { createdAt: "asc" },
   });
 
-  console.log(courses);
-
   return (
     <main className="bg-slate-50 min-h-screen">
       {/* Hero */}
@@ -99,9 +97,20 @@ export default async function CoursesPage() {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
-                    <span className="text-lg font-extrabold text-blue-600">
-                      {course.price}
-                    </span>
+                    {course.salePrice ? (
+                      <span className="flex items-baseline gap-2">
+                        <span className="text-sm text-slate-400 line-through">
+                          {course.price}
+                        </span>
+                        <span className="text-lg font-extrabold text-blue-600">
+                          {course.salePrice}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-lg font-extrabold text-blue-600">
+                        {course.price}
+                      </span>
+                    )}
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 group-hover:gap-2.5 transition-all">
                       View Course <i className="ti ti-arrow-right text-sm" />
                     </span>

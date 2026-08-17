@@ -1,4 +1,3 @@
-// src/lib/pageBuilder/cards/CourseCard.jsx
 "use client";
 
 import Link from "next/link";
@@ -70,15 +69,38 @@ export function CourseCard({ item: course }) {
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
-          <span
-            className="font-extrabold"
-            style={{
-              color: "var(--card-accent, #2563eb)",
-              fontSize: "var(--card-button-size, 0.875rem)",
-            }}
-          >
-            {course.price}
-          </span>
+          {course.salePrice ? (
+            <span className="flex items-baseline gap-2">
+              <span
+                className="line-through"
+                style={{
+                  color: "var(--card-text-color, #64748b)",
+                  fontSize: "var(--card-text-size, 0.875rem)",
+                }}
+              >
+                {course.price}
+              </span>
+              <span
+                className="font-extrabold"
+                style={{
+                  color: "var(--card-accent, #2563eb)",
+                  fontSize: "var(--card-button-size, 0.875rem)",
+                }}
+              >
+                {course.salePrice}
+              </span>
+            </span>
+          ) : (
+            <span
+              className="font-extrabold"
+              style={{
+                color: "var(--card-accent, #2563eb)",
+                fontSize: "var(--card-button-size, 0.875rem)",
+              }}
+            >
+              {course.price}
+            </span>
+          )}
           <span
             className="inline-flex items-center gap-1 font-bold group-hover:gap-2 transition-all"
             style={{

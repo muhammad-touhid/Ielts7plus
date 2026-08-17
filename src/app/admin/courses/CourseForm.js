@@ -12,6 +12,7 @@ const defaultForm = {
   icon: "ti ti-certificate",
   coverImage: "",
   price: "",
+  salePrice: "",
   duration: "",
   batchSize: "",
   classes: "",
@@ -32,6 +33,7 @@ export default function CourseForm({ course }) {
       ? {
           ...course,
           coverImage: course.coverImage ?? "",
+          salePrice: course.salePrice ?? "",
           features: course.features ?? [""],
           highlights: course.highlights ?? [{ icon: "ti ti-star", label: "" }],
           whatYouWillLearn: course.whatYouWillLearn ?? [
@@ -257,6 +259,23 @@ export default function CourseForm({ course }) {
               value={form.price}
               onChange={(e) =>
                 setForm((f) => ({ ...f, price: e.target.value }))
+              }
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>
+              Sale Price{" "}
+              <span className="text-slate-400 normal-case font-normal">
+                (optional — leave blank for no discount)
+              </span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. ৳ 6,500"
+              value={form.salePrice}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, salePrice: e.target.value }))
               }
               className={inputClass}
             />

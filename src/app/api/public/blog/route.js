@@ -1,15 +1,15 @@
-// src/app/api/public/courses/route.js
+// src/app/api/public/blog/route.js
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/public/courses?limit=6
-// Used by the Course Grid/Carousel page-builder widget (both in Puck's
+// GET /api/public/blog?limit=6
+// Used by the Blog Grid/Carousel page-builder widget (both in Puck's
 // editor preview and on the live published page — both render
 // client-side in our current architecture, so this widget fetches via
 // API rather than querying Prisma directly, same reasoning as
-// SearchBar's client-side navigation).
+// SearchBar's client-side navigation and the Course Grid widget).
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(
@@ -17,23 +17,21 @@ export async function GET(req) {
     24,
   );
 
-  const courses = await prisma.course.findMany({
+  const posts = await prisma.blogPost.findMany({
     where: { published: true },
     orderBy: { createdAt: "desc" },
     take: limit,
     select: {
       slug: true,
-      name: true,
-      tagline: true,
-      icon: true,
-      coverImage: true,
-      duration: true,
-      level: true,
-      price: true,
-      salePrice: true, // was missing — Grid/Carousel course cards never showed discounts without this
-      badge: true,
+      title: true,
+      excerpt: true,
+      category: true,
+      image: true,
+      author: true,
+      readTime: true,
+      createdAt: true,
     },
   });
 
-  return NextResponse.json({ courses });
+  return NextResponse.json({ posts });
 }

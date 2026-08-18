@@ -3,6 +3,7 @@ import { BatchCard } from "./BatchCard";
 import { CourseCard } from "./CourseCard";
 import { TestimonialCard } from "./TestimonialCard";
 import { EventCard } from "./EventCard";
+import { BlogCard } from "./BlogCard";
 
 // Single source of truth for every data source Grid can offer, and the
 // data-source part of what Carousel can offer. Carousel additionally
@@ -36,6 +37,13 @@ export const CARD_REGISTRY = {
     fetchUrl: (limit) => `/api/public/events?limit=${limit}`,
     extractItems: (json) => json.events || [],
     getKey: (item) => item.id,
+  },
+  blog: {
+    label: "Blog",
+    Card: BlogCard,
+    fetchUrl: (limit) => `/api/public/blog?limit=${limit}`,
+    extractItems: (json) => json.posts || [],
+    getKey: (item) => item.slug,
   },
 };
 

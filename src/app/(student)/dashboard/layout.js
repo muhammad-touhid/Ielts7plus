@@ -1,13 +1,21 @@
-import Header from "@/components/common/Header";
-import Footer from "@/components/common/Footer";
+// src/app/(student)/dashboard/layout.js
 import SessionWrapper from "@/components/common/SessionWrapper";
+import PageRenderer from "@/app/(public)/PageRenderer";
+import { getPublishedPageData } from "@/lib/pageBuilder/getPublishedPage";
 
-export default function DashboardLayout({ children }) {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardLayout({ children }) {
+  const [headerData, footerData] = await Promise.all([
+    getPublishedPageData("site-header"),
+    getPublishedPageData("site-footer"),
+  ]);
+
   return (
     <SessionWrapper>
-      <Header />
+      {headerData && <PageRenderer data={headerData} />}
       <main>{children}</main>
-      <Footer />
+      {footerData && <PageRenderer data={footerData} />}
     </SessionWrapper>
   );
 }

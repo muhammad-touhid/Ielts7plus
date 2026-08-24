@@ -738,7 +738,7 @@ export function ctaTemplate() {
           props: {
             id: buttonRowId,
             columns: "2-equal",
-            columnGap: "5px",
+            columnGap: "16px",
             bgType: "color",
             bgColor: "transparent",
             bgImage: "",
@@ -931,6 +931,823 @@ export function ctaTemplate() {
   };
 }
 
+// Starting point for the "site-header" Page (see reservedSlugs.js /
+// getPublishedPage.js) — logo (links home) + horizontal Menu with
+// dropdowns matching the real Header.jsx's nav structure + a Sign In /
+// Dashboard auth button.
+//
+// KNOWN GAPS vs the real Header.jsx (accepted when choosing full
+// replacement over keeping the real Header):
+//   - No scroll-triggered background/color change (Section has no
+//     scroll-aware behavior).
+//   - Logo sizing is approximate — ImageBlock's width field is
+//     percentage-only, not fixed px, same limitation flagged for the
+//     CTA template's avatar row. Adjust in the editor if it renders too
+//     big/small for a 1/3-width column.
+//   - 3-equal column split (logo | menu | auth button) is a rough
+//     approximation of the real header's logo-left/nav-center/cta-right
+//     layout, not a pixel match.
+export function headerTemplate() {
+  const sectionId = genId("section");
+  const logoSectionId = genId("section");
+  const menuSectionId = genId("section");
+  const buttonSectionId = genId("section");
+
+  // Nested-Section-per-slot helper — same pattern as heroTemplate's
+  // inner content Section and ctaTemplate's button-row Section. Each
+  // slot gets its OWN contentWidth (resizable) and contentAlign
+  // (horizontal position), independent of the other slots — this is
+  // what actually gives you per-slot alignment control, rather than
+  // relying on each widget's own blockAlign inside a rigid equal-width
+  // grid column.
+  function slotSection(slotId, align, width) {
+    return {
+      type: "Section",
+      props: {
+        id: slotId,
+        columns: "1",
+        columnGap: "0px",
+        columnAlign: "center", // vertical centering within the slot
+        bgType: "color",
+        bgColor: "transparent",
+        bgImage: "",
+        overlayType: "none",
+        overlayColor: "#000000",
+        overlayColorFrom: "#1e3a8a",
+        overlayColorTo: "#1d4ed8",
+        overlayDirection: "to right",
+        overlayOpacity: "0",
+        minHeight: "auto",
+        verticalAlign: "center",
+        // MUST be narrower than the slot's actual column width for
+        // contentAlign's left/center/right margin trick to have any
+        // visible effect — "none" (no constraint) makes the box fill
+        // 100% of the column, leaving zero free space to shift within,
+        // so contentAlign silently does nothing regardless of value.
+        // Resize freely in the editor — just don't set it back to "none".
+        contentWidth: { desktop: width },
+        contentAlign: align, // "left" | "center" | "right"
+        stickyMode: "static",
+        padding: {
+          top: { desktop: "0" },
+          right: { desktop: "0" },
+          bottom: { desktop: "0" },
+          left: { desktop: "0" },
+          linked: false,
+          unit: "px",
+        },
+        margin: {
+          top: { desktop: "0" },
+          right: { desktop: "0" },
+          bottom: { desktop: "0" },
+          left: { desktop: "0" },
+          linked: false,
+          unit: "px",
+        },
+        borderWidth: "0px",
+        borderStyle: "none",
+        borderColor: "transparent",
+        borderRadius: {
+          topLeft: { desktop: "0px" },
+          topRight: { desktop: "0px" },
+          bottomRight: { desktop: "0px" },
+          bottomLeft: { desktop: "0px" },
+          linked: true,
+        },
+      },
+    };
+  }
+
+  return {
+    content: [
+      {
+        type: "Section",
+        props: {
+          id: sectionId,
+          columns: "3-equal",
+          columnGap: "24px",
+          columnAlign: "center",
+          bgType: "color",
+          bgColor: "transparent", // transparent at top — hero shows through
+          bgImage: "",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "center",
+          contentWidth: { desktop: "80rem" },
+          contentAlign: "center",
+          // "fixed", not "sticky" — sticky stays in normal document
+          // flow until you scroll past it, which pushes Hero down
+          // below it instead of the header floating transparently on
+          // top of Hero from the first pixel. Fixed removes the header
+          // from flow entirely so Hero starts at the true top of the
+          // page. Tradeoff: any OTHER page's content that immediately
+          // follows the header and does NOT want to be covered by it
+          // will need manual top padding added in the editor — Hero
+          // wants the overlap, most other first-sections won't.
+          stickyMode: "fixed",
+          scrollBgColor: "#ffffff",
+          scrollThreshold: 10,
+          padding: {
+            top: { desktop: "16" },
+            right: { desktop: "24" },
+            bottom: { desktop: "16" },
+            left: { desktop: "24" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
+      },
+    ],
+    zones: {
+      [`${sectionId}:col-0`]: [slotSection(logoSectionId, "left", "24rem")],
+      [`${sectionId}:col-1`]: [slotSection(menuSectionId, "center", "40rem")],
+      [`${sectionId}:col-2`]: [slotSection(buttonSectionId, "right", "24rem")],
+
+      [`${logoSectionId}:col-0`]: [
+        {
+          type: "ImageBlock",
+          props: {
+            id: genId("image"),
+            src: "/images/IELTS7.jpeg",
+            alt: "IELTS7+ logo",
+            href: "/",
+            width: "25%",
+            height: "auto",
+            fit: "object-cover",
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "8px" },
+              topRight: { desktop: "8px" },
+              bottomRight: { desktop: "8px" },
+              bottomLeft: { desktop: "8px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${menuSectionId}:col-0`]: [
+        {
+          type: "Menu",
+          props: {
+            id: genId("menu"),
+            items: [
+              {
+                label: "Courses",
+                href: "/courses",
+                children: [
+                  { label: "All Courses", href: "/courses" },
+                  { label: "Batch Schedule", href: "/batch-schedule" },
+                  { label: "IELTS", href: "/courses/ielts-preparation" },
+                  {
+                    label: "Spoken English",
+                    href: "/courses/spoken-english",
+                  },
+                  {
+                    label: "Advance Writing",
+                    href: "/courses/advanced-writing",
+                  },
+                  {
+                    label: "Grammar & Writing",
+                    href: "/courses/grammar-writing",
+                  },
+                ],
+              },
+              {
+                label: "Mock Test",
+                href: "/mock-test",
+                children: [
+                  { label: "Mock Test", href: "/mock-test" },
+                  { label: "IELTS Calculator", href: "/band-calculator" },
+                ],
+              },
+              {
+                label: "About Us",
+                href: "/about",
+                children: [
+                  { label: "About Us", href: "/about" },
+                  { label: "Success Stories", href: "/success-stories" },
+                  { label: "Guides", href: "/guides" },
+                  { label: "FAQ", href: "/faq" },
+                ],
+              },
+              { label: "Events", href: "/events", children: [] },
+              { label: "Blog", href: "/blog", children: [] },
+              { label: "Contact", href: "/contact", children: [] },
+            ],
+            orientation: "horizontal",
+            textColor: "#374151",
+            hoverColor: "#2563eb",
+            fontSize: { desktop: "0.9375rem" },
+            gap: "18px",
+            blockAlign: { desktop: "center" },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${buttonSectionId}:col-0`]: [
+        {
+          type: "ButtonBlock",
+          props: {
+            id: genId("button"),
+            isAuthButton: true,
+            text: "Sign In",
+            href: "",
+            variant: "filled",
+            font: { type: "theme", token: "button" },
+            bgColor: "#2563eb",
+            bgOpacity: "100",
+            textColor: "#ffffff",
+            weight: "font-bold",
+            textCase: "none",
+            icon: "ti-login",
+            iconPosition: "left",
+            width: "inline-block",
+            size: { desktop: "0.875rem" },
+            align: { desktop: "right" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "8px" },
+              topRight: { desktop: "8px" },
+              bottomRight: { desktop: "8px" },
+              bottomLeft: { desktop: "8px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "10" },
+              right: { desktop: "18" },
+              bottom: { desktop: "10" },
+              left: { desktop: "18" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            dashboardLabel: "Dashboard",
+            signOutLabel: "Sign Out",
+            avatarColor: "#2563eb",
+            nameColor: "#1e293b",
+          },
+        },
+      ],
+    },
+  };
+}
+
+// Starting point for the "site-footer" Page — dark background, 4
+// columns (logo+text+social / quick links / resources / contact),
+// matching the real Footer.jsx's structure.
+//
+// KNOWN GAPS vs the real Footer.jsx:
+//   - Social icon row and the contact-info block use HtmlBlock (raw
+//     HTML, inline styles) since no widget covers icon-only link rows
+//     or a labeled icon+text list — same reasoning as the CTA
+//     template's avatar row.
+//   - The newsletter signup input+button is dropped entirely — no
+//     widget handles form submission, and building one is out of scope
+//     here. Add it back via HtmlBlock (display only, won't actually
+//     submit anywhere) or wire up a real form widget later if needed.
+export function footerTemplate() {
+  const sectionId = genId("section");
+  const bottomSectionId = genId("section");
+  const bottomBarClass = genId("footer-bottom");
+
+  return {
+    content: [
+      {
+        type: "Section",
+        props: {
+          id: sectionId,
+          columns: "4-equal",
+          columnGap: "32px",
+          bgType: "color",
+          bgColor: "#111827",
+          bgImage: "",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "flex-start",
+          contentWidth: { desktop: "80rem" },
+          contentAlign: "center",
+          padding: {
+            top: { desktop: "80" },
+            right: { desktop: "24" },
+            bottom: { desktop: "40" },
+            left: { desktop: "24" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
+      },
+      {
+        type: "Section",
+        props: {
+          id: bottomSectionId,
+          columns: "1",
+          columnGap: "0px",
+          bgType: "color",
+          bgColor: "#111827",
+          bgImage: "",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "flex-start",
+          contentWidth: { desktop: "80rem" },
+          contentAlign: "center",
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "24" },
+            bottom: { desktop: "0" },
+            left: { desktop: "24" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
+      },
+    ],
+    zones: {
+      [`${bottomSectionId}:col-0`]: [
+        {
+          type: "HtmlBlock",
+          props: {
+            id: genId("html"),
+            html: `<style>
+  .${bottomBarClass} { flex-direction: column; }
+  @media (min-width: 768px) { .${bottomBarClass} { flex-direction: row; } }
+</style>
+<div class="${bottomBarClass}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #1f2937;padding:24px 0;">
+  <p style="font-size:0.75rem;color:#4b5563;margin:0;">© 2026 IELTS7+. All rights reserved.</p>
+  <div style="display:flex;gap:24px;">
+    <a href="/privacy" style="font-size:0.75rem;color:#4b5563;text-decoration:none;">Privacy Policy</a>
+    <a href="/terms" style="font-size:0.75rem;color:#4b5563;text-decoration:none;">Terms of Service</a>
+    <a href="/cookies" style="font-size:0.75rem;color:#4b5563;text-decoration:none;">Cookie Policy</a>
+  </div>
+</div>`,
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${sectionId}:col-0`]: [
+        {
+          type: "ImageBlock",
+          props: {
+            id: genId("image"),
+            src: "/images/IELTS7.jpeg",
+            alt: "IELTS7+ logo",
+            href: "/",
+            width: "50%",
+            height: "auto",
+            fit: "object-cover",
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "8px" },
+              topRight: { desktop: "8px" },
+              bottomRight: { desktop: "8px" },
+              bottomLeft: { desktop: "8px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "16" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "Text",
+          props: {
+            id: genId("text"),
+            text: "Your trusted partner for achieving IELTS band 7 and above. Expert-led courses, real practice tests, and personalized feedback.",
+            size: { desktop: "0.9375rem" },
+            align: { desktop: "left" },
+            color: "#9ca3af",
+            maxWidth: { desktop: "none" },
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "20" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "HtmlBlock",
+          props: {
+            id: genId("html"),
+            html: `<div style="display:flex;gap:8px;">
+  <a href="https://www.facebook.com/ielts7plus" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid #374151;color:#9ca3af;text-decoration:none;"><i class="ti ti-brand-facebook"></i></a>
+  <a href="https://www.instagram.com/ielts.7plus" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid #374151;color:#9ca3af;text-decoration:none;"><i class="ti ti-brand-instagram"></i></a>
+  <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid #374151;color:#9ca3af;text-decoration:none;"><i class="ti ti-brand-youtube"></i></a>
+  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid #374151;color:#9ca3af;text-decoration:none;"><i class="ti ti-brand-linkedin"></i></a>
+</div>`,
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${sectionId}:col-1`]: [
+        {
+          type: "Heading",
+          props: {
+            id: genId("heading"),
+            text: "Quick Links",
+            tag: "h3",
+            size: { desktop: "1.125rem" },
+            align: { desktop: "left" },
+            color: "#ffffff",
+            weight: "font-medium",
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "16" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "Menu",
+          props: {
+            id: genId("menu"),
+            items: [
+              {
+                label: "IELTS",
+                href: "/courses/ielts-preparation",
+                children: [],
+              },
+              {
+                label: "IELTS Preparation",
+                href: "/courses/ielts-preparation",
+                children: [],
+              },
+              {
+                label: "IELTS Score Calculator",
+                href: "/courses",
+                children: [],
+              },
+              { label: "Course Fees", href: "/course-fee", children: [] },
+              {
+                label: "Batch Schedule",
+                href: "/batch-schedule",
+                children: [],
+              },
+              {
+                label: "Success Stories",
+                href: "/success-stories",
+                children: [],
+              },
+            ],
+            orientation: "vertical",
+            textColor: "#d1d5db",
+            hoverColor: "#f87171",
+            fontSize: { desktop: "0.9375rem" },
+            gap: "10px",
+            blockAlign: { desktop: "left" },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${sectionId}:col-2`]: [
+        {
+          type: "Heading",
+          props: {
+            id: genId("heading"),
+            text: "Resources",
+            tag: "h3",
+            size: { desktop: "1.125rem" },
+            align: { desktop: "left" },
+            color: "#ffffff",
+            weight: "font-medium",
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "16" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "Menu",
+          props: {
+            id: genId("menu"),
+            items: [
+              { label: "Blog", href: "/blog", children: [] },
+              { label: "Events", href: "/events", children: [] },
+              { label: "Podcast", href: "#", children: [] },
+              { label: "FAQs", href: "/faq", children: [] },
+              { label: "Community", href: "#", children: [] },
+              { label: "Support", href: "/contact", children: [] },
+            ],
+            orientation: "vertical",
+            textColor: "#d1d5db",
+            hoverColor: "#f87171",
+            fontSize: { desktop: "0.9375rem" },
+            gap: "10px",
+            blockAlign: { desktop: "left" },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${sectionId}:col-3`]: [
+        {
+          type: "Heading",
+          props: {
+            id: genId("heading"),
+            text: "Contact Us",
+            tag: "h3",
+            size: { desktop: "1.125rem" },
+            align: { desktop: "left" },
+            color: "#ffffff",
+            weight: "font-medium",
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "16" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          type: "HtmlBlock",
+          props: {
+            id: genId("html"),
+            html: `<div style="display:flex;flex-direction:column;gap:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <i class="ti ti-mail" style="font-size:1.25rem;color:#f87171;"></i>
+    <a href="mailto:info@ielts7plus.co.uk" style="color:#d1d5db;text-decoration:none;">info@ielts7plus.co.uk</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <i class="ti ti-phone" style="font-size:1.25rem;color:#f87171;"></i>
+    <a href="tel:+8801711153678" style="color:#d1d5db;text-decoration:none;">+8801711153678</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <i class="ti ti-map-pin" style="font-size:1.25rem;color:#f87171;"></i>
+    <span style="color:#d1d5db;">Dhaka, Bangladesh</span>
+  </div>
+</div>`,
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+    },
+  };
+}
+
 export const templates = [
   {
     key: "hero",
@@ -950,5 +1767,19 @@ export const templates = [
     description:
       "Your actual CTA section — gradient, badge, headline, buttons, avatars",
     build: ctaTemplate,
+  },
+  {
+    key: "header",
+    label: "Header",
+    description:
+      "Starting point for the site header — logo, nav menu, auth button",
+    build: headerTemplate,
+  },
+  {
+    key: "footer",
+    label: "Footer",
+    description:
+      "Starting point for the site footer — 4 columns, social, contact",
+    build: footerTemplate,
   },
 ];

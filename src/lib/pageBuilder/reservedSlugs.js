@@ -1,27 +1,21 @@
 // src/lib/pageBuilder/reservedSlugs.js
 //
-// Slugs that must never be assignable to a builder Page, because a
-// static Next.js route already owns that path segment (or the app
-// reserves it structurally). If a Page were ever created with one of
-// these slugs, src/app/(public)/[slug]/page.js would never be reached
-// for it — Next.js always prefers a matching static folder route over
-// a dynamic [slug] route — so the page would silently become
-// unreachable with no error anywhere in the app.
+// Two distinct lists, two distinct purposes:
 //
-// NOTE: "home" is deliberately NOT in this list. It's the opposite of
-// reserved — it's the one required slug: src/app/(public)/page.js
-// fetches the Page row where slug === "home" and renders it at "/".
-// Visiting /home directly redirects to / (see [slug]/page.js), but the
-// underlying Page row must be allowed to actually have that slug.
+// RESERVED_SLUGS — slugs that must never be assignable to a NEW builder
+// Page, because a static Next.js route already owns that path segment.
+// If a Page were created with one of these slugs, [slug]/page.js would
+// never be reached for it (Next.js always prefers a matching static
+// folder route), so the page would silently become unreachable.
 //
-// Enforced in two places:
-//   - Client-side in NewPageForm.js and RenamePageForm.js (nicer UX,
-//     catches the mistake before a network round-trip)
-//   - Server-side in /api/pages (POST) and /api/pages/[id] (PUT) —
-//     this is the actual guarantee, since client-side checks can always
-//     be bypassed
+// PROTECTED_SLUGS — the opposite direction: slugs that DO belong to a
+// real, load-bearing builder Page ("home", "site-header",
+// "site-footer") that the rest of the app depends on by exact slug
+// name. These are blocked from being DELETED or RENAMED AWAY FROM,
+// since doing so would blank the homepage or site chrome with no
+// warning. Title can still be changed freely — only the slug itself is
+// locked once a page has one of these.
 export const RESERVED_SLUGS = [
-  "about",
   "band-calculator",
   "batch-schedule",
   "blog",
@@ -36,5 +30,7 @@ export const RESERVED_SLUGS = [
   "success-stories",
   "admin",
   "api",
-  "p", // old page-builder route, being removed, but block reuse anyway
+  "p",
 ];
+
+export const PROTECTED_SLUGS = ["home", "site-header", "site-footer"];

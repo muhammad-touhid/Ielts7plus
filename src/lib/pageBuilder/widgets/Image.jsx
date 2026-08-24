@@ -1,9 +1,10 @@
 // src/lib/pageBuilder/widgets/Image.jsx
 "use client";
 
+import Link from "next/link";
 import ImageUpload from "@/app/admin/ImageUpload";
 import { withLabel } from "../fields/withLabel";
-import { TEXT_ALIGN_PRESETS } from "../fields/flexibleSize";
+import { TEXT_ALIGN_PRESETS, flexibleSizeField } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
 import {
   borderFieldSet,
@@ -30,6 +31,16 @@ import {
 } from "../fields/shadowField";
 import { useThemeColors } from "../theme/ThemeColorsContext";
 
+// Kept local to this widget rather than in flexibleSize.js's shared
+// preset exports, since these percentage values are specific to
+// ImageBlock's own sizing convention, not reused elsewhere.
+const IMAGE_WIDTH_PRESETS = [
+  { label: "25%", value: "25%" },
+  { label: "50%", value: "50%" },
+  { label: "75%", value: "75%" },
+  { label: "100%", value: "100%" },
+];
+
 export const ImageBlock = {
   label: "Image",
   fields: {
@@ -41,16 +52,15 @@ export const ImageBlock = {
       )),
     },
     alt: { type: "text", label: "Alt Text" },
-    width: {
-      type: "select",
-      label: "Width",
-      options: [
-        { label: "25%", value: "25%" },
-        { label: "50%", value: "50%" },
-        { label: "75%", value: "75%" },
-        { label: "100%", value: "100%" },
-      ],
+    href: {
+      type: "text",
+      label: "Link URL (optional — e.g. / for a logo)",
     },
+    // flexibleSizeField gives the existing 25/50/75/100% presets PLUS a
+    // "Custom..." option (any number + px/rem/em/%/vh/vw). The render
+    // logic below needs no change — width was already applied as a raw
+    // CSS string, which is exactly what this field produces.
+    width: flexibleSizeField("Width", IMAGE_WIDTH_PRESETS),
     height: {
       type: "select",
       label: "Height",
@@ -83,6 +93,7 @@ export const ImageBlock = {
     id: "image-default",
     src: "",
     alt: "",
+    href: "",
     width: "100%",
     height: "auto",
     fit: "object-cover",
@@ -118,6 +129,7 @@ export const ImageBlock = {
     id,
     src,
     alt,
+    href,
     width,
     height,
     fit,
@@ -172,6 +184,21 @@ export const ImageBlock = {
         </div>
       );
     }
+
+    const imgEl = (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt}
+        className={`${fit} ${scopedClass}`}
+        style={{
+          width,
+          height: height === "auto" ? undefined : height,
+          boxShadow: resolveShadow(shadow) || undefined,
+        }}
+      />
+    );
+
     return (
       <>
         <ResponsiveStyle
@@ -193,17 +220,16 @@ export const ImageBlock = {
         />
         {hoverCss && <style>{hoverCss}</style>}
         <div className={`${wrapClass} overflow-hidden`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={alt}
-            className={`${fit} ${scopedClass}`}
-            style={{
-              width,
-              height: height === "auto" ? undefined : height,
-              boxShadow: resolveShadow(shadow) || undefined,
-            }}
-          />
+          {href ? (
+            <Link
+              href={href}
+              style={{ display: "block", width: "100%", lineHeight: 0 }}
+            >
+              {imgEl}
+            </Link>
+          ) : (
+            imgEl
+          )}
         </div>
       </>
     );

@@ -37,6 +37,7 @@ import { SearchBar } from "./widgets/SearchBar";
 import { TagList } from "./widgets/TagList";
 import { Carousel } from "./widgets/Carousel";
 import { Grid } from "./widgets/Grid";
+import { Menu } from "./widgets/Menu";
 
 export const config = {
   categories: {
@@ -57,6 +58,7 @@ export const config = {
         "Badge",
         "SearchBar",
         "TagList",
+        "Menu",
       ],
     },
     dynamic: {
@@ -76,6 +78,7 @@ export const config = {
     Badge,
     SearchBar,
     TagList,
+    Menu,
     Carousel,
     Grid,
   },

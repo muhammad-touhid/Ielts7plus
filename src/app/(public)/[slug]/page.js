@@ -2,6 +2,7 @@
 import prisma from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import PageRenderer from "../PageRenderer";
+import { PROTECTED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,15 @@ export default async function PublicPage({ params }) {
   const { slug } = await params;
 
   // "home" is reserved for the homepage. Redirect rather than
-  // double-render the same content at both / and /home (duplicate
-  // content, confusing for SEO and for anyone sharing the link).
+  // double-render the same content at both / and /home.
   if (slug === "home") {
     redirect("/");
+  }
+
+  // "site-header" / "site-footer" are chrome, not standalone pages —
+  // they're rendered as part of the layout, never visited directly.
+  if (slug === "site-header" || slug === "site-footer") {
+    notFound();
   }
 
   const page = await prisma.page.findUnique({ where: { slug } });

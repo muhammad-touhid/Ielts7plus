@@ -5,6 +5,8 @@ import prisma from "@/lib/prisma";
 import NewPageForm from "./NewPageForm";
 import DeletePageButton from "./DeletePageButton";
 
+const CHROME_SLUGS = { "site-header": "Header", "site-footer": "Footer" };
+
 export default async function AdminPagesList() {
   const pages = await prisma.page.findMany({ orderBy: { updatedAt: "desc" } });
 
@@ -21,7 +23,10 @@ export default async function AdminPagesList() {
           </p>
         )}
         {pages.map((page) => {
-          const publicHref = page.slug === "home" ? "/" : `/${page.slug}`;
+          const isHome = page.slug === "home";
+          const isChrome = page.slug in CHROME_SLUGS;
+          const publicHref = isHome ? "/" : `/${page.slug}`;
+
           return (
             <div
               key={page.id}
@@ -30,14 +35,20 @@ export default async function AdminPagesList() {
               <div>
                 <p className="font-medium text-gray-900">
                   {page.title}
-                  {page.slug === "home" && (
+                  {isHome && (
                     <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                       Homepage
                     </span>
                   )}
+                  {isChrome && (
+                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      {CHROME_SLUGS[page.slug]}
+                    </span>
+                  )}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {publicHref} &middot;{" "}
+                  {isChrome ? "Site chrome — no standalone URL" : publicHref}{" "}
+                  &middot;{" "}
                   <span
                     className={
                       page.status === "published"
@@ -61,7 +72,7 @@ export default async function AdminPagesList() {
                 >
                   Edit
                 </Link>
-                {page.status === "published" && (
+                {page.status === "published" && !isChrome && (
                   <Link
                     href={publicHref}
                     target="_blank"

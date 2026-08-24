@@ -1,8 +1,10 @@
-// src/app/api/pages/[id]/route.js
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { RESERVED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
+import {
+  RESERVED_SLUGS,
+  PROTECTED_SLUGS,
+} from "@/lib/pageBuilder/reservedSlugs";
 
 export const dynamic = "force-dynamic";
 
@@ -16,19 +18,10 @@ export async function GET(req, { params }) {
 
 // PUT /api/pages/:id
 //
-// Two distinct request shapes, both handled by this one route:
-//
-// 1. RENAME-ONLY: body is { title?, slug? }, no `content`/`action`.
-//    Used by RenamePageForm in the editor header. Updates title and/or
-//    slug directly, validated against reserved slugs + uniqueness.
-//
-// 2. CONTENT SAVE: body is { content, action, title? } (existing
-//    behavior, unchanged).
-//    action: "draft"   -> saves into draftData only. Live published
-//                          page (`data`) is untouched.
-//    action: "publish" -> copies content into `data` (live published
-//                          field), clears draftData, sets status
-//                          published.
+// 1. RENAME-ONLY: body is { title?, slug? }, no content/action.
+//    Blocks changing slug AWAY from a protected slug (home,
+//    site-header, site-footer) — title can still change freely.
+// 2. CONTENT SAVE: body is { content, action, title? } — unchanged.
 export async function PUT(req, { params }) {
   const { id } = await params;
   const body = await req.json();
@@ -46,11 +39,28 @@ export async function PUT(req, { params }) {
       );
     }
 
+    const existingPage = await prisma.page.findUnique({ where: { id } });
+    if (!existingPage) {
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+    }
+
     const updateData = {};
     if (title) updateData.title = title;
 
     if (slug) {
       const normalizedSlug = slug.toLowerCase().trim();
+
+      if (
+        PROTECTED_SLUGS.includes(existingPage.slug) &&
+        normalizedSlug !== existingPage.slug
+      ) {
+        return NextResponse.json(
+          {
+            error: `"${existingPage.slug}" is a protected page slug and can't be changed — the site depends on it by exact name. Rename the title instead.`,
+          },
+          { status: 409 },
+        );
+      }
 
       if (RESERVED_SLUGS.includes(normalizedSlug)) {
         return NextResponse.json(
@@ -113,6 +123,23 @@ export async function DELETE(req, { params }) {
   }
 
   const { id } = await params;
+
+  const existingPage = await prisma.page.findUnique({ where: { id } });
+  if (!existingPage) {
+    return NextResponse.json(
+      { error: "Page not found or already deleted" },
+      { status: 404 },
+    );
+  }
+
+  if (PROTECTED_SLUGS.includes(existingPage.slug)) {
+    return NextResponse.json(
+      {
+        error: `"${existingPage.slug}" is a protected page and can't be deleted — the site depends on it (homepage or site header/footer).`,
+      },
+      { status: 409 },
+    );
+  }
 
   try {
     await prisma.page.delete({ where: { id } });

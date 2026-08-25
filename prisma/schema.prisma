@@ -241,3 +241,4 @@ model SiteTheme {
   fonts     Json?
   updatedAt DateTime @updatedAt
 }
+

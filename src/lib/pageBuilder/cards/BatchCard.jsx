@@ -1,7 +1,9 @@
 // src/lib/pageBuilder/cards/BatchCard.jsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import EnrollmentModal from "@/app/(public)/batch-schedule/EnrollmentModal";
 
 const moduleBadgeColor = {
   Academic: "bg-blue-50 text-blue-600",
@@ -24,6 +26,14 @@ const batchBadgeColor = {
 // itself isn't affected by "Card Background"), and detail values keep
 // their own fixed slate color rather than following Title Color.
 export function BatchCard({ item: batch }) {
+  const [showModal, setShowModal] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+
+  const handleSuccess = () => {
+    setShowModal(false);
+    setEnrolled(true);
+  };
+
   return (
     <div
       className="rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col h-full"
@@ -132,22 +142,35 @@ export function BatchCard({ item: batch }) {
           </span>
         </div>
 
-        <Link
-          href={
-            batch.course?.slug
-              ? `/courses/${batch.course.slug}`
-              : "/batch-schedule"
-          }
-          className="mt-auto w-full inline-flex items-center justify-center gap-2 text-white font-bold py-3 rounded-xl hover:opacity-90 transition-all duration-200 shadow-md shadow-blue-100"
-          style={{
-            background: "var(--card-accent, #2563eb)",
-            fontSize: "var(--card-button-size, 0.875rem)",
-          }}
-        >
-          <i className="ti ti-pencil-plus text-sm" />
-          Enroll Now
-        </Link>
+        {enrolled ? (
+          <div className="mt-auto w-full inline-flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 font-bold py-3 rounded-xl">
+            <i className="ti ti-circle-check-filled text-sm" />
+            Enrolled
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            disabled={batch.badge === "Closed"}
+            className="mt-auto w-full inline-flex items-center justify-center gap-2 text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-blue-100"
+            style={{
+              background: "var(--card-accent, #2563eb)",
+              fontSize: "var(--card-button-size, 0.875rem)",
+            }}
+          >
+            <i className="ti ti-pencil-plus text-sm" />
+            Enroll Now
+          </button>
+        )}
       </div>
+
+      {showModal && (
+        <EnrollmentModal
+          batch={batch}
+          onClose={() => setShowModal(false)}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useSession, signIn } from "next-auth/react";
 
 const paymentMethods = [
@@ -160,7 +161,7 @@ export default function EnrollmentModal({ batch, onClose, onSuccess }) {
 
   // ── Loading session ────────────────────────────────────
   if (status === "loading") {
-    return (
+    return createPortal(
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -169,11 +170,12 @@ export default function EnrollmentModal({ batch, onClose, onSuccess }) {
         <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-10 flex items-center justify-center z-10">
           <i className="ti ti-loader-2 animate-spin text-2xl text-blue-500" />
         </div>
-      </div>
+      </div>,
+      document.body,
     );
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -498,6 +500,7 @@ export default function EnrollmentModal({ batch, onClose, onSuccess }) {
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

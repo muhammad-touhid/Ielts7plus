@@ -85,6 +85,11 @@ const navItems = [
     icon: "ti ti-mail",
     href: "/admin/site-theme",
   },
+  {
+    label: "Subscriber",
+    icon: "ti ti-mail",
+    href: "/admin/newsletter",
+  },
 ];
 
 function NavItem({ item, role, onClick, collapsed }) {

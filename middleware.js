@@ -21,7 +21,7 @@ export default auth((req) => {
     if (!session) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    if (role === "admin") {
+    if (staffRoles.includes(role)) {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
   }

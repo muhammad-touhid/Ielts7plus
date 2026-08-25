@@ -1265,8 +1265,8 @@ export function headerTemplate() {
 //     submit anywhere) or wire up a real form widget later if needed.
 export function footerTemplate() {
   const sectionId = genId("section");
+  const dividerSectionId = genId("section");
   const bottomSectionId = genId("section");
-  const bottomBarClass = genId("footer-bottom");
 
   return {
     content: [
@@ -1320,11 +1320,11 @@ export function footerTemplate() {
       {
         type: "Section",
         props: {
-          id: bottomSectionId,
+          id: dividerSectionId,
           columns: "1",
           columnGap: "0px",
           bgType: "color",
-          bgColor: "#111827",
+          bgColor: "#1f2937",
           bgImage: "",
           overlayType: "none",
           overlayColor: "#000000",
@@ -1332,7 +1332,7 @@ export function footerTemplate() {
           overlayColorTo: "#1d4ed8",
           overlayDirection: "to right",
           overlayOpacity: "0",
-          minHeight: "auto",
+          minHeight: "1px",
           verticalAlign: "flex-start",
           contentWidth: { desktop: "80rem" },
           contentAlign: "center",
@@ -1364,25 +1364,66 @@ export function footerTemplate() {
           },
         },
       },
+      {
+        type: "Section",
+        props: {
+          id: bottomSectionId,
+          columns: "2-equal",
+          columnGap: "16px",
+          columnAlign: "center",
+          bgType: "color",
+          bgColor: "#111827",
+          bgImage: "",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "flex-start",
+          contentWidth: { desktop: "80rem" },
+          contentAlign: "center",
+          padding: {
+            top: { desktop: "24" },
+            right: { desktop: "24" },
+            bottom: { desktop: "24" },
+            left: { desktop: "24" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
+      },
     ],
     zones: {
       [`${bottomSectionId}:col-0`]: [
         {
-          type: "HtmlBlock",
+          type: "Text",
           props: {
-            id: genId("html"),
-            html: `<style>
-  .${bottomBarClass} { flex-direction: column; }
-  @media (min-width: 768px) { .${bottomBarClass} { flex-direction: row; } }
-</style>
-<div class="${bottomBarClass}" style="display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid #1f2937;padding:24px 0;">
-  <p style="font-size:0.75rem;color:#4b5563;margin:0;">© 2026 IELTS7+. All rights reserved.</p>
-  <div style="display:flex;gap:24px;">
-    <a href="/privacy" style="font-size:0.75rem;color:#4b5563;text-decoration:none;">Privacy Policy</a>
-    <a href="/terms" style="font-size:0.75rem;color:#4b5563;text-decoration:none;">Terms of Service</a>
-    <a href="/cookies" style="font-size:0.75rem;color:#4b5563;text-decoration:none;">Cookie Policy</a>
-  </div>
-</div>`,
+            id: genId("text"),
+            text: "© 2026 IELTS7+. All rights reserved.",
+            size: { desktop: "0.75rem" },
+            align: { desktop: "left" },
+            color: "#4b5563",
+            maxWidth: { desktop: "none" },
             blockAlign: { desktop: "left" },
             borderWidth: "0px",
             borderStyle: "none",
@@ -1399,9 +1440,36 @@ export function footerTemplate() {
               right: { desktop: "0" },
               bottom: { desktop: "0" },
               left: { desktop: "0" },
-              linked: true,
+              linked: false,
               unit: "px",
             },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${bottomSectionId}:col-1`]: [
+        {
+          type: "Menu",
+          props: {
+            id: genId("menu"),
+            items: [
+              { label: "Privacy Policy", href: "/privacy", children: [] },
+              { label: "Terms of Service", href: "/terms", children: [] },
+              { label: "Cookie Policy", href: "/cookies", children: [] },
+            ],
+            orientation: "horizontal",
+            textColor: "#4b5563",
+            hoverColor: "#9ca3af",
+            fontSize: { desktop: "0.75rem" },
+            gap: "24px",
+            blockAlign: { desktop: "right" },
             margin: {
               top: { desktop: "0" },
               right: { desktop: "0" },
@@ -1735,6 +1803,67 @@ export function footerTemplate() {
             },
             margin: {
               top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+        {
+          // NEWSLETTER — added below Contact Us info. Inline styles
+          // (not Tailwind classes) for the same reason the social-icon
+          // row and contact-info blocks above use them: this html is
+          // served via dangerouslySetInnerHTML, so Tailwind's JIT never
+          // scans it and would purge any classes referenced here.
+          // Hover on the button uses inline onmouseover/onmouseout
+          // since inline styles can't express :hover.
+          // NOTE: this is DISPLAY ONLY — the form has no onsubmit
+          // handler, so clicking Subscribe does not currently POST
+          // anywhere. Wire it to a real endpoint (e.g. an
+          // /api/newsletter route) if/when you want it functional.
+          type: "HtmlBlock",
+          props: {
+            id: genId("html"),
+            html: `<div>
+  <p style="margin:0 0 8px 0;font-size:0.75rem;color:#6b7280;">Subscribe to our newsletter</p>
+  <div style="display:flex;overflow:hidden;border-radius:8px;border:1px solid #374151;">
+    <input
+      type="email"
+      placeholder="Your email address"
+      style="flex:1 1 0%;min-width:0;background-color:#1f2937;padding:8px 12px;font-size:0.875rem;color:#ffffff;outline:none;border:none;"
+    />
+    <button
+      style="background-color:#ef4444;flex-shrink:0;padding:8px 16px;font-size:0.875rem;font-weight:500;color:#ffffff;border:none;cursor:pointer;transition:background-color 0.2s;"
+      onmouseover="this.style.backgroundColor='#f87171'"
+      onmouseout="this.style.backgroundColor='#ef4444'"
+    >
+      Subscribe
+    </button>
+  </div>
+</div>`,
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "0px" },
+              topRight: { desktop: "0px" },
+              bottomRight: { desktop: "0px" },
+              bottomLeft: { desktop: "0px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "20" },
               right: { desktop: "0" },
               bottom: { desktop: "0" },
               left: { desktop: "0" },

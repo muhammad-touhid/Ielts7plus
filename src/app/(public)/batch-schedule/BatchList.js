@@ -3,14 +3,14 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import EnrollmentModal from "./EnrollmentModal";
 
-function SeatBar({ seats }) {
-  const max = 20;
-  const filled = max - seats;
+function SeatBar({ totalSeats, remainingSeats }) {
+  const max = totalSeats || 20;
+  const filled = max - remainingSeats;
   const percent = Math.round((filled / max) * 100);
   const color =
-    seats <= 5
+    remainingSeats <= 5
       ? "bg-rose-500"
-      : seats <= 10
+      : remainingSeats <= 10
         ? "bg-amber-400"
         : "bg-emerald-500";
   return (
@@ -22,7 +22,7 @@ function SeatBar({ seats }) {
         />
       </div>
       <span className="text-xs text-slate-400 whitespace-nowrap">
-        {seats} seats left
+        {remainingSeats} seats left
       </span>
     </div>
   );
@@ -95,97 +95,108 @@ export default function BatchList({ batches }) {
         {/* Batch List */}
         {batches.length > 0 ? (
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            {batches.map((batch, i) => (
-              <div key={batch.id}>
-                <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10 px-8 py-8">
-                  {/* Left Side */}
-                  <div className="flex-1 flex flex-col gap-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {batch.badge && (
-                        <span
-                          className={`text-xs font-bold px-3 py-1 rounded-full
-                          ${
-                            batch.badge === "Filling Fast"
-                              ? "bg-rose-100 text-rose-600"
-                              : batch.badge === "New"
-                                ? "bg-sky-100 text-sky-600"
-                                : batch.badge === "Closed"
-                                  ? "bg-slate-100 text-slate-500"
-                                  : "bg-emerald-100 text-emerald-600"
-                          }`}
-                        >
-                          {batch.badge}
+            {batches.map((batch, i) => {
+              const remainingSeats = Math.max(
+                0,
+                batch.seats - batch._count.enrollments,
+              );
+              const isFull = remainingSeats <= 0;
+
+              return (
+                <div key={batch.id}>
+                  <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10 px-8 py-8">
+                    {/* Left Side */}
+                    <div className="flex-1 flex flex-col gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {batch.badge && (
+                          <span
+                            className={`text-xs font-bold px-3 py-1 rounded-full
+                            ${
+                              batch.badge === "Filling Fast"
+                                ? "bg-rose-100 text-rose-600"
+                                : batch.badge === "New"
+                                  ? "bg-sky-100 text-sky-600"
+                                  : batch.badge === "Closed"
+                                    ? "bg-slate-100 text-slate-500"
+                                    : "bg-emerald-100 text-emerald-600"
+                            }`}
+                          >
+                            {batch.badge}
+                          </span>
+                        )}
+                        <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+                          {batch.module}
                         </span>
-                      )}
-                      <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-                        {batch.module}
-                      </span>
-                      <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full">
-                        {batch.duration}
-                      </span>
-                    </div>
-
-                    <h2 className="text-lg font-bold text-slate-800 leading-snug">
-                      {batch.name}
-                    </h2>
-
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                      <span className="flex items-center gap-1.5 text-sm text-slate-500">
-                        <i className="ti ti-clock text-sky-500 text-base" />
-                        {batch.time}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-sm text-slate-500">
-                        <i className="ti ti-calendar-week text-sky-500 text-base" />
-                        {batch.schedule}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="max-w-xs">
-                        <SeatBar seats={batch.seats} />
+                        <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full">
+                          {batch.duration}
+                        </span>
                       </div>
+
+                      <h2 className="text-lg font-bold text-slate-800 leading-snug">
+                        {batch.name}
+                      </h2>
+
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                        <span className="flex items-center gap-1.5 text-sm text-slate-500">
+                          <i className="ti ti-clock text-sky-500 text-base" />
+                          {batch.time}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-sm text-slate-500">
+                          <i className="ti ti-calendar-week text-sky-500 text-base" />
+                          {batch.schedule}
+                        </span>
+                      </div>
+
                       <div>
-                        <p className="text-xs text-slate-500">
-                          <i className="ti ti-users mr-1" />
-                          {batch._count.enrollments} students enrolled
+                        <div className="max-w-xs">
+                          <SeatBar
+                            totalSeats={batch.seats}
+                            remainingSeats={remainingSeats}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            <i className="ti ti-users mr-1" />
+                            {batch._count.enrollments} students enrolled
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-20 bg-slate-100 flex-shrink-0" />
+                    <div className="block md:hidden w-full h-px bg-slate-100" />
+
+                    {/* Right Side */}
+                    <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 flex-shrink-0 md:min-w-[180px]">
+                      <div className="text-left md:text-right">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                          Starts On
+                        </p>
+                        <p className="text-lg font-extrabold text-blue-600">
+                          {batch.startDate}
                         </p>
                       </div>
+                      <button
+                        onClick={() => setSelectedBatch(batch)}
+                        disabled={batch.badge === "Closed" || isFull}
+                        className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl
+                          shadow-md shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 hover:shadow-lg
+                          disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                          transition-all duration-200 whitespace-nowrap"
+                      >
+                        {isFull ? "Seats Full" : "Enroll Now"}
+                        {!isFull && <i className="ti ti-arrow-right text-sm" />}
+                      </button>
                     </div>
                   </div>
 
-                  {/* Divider */}
-                  <div className="hidden md:block w-px h-20 bg-slate-100 flex-shrink-0" />
-                  <div className="block md:hidden w-full h-px bg-slate-100" />
-
-                  {/* Right Side */}
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 flex-shrink-0 md:min-w-[180px]">
-                    <div className="text-left md:text-right">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                        Starts On
-                      </p>
-                      <p className="text-lg font-extrabold text-blue-600">
-                        {batch.startDate}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedBatch(batch)}
-                      disabled={batch.badge === "Closed"}
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl
-                        shadow-md shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 hover:shadow-lg
-                        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
-                        transition-all duration-200 whitespace-nowrap"
-                    >
-                      Enroll Now
-                      <i className="ti ti-arrow-right text-sm" />
-                    </button>
-                  </div>
+                  {i < batches.length - 1 && (
+                    <div className="mx-8 h-px bg-slate-100" />
+                  )}
                 </div>
-
-                {i < batches.length - 1 && (
-                  <div className="mx-8 h-px bg-slate-100" />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">

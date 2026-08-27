@@ -38,6 +38,7 @@ import { TagList } from "./widgets/TagList";
 import { Carousel } from "./widgets/Carousel";
 import { Grid } from "./widgets/Grid";
 import { Menu } from "./widgets/Menu";
+import { CourseDetail } from "./widgets/CourseDetail";
 
 export const config = {
   categories: {
@@ -63,7 +64,7 @@ export const config = {
     },
     dynamic: {
       title: "Dynamic (Live Data)",
-      components: ["Carousel", "Grid"],
+      components: ["Carousel", "Grid", "CourseDetail"],
     },
   },
   components: {
@@ -81,5 +82,6 @@ export const config = {
     Menu,
     Carousel,
     Grid,
+    CourseDetail,
   },
 };

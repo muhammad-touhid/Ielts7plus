@@ -5,12 +5,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RESERVED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
+// Cleans each "/"-separated segment on its own, then rejoins with "/" —
+// preserves nested paths like "courses/ielts-preparation" instead of
+// collapsing the slash into a dash. Empty segments (from stray/double
+// slashes) are dropped.
 function slugify(str) {
   return str
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .split("/")
+    .map((segment) =>
+      segment.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+    )
+    .filter(Boolean)
+    .join("/");
 }
 
 export default function NewPageForm() {
@@ -70,19 +78,19 @@ export default function NewPageForm() {
             if (!slug) setSlug(slugify(e.target.value));
           }}
           placeholder="About Us"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+          className="w-full border border-gray-300 text-gray-500 rounded-md px-3 py-2 text-sm"
           required
         />
       </div>
       <div className="flex-1 min-w-[180px]">
-        <label className="block text-xs font-medium text-gray-600 mb-1">
-          URL slug
+        <label className="block text-xs text-gray-600 font-medium  mb-1">
+          URL slug (Use a slash for nested)
         </label>
         <input
           value={slug}
           onChange={(e) => setSlug(slugify(e.target.value))}
-          placeholder="about-us"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+          placeholder="about-us or courses/ielts-preparation"
+          className="w-full border border-gray-300 text-gray-500 rounded-md px-3 py-2 text-sm"
           required
         />
       </div>

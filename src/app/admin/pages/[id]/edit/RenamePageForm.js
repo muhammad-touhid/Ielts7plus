@@ -4,12 +4,21 @@
 import { useState } from "react";
 import { RESERVED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
+// Cleans each "/"-separated segment on its own, then rejoins with "/" —
+// preserves nested paths like "courses/ielts-preparation" instead of
+// collapsing the slash into a dash. Empty segments (from stray/double
+// slashes) are dropped. Same logic as NewPageForm.js's slugify — keep
+// both in sync if this ever changes.
 function slugify(str) {
   return str
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .split("/")
+    .map((segment) =>
+      segment.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+    )
+    .filter(Boolean)
+    .join("/");
 }
 
 export default function RenamePageForm({
@@ -78,14 +87,14 @@ export default function RenamePageForm({
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="border border-gray-300 rounded px-2 py-1 text-sm w-40"
+        className="border border-gray-300 text-gray-500 rounded px-2 py-1 text-sm w-40"
         placeholder="Page title"
       />
       <input
         value={slug}
         onChange={(e) => setSlug(slugify(e.target.value))}
-        className="border border-gray-300 rounded px-2 py-1 text-sm w-40"
-        placeholder="url-slug"
+        className="border border-gray-300 text-gray-500 rounded px-2 py-1 text-sm w-40"
+        placeholder="url-slug or courses/name"
       />
       <button
         type="button"

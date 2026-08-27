@@ -1,19 +1,20 @@
-// src/app/(public)/[slug]/page.js
+// src/app/(public)/[...slug]/page.js
 import prisma from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import PageRenderer from "../PageRenderer";
-import { PROTECTED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
+  const { slug: slugParts } = await params;
+  const slug = slugParts.join("/");
   const page = await prisma.page.findUnique({ where: { slug } });
   return { title: page?.title || "Page" };
 }
 
 export default async function PublicPage({ params }) {
-  const { slug } = await params;
+  const { slug: slugParts } = await params;
+  const slug = slugParts.join("/");
 
   // "home" is reserved for the homepage. Redirect rather than
   // double-render the same content at both / and /home.

@@ -14,6 +14,11 @@ const paymentMethods = [
 export default function EnrollmentModal({ batch, onClose, onSuccess }) {
   const { data: session, status } = useSession();
 
+  const remainingSeats = Math.max(
+    0,
+    batch.seats - (batch._count?.enrollments || 0),
+  );
+
   // Auth step state
   const [authTab, setAuthTab] = useState("login"); // "login" | "signup"
   const [authForm, setAuthForm] = useState({
@@ -144,7 +149,7 @@ export default function EnrollmentModal({ batch, onClose, onSuccess }) {
               <i className="ti ti-calendar text-blue-400" /> {batch.startDate}
             </span>
             <span className="flex items-center gap-1 text-xs text-slate-400">
-              <i className="ti ti-users text-blue-400" /> {batch.seats} seats
+              <i className="ti ti-users text-blue-400" /> {remainingSeats} seats
               left
             </span>
           </div>

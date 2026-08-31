@@ -86,6 +86,25 @@ const COLUMN_ALIGN_CSS = {
   bottom: "end",
 };
 
+// Cross-axis alignment for items WITHIN a column, when Content
+// Direction is horizontal (row) — this is separate from columnAlign
+// above, which aligns entire COLUMNS relative to each other, not the
+// individual widgets inside one column's DropZone.
+const CONTENT_ITEM_ALIGN_CSS = {
+  stretch: "stretch",
+  top: "flex-start",
+  center: "center",
+  bottom: "flex-end",
+};
+
+const CONTENT_ITEM_JUSTIFY_CSS = {
+  left: "flex-start",
+  center: "center",
+  right: "flex-end",
+  "space-between": "space-between",
+  "space-around": "space-around",
+};
+
 function countCustomColumns(template) {
   const count = (template || "").trim().split(/\s+/).filter(Boolean).length;
   return count > 0 ? count : 1;
@@ -250,6 +269,54 @@ function baseFields() {
         { label: "Bottom", value: "bottom" },
       ],
     },
+    // Controls the layout of widgets WITHIN each column's DropZone —
+    // separate from `columns` above (which controls how many columns
+    // the Section itself has and how wide each is). Vertical (the
+    // default) is normal block-stacking, matching every Section built
+    // before this field existed — existing pages with no saved value
+    // fall back to "column" via defaultProps, so nothing changes for
+    // them.
+    contentDirection: {
+      type: "radio",
+      label: "Content Direction (inside each column)",
+      options: [
+        { label: "Vertical (stacked)", value: "column" },
+        { label: "Horizontal (side by side)", value: "row" },
+      ],
+    },
+    contentItemGap: flexibleSizeField(
+      "Gap Between Items (inside each column)",
+      GAP_PRESETS,
+    ),
+    contentItemAlign: {
+      type: "select",
+      label: "Item Cross-Alignment (Horizontal direction only)",
+      options: [
+        { label: "Stretch (default)", value: "stretch" },
+        { label: "Top", value: "top" },
+        { label: "Center", value: "center" },
+        { label: "Bottom", value: "bottom" },
+      ],
+    },
+    contentItemJustify: {
+      type: "select",
+      label: "Item Alignment Along Row (Horizontal direction only)",
+      options: [
+        { label: "Left (default)", value: "left" },
+        { label: "Center", value: "center" },
+        { label: "Right", value: "right" },
+        { label: "Space Between", value: "space-between" },
+        { label: "Space Around", value: "space-around" },
+      ],
+    },
+    contentItemWrap: {
+      type: "radio",
+      label: "Wrap Items (Horizontal direction only)",
+      options: [
+        { label: "On", value: true },
+        { label: "Off", value: false },
+      ],
+    },
     bgType: {
       type: "radio",
       label: "Background Type",
@@ -372,27 +439,8 @@ function baseFields() {
   };
 }
 
-// IMPORTANT: this runs exactly ONCE, at module load — NOT inside
-// resolveFields. That's the whole fix. Every custom field's `render`
-// function (colorField, flexibleSizeField, columnLayoutField, etc.)
-// gets created here a single time and reused for the component's
-// entire lifetime, so React sees the SAME function reference across
-// renders and keeps the input mounted instead of tearing it down.
-//
-// The bug this fixes: resolveFields runs on every keystroke (Puck
-// calls it on every prop change). Calling baseFields() again INSIDE
-// resolveFields — which is what an earlier version of this file did —
-// creates brand-new field objects, including brand-new `render`
-// function closures, every single call. React uses function identity
-// to decide whether to keep a DOM node mounted or remount it; a "new"
-// render function every keystroke means every custom field's input
-// remounts and loses focus after exactly one character, for every
-// custom field on this component, not just one.
 const STATIC_FIELDS = baseFields();
 
-// Same reasoning — these conditionally-shown fields must also be built
-// exactly once, not recreated inside resolveFields, or they'd have the
-// identical remount bug the moment stickyMode is active.
 const SCROLL_BG_COLOR_FIELD = colorField(
   "Background After Scroll (color-type backgrounds only)",
   [
@@ -441,10 +489,6 @@ const SCROLL_HOVER_COLOR_FIELD = colorField(
 export const Section = {
   label: "Section",
   fields: STATIC_FIELDS,
-  // Uses the `fields` param Puck passes in (the SAME stable
-  // STATIC_FIELDS reference) instead of recomputing baseFields() from
-  // scratch — that reuse is what keeps every field's identity stable
-  // across renders, which is what keeps inputs focused while typing.
   resolveFields: (data, { fields }) => {
     if (data.props.stickyMode && data.props.stickyMode !== "static") {
       return {
@@ -464,6 +508,11 @@ export const Section = {
     columns: "1",
     columnGap: "32px",
     columnAlign: "stretch",
+    contentDirection: "column",
+    contentItemGap: "16px",
+    contentItemAlign: "stretch",
+    contentItemJustify: "left",
+    contentItemWrap: true,
     bgType: "color",
     bgColor: "transparent",
     bgImage: "",
@@ -511,6 +560,11 @@ export const Section = {
     columns,
     columnGap,
     columnAlign,
+    contentDirection = "column",
+    contentItemGap = "16px",
+    contentItemAlign = "stretch",
+    contentItemJustify = "left",
+    contentItemWrap = true,
     bgType,
     bgColor,
     bgImage,
@@ -651,18 +705,36 @@ export const Section = {
           ? { position: "fixed", top: 0, left: 0, width: "100%", zIndex: 100 }
           : {};
 
+    // Style applied to each column's DropZone wrapper — this is what
+    // actually implements Content Direction. "column" (vertical, the
+    // default) still uses flex so contentItemGap works consistently in
+    // both modes, but flex-direction:column behaves like normal block
+    // stacking visually. "row" (horizontal) lays widgets side-by-side.
+    const columnContentStyle =
+      contentDirection === "row"
+        ? {
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: contentItemWrap ? "wrap" : "nowrap",
+            alignItems: CONTENT_ITEM_ALIGN_CSS[contentItemAlign] || "stretch",
+            justifyContent:
+              CONTENT_ITEM_JUSTIFY_CSS[contentItemJustify] || "flex-start",
+            gap: contentItemGap,
+            width: "100%",
+          }
+        : {
+            display: "flex",
+            flexDirection: "column",
+            gap: contentItemGap,
+            width: "100%",
+          };
+
     return (
       <section
         className={`relative ${scopedClass}`}
         style={{
           minHeight: minHeight === "auto" ? undefined : minHeight,
           display: "flex",
-          // overflow is intentionally NOT set here anymore — this
-          // outer element owns border-radius + box-shadow, and
-          // overflow:hidden on the SAME element as a box-shadow clips
-          // the shadow itself (a well-known CSS interaction), which is
-          // exactly the "shadow doesn't follow the radius" bug this
-          // fixes. Clipping now happens one level down instead.
           alignItems: verticalAlign,
           boxShadow: resolveShadow(shadow) || undefined,
           ...(resolvedTextColor
@@ -691,20 +763,6 @@ export const Section = {
         />
         {hoverCss && <style>{hoverCss}</style>}
 
-        {/* Background layer: absolutely positioned behind the content,
-            owns overflow:hidden + border-radius:inherit so the
-            background color/image/overlay/decorative pattern all clip
-            correctly to the rounded corners. Deliberately holds NO
-            actual content (no DropZones) — anything that could visually
-            extend past this box (like a nested child Section's own
-            box-shadow) never touches this element's overflow at all,
-            since it isn't inside it. This is what fixes a nested
-            Section's shadow getting clipped by its parent: previously
-            the content grid (and every nested widget in it) rendered
-            INSIDE the same overflow:hidden wrapper as the background,
-            so any child shadow bleeding past the parent's edges was
-            silently cut off along with everything else that layer
-            clips on purpose. */}
         <div
           className={`absolute inset-0 ${bgType === "gradient" ? `${gradientClass} from-[#354e98] to-[#4a71df]` : ""}`}
           style={{
@@ -744,15 +802,6 @@ export const Section = {
           )}
         </div>
 
-        {/* Content layer: sits ABOVE the background layer (relative +
-            normal flow, no overflow restriction of any kind), holds
-            padding + the column grid + every DropZone. Nested Sections
-            (and their shadows) render freely here with nothing clipping
-            them. Padding lives here — same element the old inner
-            wrapper used to hold both background AND padding together,
-            preserved so padding still lines up with visible content,
-            just without the background attached to this same element
-            anymore. */}
         <div
           className={`relative flex w-full flex-1 ${scopedClass}-inner`}
           style={{ alignItems: verticalAlign }}
@@ -788,7 +837,7 @@ export const Section = {
             />
             {Array.from({ length: count }).map((_, i) => (
               <div key={i} className="min-w-0">
-                <DropZone zone={`col-${i}`} />
+                <DropZone zone={`col-${i}`} style={columnContentStyle} />
               </div>
             ))}
           </div>

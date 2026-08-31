@@ -22,7 +22,6 @@ export const RESERVED_SLUGS = [
   "course-fee",
   "courses",
   "events",
-  "faq",
   "guides",
   "login",
   "mock-test",

@@ -23,6 +23,17 @@ export async function PATCH(req, { params }) {
     if (body.password) {
       data.password = await bcrypt.hash(body.password, 12);
     }
+    // Team-showcase fields — all optional, undefined means "don't touch".
+    // image/bio/publicTitle/linkedinUrl/facebookUrl can be explicitly
+    // cleared by sending an empty string, so we check for the key's
+    // presence rather than truthiness.
+    if ("image" in body) data.image = body.image || null;
+    if ("bio" in body) data.bio = body.bio || null;
+    if ("publicTitle" in body) data.publicTitle = body.publicTitle || null;
+    if ("linkedinUrl" in body) data.linkedinUrl = body.linkedinUrl || null;
+    if ("facebookUrl" in body) data.facebookUrl = body.facebookUrl || null;
+    if (typeof body.showOnWebsite === "boolean")
+      data.showOnWebsite = body.showOnWebsite;
 
     const updated = await prisma.admin.update({
       where: { id },
@@ -32,6 +43,12 @@ export async function PATCH(req, { params }) {
         name: true,
         email: true,
         role: true,
+        image: true,
+        bio: true,
+        publicTitle: true,
+        linkedinUrl: true,
+        facebookUrl: true,
+        showOnWebsite: true,
         createdAt: true,
       },
     });

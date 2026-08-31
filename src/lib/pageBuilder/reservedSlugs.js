@@ -17,7 +17,6 @@
 // locked once a page has one of these.
 export const RESERVED_SLUGS = [
   "band-calculator",
-  "batch-schedule",
   "blog",
   "contact",
   "course-fee",
@@ -27,7 +26,6 @@ export const RESERVED_SLUGS = [
   "guides",
   "login",
   "mock-test",
-  "success-stories",
   "admin",
   "api",
   "p",

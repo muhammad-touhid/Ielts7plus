@@ -487,10 +487,10 @@ export const Section = {
     initialHoverColor: "#ffffff",
     scrollHoverColor: "#2563eb",
     padding: {
-      top: { desktop: "64", tablet: "40", mobile: "32" },
-      right: { desktop: "24" },
-      bottom: { desktop: "64", tablet: "40", mobile: "32" },
-      left: { desktop: "24" },
+      top: { desktop: "0", tablet: "0", mobile: "0" },
+      right: { desktop: "0" },
+      bottom: { desktop: "0", tablet: "0", mobile: "0" },
+      left: { desktop: "0" },
       linked: false,
       unit: "px",
     },
@@ -653,20 +653,18 @@ export const Section = {
 
     return (
       <section
-        className={`relative ${scopedClass} ${bgType === "gradient" ? `${gradientClass} from-[#354e98] to-[#4a71df]` : ""}`}
+        className={`relative ${scopedClass}`}
         style={{
           minHeight: minHeight === "auto" ? undefined : minHeight,
           display: "flex",
-          overflow: stickyMode === "static" ? "hidden" : "visible",
+          // overflow is intentionally NOT set here anymore — this
+          // outer element owns border-radius + box-shadow, and
+          // overflow:hidden on the SAME element as a box-shadow clips
+          // the shadow itself (a well-known CSS interaction), which is
+          // exactly the "shadow doesn't follow the radius" bug this
+          // fixes. Clipping now happens one level down instead.
           alignItems: verticalAlign,
-          backgroundColor: bgType === "color" ? resolvedBgColor : undefined,
-          backgroundImage:
-            bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
           boxShadow: resolveShadow(shadow) || undefined,
-          transition:
-            stickyMode !== "static" ? "background-color 0.25s ease" : undefined,
           ...(resolvedTextColor
             ? { "--pb-scroll-text-color": resolvedTextColor }
             : {}),
@@ -679,68 +677,121 @@ export const Section = {
         <ResponsiveStyle
           className={scopedClass}
           entries={[
-            ...spacingBoxToEntries("padding", padding),
             ...spacingBoxToEntries("margin", margin),
-            ...borderToEntries({
-              borderWidth,
-              borderStyle,
-              borderColor,
-              borderRadius,
-            }),
+            ...borderToEntries(
+              {
+                borderWidth,
+                borderStyle,
+                borderColor,
+                borderRadius,
+              },
+              themeColors,
+            ),
           ]}
         />
         {hoverCss && <style>{hoverCss}</style>}
-        {overlayStyle && (
-          <div className="absolute inset-0" style={overlayStyle} />
-        )}
 
-        {(decorative === "grid" || decorative === "grid-blobs") && (
-          <div
-            className="absolute inset-0 opacity-[0.07] pointer-events-none"
-            style={{
-              backgroundImage:
-                "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-              backgroundSize: "48px 48px",
-            }}
-          />
-        )}
-        {decorative === "grid-blobs" && (
-          <>
-            <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] bg-white/5 rounded-full blur-3xl pointer-events-none" />
-          </>
-        )}
+        {/* Background layer: absolutely positioned behind the content,
+            owns overflow:hidden + border-radius:inherit so the
+            background color/image/overlay/decorative pattern all clip
+            correctly to the rounded corners. Deliberately holds NO
+            actual content (no DropZones) — anything that could visually
+            extend past this box (like a nested child Section's own
+            box-shadow) never touches this element's overflow at all,
+            since it isn't inside it. This is what fixes a nested
+            Section's shadow getting clipped by its parent: previously
+            the content grid (and every nested widget in it) rendered
+            INSIDE the same overflow:hidden wrapper as the background,
+            so any child shadow bleeding past the parent's edges was
+            silently cut off along with everything else that layer
+            clips on purpose. */}
         <div
-          className={`relative grid w-full ${layout.className} ${scopedClass}-content`}
+          className={`absolute inset-0 ${bgType === "gradient" ? `${gradientClass} from-[#354e98] to-[#4a71df]` : ""}`}
           style={{
-            gap: columnGap,
-            alignItems: COLUMN_ALIGN_CSS[columnAlign] || "stretch",
-            ...contentAlignMargin,
+            overflow: "hidden",
+            borderRadius: "inherit",
+            backgroundColor: bgType === "color" ? resolvedBgColor : undefined,
+            backgroundImage:
+              bgType === "image" && bgImage ? `url(${bgImage})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            transition:
+              stickyMode !== "static"
+                ? "background-color 0.25s ease"
+                : undefined,
           }}
         >
+          {overlayStyle && (
+            <div className="absolute inset-0" style={overlayStyle} />
+          )}
+
+          {(decorative === "grid" || decorative === "grid-blobs") && (
+            <div
+              className="absolute inset-0 opacity-[0.07] pointer-events-none"
+              style={{
+                backgroundImage:
+                  "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+                backgroundSize: "48px 48px",
+              }}
+            />
+          )}
+          {decorative === "grid-blobs" && (
+            <>
+              <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-400/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] bg-white/5 rounded-full blur-3xl pointer-events-none" />
+            </>
+          )}
+        </div>
+
+        {/* Content layer: sits ABOVE the background layer (relative +
+            normal flow, no overflow restriction of any kind), holds
+            padding + the column grid + every DropZone. Nested Sections
+            (and their shadows) render freely here with nothing clipping
+            them. Padding lives here — same element the old inner
+            wrapper used to hold both background AND padding together,
+            preserved so padding still lines up with visible content,
+            just without the background attached to this same element
+            anymore. */}
+        <div
+          className={`relative flex w-full flex-1 ${scopedClass}-inner`}
+          style={{ alignItems: verticalAlign }}
+        >
           <ResponsiveStyle
-            className={`${scopedClass}-content`}
-            entries={[
-              { property: "max-width", value: contentWidth },
-              ...(isCustomColumns
-                ? [
-                    {
-                      property: "grid-template-columns",
-                      value: {
-                        desktop: columnsNormalized.value || "1fr",
-                        mobile: "1fr",
-                      },
-                    },
-                  ]
-                : []),
-            ]}
+            className={`${scopedClass}-inner`}
+            entries={spacingBoxToEntries("padding", padding)}
           />
-          {Array.from({ length: count }).map((_, i) => (
-            <div key={i} className="min-w-0">
-              <DropZone zone={`col-${i}`} />
-            </div>
-          ))}
+          <div
+            className={`relative grid w-full ${layout.className} ${scopedClass}-content`}
+            style={{
+              gap: columnGap,
+              alignItems: COLUMN_ALIGN_CSS[columnAlign] || "stretch",
+              ...contentAlignMargin,
+            }}
+          >
+            <ResponsiveStyle
+              className={`${scopedClass}-content`}
+              entries={[
+                { property: "max-width", value: contentWidth },
+                ...(isCustomColumns
+                  ? [
+                      {
+                        property: "grid-template-columns",
+                        value: {
+                          desktop: columnsNormalized.value || "1fr",
+                          mobile: "1fr",
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+            {Array.from({ length: count }).map((_, i) => (
+              <div key={i} className="min-w-0">
+                <DropZone zone={`col-${i}`} />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     );

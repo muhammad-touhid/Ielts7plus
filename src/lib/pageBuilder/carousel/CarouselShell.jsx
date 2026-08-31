@@ -226,7 +226,17 @@ export default function CarouselShell({
           </div>
         </>
       ) : (
-        <div className="overflow-hidden">
+        // py-8 -my-8: adds 32px of clipping headroom above/below the
+        // track inside the overflow:hidden box, then pulls the box's
+        // outer footprint back up by the same amount so it still
+        // occupies the same visual space in the page. Without this, a
+        // card's hover:shadow-lg / hover:-translate-y-1 (or any other
+        // widget's configured hover shadow) gets clipped flush against
+        // this wrapper's edges — overflow:hidden here is legitimately
+        // needed to hide off-screen slides during the transform-based
+        // slide animation, so it can't just be removed; this gives
+        // hover effects room to render before hitting that boundary.
+        <div className="overflow-hidden py-8 -my-8">
           <div
             ref={trackRef}
             className="flex gap-6 transition-transform duration-300 ease-in-out"

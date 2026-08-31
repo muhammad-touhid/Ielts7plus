@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BatchCard } from "../cards/BatchCard";
 
 // Module-level cache so the course dropdown's option list is fetched
 // once per editor session, not on every resolveFields call (which fires
@@ -38,6 +39,18 @@ const fields = {
     options: [{ label: "Loading courses...", value: "" }],
   },
 };
+
+// Shared handler for both "Enroll Now" / "View Batches" buttons —
+// scrollIntoView instead of a bare #hash link, since the fixed header
+// (stickyMode: "fixed" in headerTemplate) floats over content, and a
+// plain anchor jump would land the section partly hidden underneath it.
+// scroll-mt-24 on the target div handles the header-height offset.
+function scrollToBatches(e) {
+  e.preventDefault();
+  document
+    .getElementById("batches")
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 function CourseDetailBody({ course, batches }) {
   const details = [
@@ -176,13 +189,14 @@ function CourseDetailBody({ course, batches }) {
                   </li>
                 ))}
               </ul>
-              <Link
+              <a
                 href="#batches"
+                onClick={scrollToBatches}
                 className="mt-7 w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-4 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-200"
               >
                 <i className="ti ti-calendar-event" />
                 Enroll Now
-              </Link>
+              </a>
               <p className="text-center text-xs text-slate-400 mt-3">
                 No hidden fees. Seats are limited.
               </p>
@@ -190,9 +204,11 @@ function CourseDetailBody({ course, batches }) {
           </div>
         </div>
 
-        {/* Upcoming Batches */}
+        {/* Upcoming Batches — reuses the exact same BatchCard used by
+            the page builder's Carousel/Grid widgets, so styling, the
+            Enroll modal, and seat-count logic all stay in one place. */}
         {batches.length > 0 && (
-          <div id="batches">
+          <div id="batches" className="scroll-mt-24">
             <div className="mb-8">
               <h2 className="text-2xl font-extrabold text-slate-800 mb-2">
                 Upcoming Batches
@@ -203,143 +219,9 @@ function CourseDetailBody({ course, batches }) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {batches.map((batch) => {
-                const remainingSeats = Math.max(
-                  0,
-                  batch.seats - (batch._count?.enrollments || 0),
-                );
-                return (
-                  <div
-                    key={batch.id}
-                    className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col"
-                  >
-                    <div className="relative bg-gradient-to-br from-[#354e98] to-[#4a71df] p-5 pb-8">
-                      <div
-                        className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                        style={{
-                          backgroundImage:
-                            "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-                          backgroundSize: "32px 32px",
-                        }}
-                      />
-                      <div className="relative z-10 flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-white font-extrabold text-base leading-snug">
-                            {batch.name}
-                          </p>
-                        </div>
-                        {batch.badge && (
-                          <span
-                            className={`text-xs font-bold text-white px-2.5 py-1 rounded-full flex-shrink-0 ${
-                              batch.badge === "Open"
-                                ? "bg-emerald-500"
-                                : batch.badge === "Filling Fast"
-                                  ? "bg-amber-500"
-                                  : batch.badge === "New"
-                                    ? "bg-blue-500"
-                                    : "bg-slate-400"
-                            }`}
-                          >
-                            {batch.badge}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 px-5">
-                      <span
-                        className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${
-                          batch.module === "Academic"
-                            ? "bg-blue-50 text-blue-600"
-                            : batch.module === "General"
-                              ? "bg-emerald-50 text-emerald-600"
-                              : batch.module === "Spoken English"
-                                ? "bg-violet-50 text-violet-600"
-                                : batch.module === "Writing"
-                                  ? "bg-amber-50 text-amber-600"
-                                  : "bg-rose-50 text-rose-600"
-                        }`}
-                      >
-                        {batch.module}
-                      </span>
-                    </div>
-
-                    <div className="px-5 py-4 flex flex-col gap-3 flex-1">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <i className="ti ti-calendar text-blue-500 text-sm" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-400">Start Date</p>
-                            <p className="text-xs font-bold text-slate-700">
-                              {batch.startDate}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <i className="ti ti-clock text-blue-500 text-sm" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-400">Time</p>
-                            <p className="text-xs font-bold text-slate-700">
-                              {batch.time}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <i className="ti ti-calendar-week text-blue-500 text-sm" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-400">Schedule</p>
-                            <p className="text-xs font-bold text-slate-700">
-                              {batch.schedule}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <i className="ti ti-hourglass text-blue-500 text-sm" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-400">Duration</p>
-                            <p className="text-xs font-bold text-slate-700">
-                              {batch.duration}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-xs text-slate-400">
-                          Available Seats
-                        </span>
-                        <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                            remainingSeats <= 5
-                              ? "bg-rose-50 text-rose-600"
-                              : remainingSeats <= 10
-                                ? "bg-amber-50 text-amber-600"
-                                : "bg-emerald-50 text-emerald-600"
-                          }`}
-                        >
-                          {remainingSeats} seats left
-                        </span>
-                      </div>
-
-                      <Link
-                        href="/batch-schedule"
-                        className="mt-auto w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white text-sm font-bold py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md shadow-blue-100"
-                      >
-                        <i className="ti ti-pencil-plus text-sm" />
-                        Enroll Now
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
+              {batches.map((batch) => (
+                <BatchCard key={batch.id} item={{ ...batch, course }} />
+              ))}
             </div>
           </div>
         )}
@@ -421,20 +303,22 @@ function CourseDetailBody({ course, batches }) {
             </p>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0">
-            <Link
+            <a
               href="#batches"
+              onClick={scrollToBatches}
               className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-700 text-sm font-bold px-6 py-3 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-all duration-200"
             >
               <i className="ti ti-calendar" />
               View Batches
-            </Link>
-            <Link
+            </a>
+            <a
               href="#batches"
+              onClick={scrollToBatches}
               className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all duration-200"
             >
               <i className="ti ti-arrow-right" />
               Enroll Now
-            </Link>
+            </a>
           </div>
         </div>
       </div>

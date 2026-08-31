@@ -102,6 +102,7 @@ export default async function AdminDashboard() {
       href: "/admin/blog",
       color: "bg-orange-50 text-orange-600",
     },
+    
   ];
 
   const quickLinks = [

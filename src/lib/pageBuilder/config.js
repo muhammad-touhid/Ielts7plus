@@ -39,6 +39,7 @@ import { Carousel } from "./widgets/Carousel";
 import { Grid } from "./widgets/Grid";
 import { Menu } from "./widgets/Menu";
 import { CourseDetail } from "./widgets/CourseDetail";
+import { FaqAccordion } from "./widgets/FaqAccordion";
 
 export const config = {
   categories: {
@@ -60,6 +61,7 @@ export const config = {
         "SearchBar",
         "TagList",
         "Menu",
+        "FaqAccordion",
       ],
     },
     dynamic: {
@@ -83,5 +85,6 @@ export const config = {
     Carousel,
     Grid,
     CourseDetail,
+    FaqAccordion,
   },
 };

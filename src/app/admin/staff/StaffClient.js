@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ImageUpload from "@/app/admin/ImageUpload";
 
 const ROLES = ["admin", "teacher", "moderator"];
 
@@ -13,12 +14,24 @@ const roleMeta = {
 const inputClass =
   "w-full bg-slate-50 text-slate-700 text-sm px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all";
 
+const labelClass =
+  "text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block";
+
 function StaffForm({ onSuccess, onCancel }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     role: "teacher",
+  });
+  const [showTeamFields, setShowTeamFields] = useState(false);
+  const [teamForm, setTeamForm] = useState({
+    image: "",
+    designation: "",
+    bio: "",
+    linkedinUrl: "",
+    facebookUrl: "",
+    showOnWebsite: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,14 +40,50 @@ function StaffForm({ onSuccess, onCancel }) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Create the account first (core login fields only) — matches the
+    // existing POST /api/staff contract, which only accepts
+    // name/email/password/role.
     const res = await fetch("/api/staff", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
     const data = await res.json();
+
+    if (!res.ok) {
+      setLoading(false);
+      return setError(data.error || "Failed to create staff.");
+    }
+
+    // If team-showcase fields were filled in, patch them onto the
+    // freshly created account in a second call — PATCH already accepts
+    // all of these fields and treats missing keys as "don't touch", so
+    // sending only what the admin actually typed is safe.
+    const hasTeamData =
+      teamForm.image ||
+      teamForm.designation ||
+      teamForm.bio ||
+      teamForm.linkedinUrl ||
+      teamForm.facebookUrl ||
+      teamForm.showOnWebsite;
+
+    if (hasTeamData) {
+      await fetch(`/api/staff/${data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: teamForm.image,
+          publicTitle: teamForm.designation,
+          bio: teamForm.bio,
+          linkedinUrl: teamForm.linkedinUrl,
+          facebookUrl: teamForm.facebookUrl,
+          showOnWebsite: teamForm.showOnWebsite,
+        }),
+      });
+    }
+
     setLoading(false);
-    if (!res.ok) return setError(data.error || "Failed to create staff.");
     onSuccess();
   }
 
@@ -48,9 +97,7 @@ function StaffForm({ onSuccess, onCancel }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
-            Full Name *
-          </label>
+          <label className={labelClass}>Full Name *</label>
           <input
             type="text"
             required
@@ -61,9 +108,7 @@ function StaffForm({ onSuccess, onCancel }) {
           />
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
-            Email Address *
-          </label>
+          <label className={labelClass}>Email Address *</label>
           <input
             type="email"
             required
@@ -74,9 +119,7 @@ function StaffForm({ onSuccess, onCancel }) {
           />
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
-            Password *
-          </label>
+          <label className={labelClass}>Password *</label>
           <input
             type="password"
             required
@@ -90,8 +133,11 @@ function StaffForm({ onSuccess, onCancel }) {
           />
         </div>
         <div>
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
-            Role *
+          <label className={labelClass}>
+            Role *{" "}
+            <span className="normal-case font-normal text-slate-400">
+              (controls dashboard access)
+            </span>
           </label>
           <div className="relative">
             <select
@@ -108,6 +154,118 @@ function StaffForm({ onSuccess, onCancel }) {
             <i className="ti ti-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none" />
           </div>
         </div>
+      </div>
+
+      {/* Team showcase fields — optional, collapsed by default */}
+      <div className="border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowTeamFields((s) => !s)}
+          className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+        >
+          <i
+            className={`ti ${showTeamFields ? "ti-chevron-up" : "ti-chevron-down"}`}
+          />
+          Team Page Details (optional)
+        </button>
+
+        {showTeamFields && (
+          <div className="flex flex-col gap-4 mt-4">
+            <p className="text-xs text-slate-400">
+              These control how this person appears on the public team page —
+              separate from their dashboard role above.
+            </p>
+
+            <div>
+              <label className={labelClass}>Photo</label>
+              <ImageUpload
+                value={teamForm.image}
+                onChange={(url) => setTeamForm((f) => ({ ...f, image: url }))}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Designation{" "}
+                <span className="normal-case font-normal text-slate-400">
+                  (e.g. CEO, Executive, Lead Trainer)
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Lead IELTS Trainer"
+                value={teamForm.designation}
+                onChange={(e) =>
+                  setTeamForm((f) => ({ ...f, designation: e.target.value }))
+                }
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>Bio</label>
+              <textarea
+                rows={3}
+                placeholder="A short bio shown on the team page"
+                value={teamForm.bio}
+                onChange={(e) =>
+                  setTeamForm((f) => ({ ...f, bio: e.target.value }))
+                }
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>LinkedIn URL</label>
+                <input
+                  type="url"
+                  placeholder="https://linkedin.com/in/..."
+                  value={teamForm.linkedinUrl}
+                  onChange={(e) =>
+                    setTeamForm((f) => ({
+                      ...f,
+                      linkedinUrl: e.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Facebook URL</label>
+                <input
+                  type="url"
+                  placeholder="https://facebook.com/..."
+                  value={teamForm.facebookUrl}
+                  onChange={(e) =>
+                    setTeamForm((f) => ({
+                      ...f,
+                      facebookUrl: e.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={teamForm.showOnWebsite}
+                onChange={(e) =>
+                  setTeamForm((f) => ({
+                    ...f,
+                    showOnWebsite: e.target.checked,
+                  }))
+                }
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-400"
+              />
+              <span className="text-sm font-semibold text-slate-700">
+                Show on public team page
+              </span>
+            </label>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-3 pt-2">
@@ -145,6 +303,14 @@ function EditStaffModal({ staff, onSuccess, onClose }) {
     password: "",
     confirmPassword: "",
   });
+  const [teamForm, setTeamForm] = useState({
+    image: staff.image || "",
+    designation: staff.publicTitle || "",
+    bio: staff.bio || "",
+    linkedinUrl: staff.linkedinUrl || "",
+    facebookUrl: staff.facebookUrl || "",
+    showOnWebsite: staff.showOnWebsite || false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -164,7 +330,16 @@ function EditStaffModal({ staff, onSuccess, onClose }) {
 
     setLoading(true);
 
-    const payload = { name: form.name, role: form.role };
+    const payload = {
+      name: form.name,
+      role: form.role,
+      image: teamForm.image,
+      publicTitle: teamForm.designation,
+      bio: teamForm.bio,
+      linkedinUrl: teamForm.linkedinUrl,
+      facebookUrl: teamForm.facebookUrl,
+      showOnWebsite: teamForm.showOnWebsite,
+    };
     if (form.password) payload.password = form.password;
 
     const res = await fetch(`/api/staff/${staff.id}`, {
@@ -191,9 +366,9 @@ function EditStaffModal({ staff, onSuccess, onClose }) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-md z-10">
+      <div className="relative bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10">
         {/* Header */}
-        <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-slate-100">
+        <div className="sticky top-0 bg-white flex items-center justify-between px-7 pt-6 pb-4 border-b border-slate-100">
           <div>
             <h3 className="font-extrabold text-slate-800">Edit Staff Member</h3>
             <p className="text-xs text-slate-400 mt-0.5">{staff.email}</p>
@@ -220,9 +395,7 @@ function EditStaffModal({ staff, onSuccess, onClose }) {
 
           {/* Name */}
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
-              Full Name *
-            </label>
+            <label className={labelClass}>Full Name *</label>
             <input
               type="text"
               required
@@ -234,8 +407,11 @@ function EditStaffModal({ staff, onSuccess, onClose }) {
 
           {/* Role */}
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
-              Role *
+            <label className={labelClass}>
+              Role *{" "}
+              <span className="normal-case font-normal text-slate-400">
+                (controls dashboard access)
+              </span>
             </label>
             <div className="flex flex-col gap-2">
               {ROLES.map((r) => (
@@ -262,12 +438,114 @@ function EditStaffModal({ staff, onSuccess, onClose }) {
             </div>
           </div>
 
+          {/* Team showcase fields */}
+          <div className="border-t border-slate-100 pt-5">
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+              Team Page Details
+            </p>
+            <p className="text-xs text-slate-400 mb-4">
+              Controls how this person appears on the public team page.
+            </p>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className={labelClass}>Photo</label>
+                <ImageUpload
+                  value={teamForm.image}
+                  onChange={(url) => setTeamForm((f) => ({ ...f, image: url }))}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  Designation{" "}
+                  <span className="normal-case font-normal text-slate-400">
+                    (e.g. CEO, Executive, Lead Trainer)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Lead IELTS Trainer"
+                  value={teamForm.designation}
+                  onChange={(e) =>
+                    setTeamForm((f) => ({
+                      ...f,
+                      designation: e.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Bio</label>
+                <textarea
+                  rows={3}
+                  placeholder="A short bio shown on the team page"
+                  value={teamForm.bio}
+                  onChange={(e) =>
+                    setTeamForm((f) => ({ ...f, bio: e.target.value }))
+                  }
+                  className={`${inputClass} resize-none`}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>LinkedIn URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://linkedin.com/in/..."
+                    value={teamForm.linkedinUrl}
+                    onChange={(e) =>
+                      setTeamForm((f) => ({
+                        ...f,
+                        linkedinUrl: e.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Facebook URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://facebook.com/..."
+                    value={teamForm.facebookUrl}
+                    onChange={(e) =>
+                      setTeamForm((f) => ({
+                        ...f,
+                        facebookUrl: e.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={teamForm.showOnWebsite}
+                  onChange={(e) =>
+                    setTeamForm((f) => ({
+                      ...f,
+                      showOnWebsite: e.target.checked,
+                    }))
+                  }
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-400"
+                />
+                <span className="text-sm font-semibold text-slate-700">
+                  Show on public team page
+                </span>
+              </label>
+            </div>
+          </div>
+
           {/* Password section */}
           <div className="border-t border-slate-100 pt-5">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                Change Password
-              </label>
+              <label className={labelClass}>Change Password</label>
               <button
                 type="button"
                 onClick={() => {
@@ -549,6 +827,12 @@ export default function StaffClient() {
                       Role
                     </th>
                     <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Designation
+                    </th>
+                    <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Public
+                    </th>
+                    <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
                       Joined
                     </th>
                     <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -564,9 +848,17 @@ export default function StaffClient() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-sm flex-shrink-0">
-                            {member.name.charAt(0).toUpperCase()}
-                          </div>
+                          {member.image ? (
+                            <img
+                              src={member.image}
+                              alt={member.name}
+                              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-sm flex-shrink-0">
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <p className="font-bold text-slate-800">
                             {member.name}
                           </p>
@@ -581,6 +873,22 @@ export default function StaffClient() {
                         >
                           {roleMeta[member.role]?.label || member.role}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 text-xs">
+                        {member.publicTitle || (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {member.showOnWebsite ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">
+                            <i className="ti ti-eye text-sm" /> Visible
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">
+                            <i className="ti ti-eye-off text-sm" /> Hidden
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-slate-500 text-xs">
                         {new Date(member.createdAt).toLocaleDateString(

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import EnrollmentModal from "@/app/(public)/batch-schedule/EnrollmentModal";
+import EnrollmentModal from "../shared/EnrollmentModal";
 
 const moduleBadgeColor = {
   Academic: "bg-blue-50 text-blue-600",
@@ -28,6 +28,12 @@ const batchBadgeColor = {
 export function BatchCard({ item: batch }) {
   const [showModal, setShowModal] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
+
+  const remainingSeats = Math.max(
+    0,
+    batch.seats - (batch._count?.enrollments || 0),
+  );
+  const isFull = remainingSeats <= 0;
 
   const handleSuccess = () => {
     setShowModal(false);
@@ -131,14 +137,14 @@ export function BatchCard({ item: batch }) {
           <span className="text-xs text-slate-400">Available Seats</span>
           <span
             className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-              batch.seats <= 5
+              remainingSeats <= 5
                 ? "bg-rose-50 text-rose-600"
-                : batch.seats <= 10
+                : remainingSeats <= 10
                   ? "bg-amber-50 text-amber-600"
                   : "bg-emerald-50 text-emerald-600"
             }`}
           >
-            {batch.seats} seats left
+            {remainingSeats} seats left
           </span>
         </div>
 
@@ -151,7 +157,7 @@ export function BatchCard({ item: batch }) {
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            disabled={batch.badge === "Closed"}
+            disabled={batch.badge === "Closed" || isFull}
             className="mt-auto w-full inline-flex items-center justify-center gap-2 text-white font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md shadow-blue-100"
             style={{
               background: "var(--card-accent, #2563eb)",
@@ -159,7 +165,7 @@ export function BatchCard({ item: batch }) {
             }}
           >
             <i className="ti ti-pencil-plus text-sm" />
-            Enroll Now
+            {isFull ? "Seats Full" : "Enroll Now"}
           </button>
         )}
       </div>

@@ -5,17 +5,20 @@ import { useState } from "react";
 import { colorField, resolveColor } from "./colorField";
 import { withLabel } from "./withLabel";
 
+// Matches Tailwind's real shadow scale exactly — see the identical
+// comment/copy in shadowField.js. Keep both in sync if these values
+// ever change.
 const SHADOW_PRESETS = {
-  soft: "0 8px 20px rgba(0,0,0,0.10)",
-  medium: "0 12px 28px rgba(0,0,0,0.15)",
-  strong: "0 20px 45px rgba(0,0,0,0.25)",
+  soft: "0 1px 2px 0 rgb(0 0 0 / 0.05)", // = Tailwind shadow-sm
+  medium: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", // = Tailwind shadow-md
+  strong: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", // = Tailwind shadow-lg
 };
 
 const SHADOW_PRESET_OPTIONS = [
   { label: "None", value: "" },
-  { label: "Soft", value: "soft" },
-  { label: "Medium", value: "medium" },
-  { label: "Strong", value: "strong" },
+  { label: "Soft (shadow-sm)", value: "soft" },
+  { label: "Medium (shadow-md)", value: "medium" },
+  { label: "Strong (shadow-lg)", value: "strong" },
 ];
 
 function hoverShadowField() {
@@ -181,8 +184,14 @@ export function buildHoverCss(scopedClass, props, themeColors) {
   if (transformParts.length)
     hoverDecls.push(`transform: ${transformParts.join(" ")};`);
 
+  // !important here for the same reason background-color/color/
+  // border-color above have it: a widget's own inline `style` (e.g.
+  // Section's boxShadow: resolveShadow(shadow)) always wins over a
+  // plain stylesheet rule regardless of :hover specificity, silently
+  // making a configured hover shadow do nothing whenever a base shadow
+  // is also set. This was the exact bug reported and fixed earlier.
   const shadowCss = resolveShadow(props.hoverShadow);
-  if (shadowCss) hoverDecls.push(`box-shadow: ${shadowCss};`);
+  if (shadowCss) hoverDecls.push(`box-shadow: ${shadowCss} !important;`);
 
   // Nothing configured at all, but hover is toggled On — fall back to a
   // gentle dim, same role your old hard-coded `hover:opacity-90` used

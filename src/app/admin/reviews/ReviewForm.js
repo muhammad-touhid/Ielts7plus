@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ImageUpload from "@/app/admin/ImageUpload";
 
 const defaultForm = {
   name: "",
@@ -101,18 +102,13 @@ export default function ReviewForm({ review }) {
             </div>
 
             <div>
-              <label className={labelClass}>Profile Image URL (optional)</label>
-              <input
-                type="text"
-                placeholder="https://example.com/photo.jpg"
+              <label className={labelClass}>Profile Image (optional)</label>
+              <ImageUpload
                 value={form.image}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, image: e.target.value }))
-                }
-                className={inputClass}
+                onChange={(url) => setForm((f) => ({ ...f, image: url }))}
               />
               <p className="text-xs text-slate-400 mt-1">
-                Leave blank to show a default avatar. R2 upload coming soon.
+                Leave blank to show a default avatar.
               </p>
             </div>
 

@@ -2,7 +2,7 @@
 "use client";
 
 import { flexibleSizeField, BORDER_WIDTH_PRESETS } from "./flexibleSize";
-import { colorField } from "./colorField";
+import { colorField, resolveColor } from "./colorField";
 import { cornerBoxField, cornerBoxToEntries } from "./cornerBoxField";
 
 // Spread into any widget's `fields` object for a consistent
@@ -52,11 +52,21 @@ export function borderDefaultProps() {
 // Converts the border field values into ResponsiveStyle entries. Border
 // style/color only actually render if width is non-zero, but there's no
 // harm setting them unconditionally — a 0px border is invisible regardless.
-export function borderToEntries({ borderWidth, borderStyle, borderColor, borderRadius }) {
+//
+// `themeColors` is required to resolve borderColor's {type, value|token}
+// shape from colorField into a real CSS color string — passing the raw
+// field value straight through (the previous bug here) sends an object
+// into the "border-color" CSS property, which the browser silently
+// drops and falls back to currentColor, explaining the white/inherited
+// border seen instead of the selected color.
+export function borderToEntries(
+  { borderWidth, borderStyle, borderColor, borderRadius },
+  themeColors,
+) {
   return [
     { property: "border-width", value: borderWidth },
     { property: "border-style", value: borderStyle },
-    { property: "border-color", value: borderColor },
+    { property: "border-color", value: resolveColor(borderColor, themeColors) },
     ...cornerBoxToEntries(borderRadius),
   ];
 }

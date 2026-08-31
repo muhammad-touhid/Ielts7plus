@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { genId } from "@/lib/pageBuilder/genId";
 
 // GET all courses
 export async function GET() {
@@ -47,6 +48,49 @@ export async function POST(req) {
         published: body.published ?? false,
       },
     });
+
+    // Auto-create the matching builder page at courses/<slug>,
+    // published immediately. If a Page with this slug somehow already
+    // exists (e.g. course was previously deleted and recreated with
+    // the same slug), skip creating a duplicate rather than throwing —
+    // the course itself must not fail to save because of this side
+    // effect.
+    const pageSlug = `courses/${course.slug}`;
+    try {
+      const existingPage = await prisma.page.findUnique({
+        where: { slug: pageSlug },
+      });
+
+      if (!existingPage) {
+        const pageContent = {
+          content: [
+            {
+              type: "CourseDetail",
+              props: {
+                id: genId("coursedetail"),
+                courseSlug: course.slug,
+              },
+            },
+          ],
+          root: { props: { title: course.name } },
+          zones: {},
+        };
+
+        await prisma.page.create({
+          data: {
+            title: course.name,
+            slug: pageSlug,
+            status: "published",
+            data: pageContent,
+            draftData: null,
+          },
+        });
+      }
+    } catch (pageError) {
+      // Log but don't fail course creation over this — the admin can
+      // still create the page manually from /admin/pages if needed.
+      console.error("Failed to auto-create course page:", pageError);
+    }
 
     return NextResponse.json(course, { status: 201 });
   } catch (error) {

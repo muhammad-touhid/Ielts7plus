@@ -8,12 +8,18 @@ datasource db {
 }
 
 model Admin {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("admin")  // "admin" | "teacher" | "moderator"
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  name           String
+  role           String   @default("admin")  // "admin" | "teacher" | "moderator"
+  image          String?
+  bio            String?
+  publicTitle    String?  // display title on the public team page, e.g. "Lead IELTS Trainer" — separate from `role` since role controls admin permissions, not what visitors see
+  linkedinUrl    String?
+  facebookUrl    String?
+  showOnWebsite  Boolean  @default(true)
+  createdAt      DateTime @default(now())
 }
 model Course {
   id               String   @id @default(cuid())

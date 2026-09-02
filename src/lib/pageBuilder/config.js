@@ -40,6 +40,9 @@ import { Grid } from "./widgets/Grid";
 import { Menu } from "./widgets/Menu";
 import { CourseDetail } from "./widgets/CourseDetail";
 import { FaqAccordion } from "./widgets/FaqAccordion";
+import { Divider } from "./widgets/Divider";
+import { IconList } from "./widgets/IconList";
+import { IconBox } from "./widgets/Iconbox";
 
 export const config = {
   categories: {
@@ -55,6 +58,8 @@ export const config = {
         "ImageBlock",
         "ButtonBlock",
         "IconBlock",
+        "IconList",
+        "IconBox",
         "Spacer",
         "HtmlBlock",
         "Badge",
@@ -62,6 +67,7 @@ export const config = {
         "TagList",
         "Menu",
         "FaqAccordion",
+        "Divider",
       ],
     },
     dynamic: {
@@ -76,6 +82,8 @@ export const config = {
     ImageBlock,
     ButtonBlock,
     IconBlock,
+    IconList,
+    IconBox,
     Spacer,
     HtmlBlock,
     Badge,
@@ -86,5 +94,6 @@ export const config = {
     Grid,
     CourseDetail,
     FaqAccordion,
+    Divider,
   },
 };

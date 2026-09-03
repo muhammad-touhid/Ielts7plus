@@ -58,6 +58,12 @@ const BOX_BG_COLOR_PRESETS = [
   { label: "Dark", value: "#111827" },
 ];
 
+const VERTICAL_ALIGN_CSS = {
+  top: "flex-start",
+  center: "center",
+  bottom: "flex-end",
+};
+
 const STATIC_FIELDS = {
   // Tabler icon class suffix, e.g. "ti-rocket" — rendered as
   // `ti ti-rocket` to match the CDN usage already established
@@ -81,6 +87,20 @@ const STATIC_FIELDS = {
       { label: "Right", value: "right" },
     ],
   },
+  // Only meaningful for Left/Right icon position — controls how the
+  // icon lines up against the title/description block vertically.
+  // Automatically overridden to Center whenever Description is empty,
+  // since a single-line title next to a larger icon looks visually
+  // off sitting at flex-start instead of matching the icon's center.
+  iconVerticalAlign: {
+    type: "radio",
+    label: "Icon Vertical Alignment (Left/Right position only)",
+    options: [
+      { label: "Top", value: "top" },
+      { label: "Center", value: "center" },
+      { label: "Bottom", value: "bottom" },
+    ],
+  },
   iconColor: colorField("Icon Color", ICON_COLOR_PRESETS),
   iconSize: flexibleSizeField("Icon Size", GAP_PRESETS),
   iconBackground: {
@@ -95,6 +115,12 @@ const STATIC_FIELDS = {
   iconBackgroundColor: colorField(
     "Icon Background Color",
     ICON_BG_COLOR_PRESETS,
+  ),
+  // Only applies when Icon Background is Square — Circle always uses
+  // 50% to stay a true circle regardless of icon size.
+  iconBackgroundRadius: flexibleSizeField(
+    "Icon Background Corner Radius (Square only)",
+    GAP_PRESETS,
   ),
   // Shape size = Icon Size + this padding on every side, same approach
   // as the IconList widget so the shape auto-scales with Icon Size.
@@ -129,10 +155,12 @@ export const IconBox = {
     icon: "ti-rocket",
     iconPosition: "top",
     contentAlign: "center",
+    iconVerticalAlign: "top",
     iconColor: "#2563eb",
     iconSize: "28px",
     iconBackground: "circle",
     iconBackgroundColor: "#dbeafe",
+    iconBackgroundRadius: "6px",
     iconBackgroundPadding: "16px",
     iconContentGap: "16px",
     title: "Icon Box Title",
@@ -162,10 +190,12 @@ export const IconBox = {
     icon,
     iconPosition,
     contentAlign,
+    iconVerticalAlign,
     iconColor,
     iconSize,
     iconBackground,
     iconBackgroundColor,
+    iconBackgroundRadius,
     iconBackgroundPadding,
     iconContentGap,
     title,
@@ -206,6 +236,7 @@ export const IconBox = {
     const isTop = iconPosition === "top";
     const isRight = iconPosition === "right";
     const hasIconBg = iconBackground !== "none";
+    const hasDescription = !!(description && description.trim());
 
     const hoverCss = buildHoverCss(
       scopedClass,
@@ -232,7 +263,8 @@ export const IconBox = {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: resolvedIconBg,
-          borderRadius: iconBackground === "circle" ? "50%" : "6px",
+          borderRadius:
+            iconBackground === "circle" ? "50%" : iconBackgroundRadius,
           padding: iconBackgroundPadding,
           lineHeight: 1,
           flexShrink: 0,
@@ -271,13 +303,13 @@ export const IconBox = {
               color: resolvedTitleColor,
               fontSize: titleSize,
               fontWeight: 600,
-              marginBottom: titleGap,
+              marginBottom: hasDescription ? titleGap : 0,
             }}
           >
             {title}
           </div>
         )}
-        {description && (
+        {hasDescription && (
           <div
             style={{
               color: resolvedDescColor,
@@ -306,7 +338,14 @@ export const IconBox = {
       : {
           display: "flex",
           flexDirection: isRight ? "row-reverse" : "row",
-          alignItems: "flex-start",
+          // No description means just a single-line title sitting next
+          // to the icon — always center that against the icon rather
+          // than respecting the Top/Bottom vertical align choice, since
+          // flex-start/flex-end would look visually offset with only
+          // one line of content.
+          alignItems: hasDescription
+            ? VERTICAL_ALIGN_CSS[iconVerticalAlign] || "flex-start"
+            : "center",
           gap: iconContentGap,
         };
 

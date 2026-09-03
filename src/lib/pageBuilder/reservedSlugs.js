@@ -18,8 +18,6 @@
 export const RESERVED_SLUGS = [
   "band-calculator",
   "blog",
-  "contact",
-  "course-fee",
   "courses",
   "events",
   "guides",

@@ -43,6 +43,10 @@ import { FaqAccordion } from "./widgets/FaqAccordion";
 import { Divider } from "./widgets/Divider";
 import { IconList } from "./widgets/IconList";
 import { IconBox } from "./widgets/Iconbox";
+import { EventDetail } from "./widgets/EventDetail";
+import { Form } from "./widgets/Form";
+import { SocialIcons } from "./widgets/SocialIcons";
+import { MapWidget } from "./widgets/MapWidget";
 
 export const config = {
   categories: {
@@ -60,6 +64,7 @@ export const config = {
         "IconBlock",
         "IconList",
         "IconBox",
+        "SocialIcons",
         "Spacer",
         "HtmlBlock",
         "Badge",
@@ -68,11 +73,13 @@ export const config = {
         "Menu",
         "FaqAccordion",
         "Divider",
+        "Form",
+        "MapWidget",
       ],
     },
     dynamic: {
       title: "Dynamic (Live Data)",
-      components: ["Carousel", "Grid", "CourseDetail"],
+      components: ["Carousel", "Grid", "CourseDetail", "EventDetail"],
     },
   },
   components: {
@@ -84,6 +91,7 @@ export const config = {
     IconBlock,
     IconList,
     IconBox,
+    SocialIcons,
     Spacer,
     HtmlBlock,
     Badge,
@@ -95,5 +103,8 @@ export const config = {
     CourseDetail,
     FaqAccordion,
     Divider,
+    EventDetail,
+    Form,
+    MapWidget,
   },
 };

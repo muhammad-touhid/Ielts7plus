@@ -142,29 +142,19 @@ model ContactSubmission {
 }
 
 model Event {
-  id        String   @id @default(cuid())
-  title     String
-  badge     String
-  para      String
-  date      String
-  time      String
-  campus    String
-  image     String?
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  registrations EventRegistration[]
+  id            String              @id @default(cuid())
+  title         String
+  slug          String?             @unique
+  badge         String
+  para          String
+  date          String
+  time          String
+  campus        String
+  image         String?
+  published     Boolean             @default(false)
+  createdAt     DateTime            @default(now())
 }
-
-model EventRegistration {
-  id        String   @id @default(cuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name      String
-  email     String
-  phone     String
-  message   String?
-  createdAt DateTime @default(now())
-}
+ 
 
 model BlogPost {
   id        String   @id @default(cuid())
@@ -252,4 +242,24 @@ model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+model FormSubmission {
+  id         String   @id @default(cuid())
+  // Optional human label set on the Form widget itself (e.g. "Event
+  // Registration", "Contact Us") — lets you filter submissions by
+  // form purpose even if the same page slug hosts a form that changed
+  // over time.
+  formLabel  String?
+  // Which page the submission came from — captured client-side from
+  // window.location.pathname at submit time. This is how you'll tell
+  // "IELTS Info Session registrations" apart from "Contact form
+  // submissions" without any special per-widget wiring.
+  pageSlug   String?
+  pageTitle  String?
+  data       Json
+  createdAt  DateTime @default(now())
+
+  @@index([pageSlug])
+  @@index([createdAt])
 }

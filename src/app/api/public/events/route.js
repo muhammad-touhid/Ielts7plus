@@ -15,6 +15,7 @@ export async function GET(req) {
     take: limit,
     select: {
       id: true,
+      slug: true,
       title: true,
       para: true,
       image: true,

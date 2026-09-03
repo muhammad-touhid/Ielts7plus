@@ -66,9 +66,9 @@ const navItems = [
     href: "/admin/events",
   },
   {
-    label: "Event Registrations",
+    label: "Form Submissions",
     icon: "ti ti-calendar-stats",
-    href: "/admin/event-registrations",
+    href: "/admin/form-submissions",
   },
   {
     label: "Blog Posts",

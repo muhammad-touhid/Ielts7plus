@@ -177,6 +177,7 @@ export const HEADING_SIZE_PRESETS = [
 ];
 
 export const TEXT_SIZE_PRESETS = [
+  { label: "X-Small", value: "0.65rem" },
   { label: "Small", value: "0.875rem" },
   { label: "Base", value: "1rem" },
   { label: "Large", value: "1.125rem" },

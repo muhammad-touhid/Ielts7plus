@@ -13,7 +13,7 @@ function stripHtml(html) {
 export function EventCard({ item: event }) {
   return (
     <Link
-      href={`/events/${event.id}`}
+      href={`/events/${event.slug || event.id}`}
       className="group rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col h-full"
       style={{ background: "var(--card-bg, #ffffff)" }}
     >

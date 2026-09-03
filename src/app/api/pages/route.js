@@ -1,6 +1,6 @@
-// src/app/api/pages/route.js
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { RESERVED_SLUGS } from "@/lib/pageBuilder/reservedSlugs";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +16,8 @@ export async function GET() {
 // POST /api/pages — create a new blank page, returns its id so the
 // admin UI can redirect straight into the editor
 export async function POST(req) {
+  const session = await auth();
+
   const body = await req.json();
   const { title, slug } = body;
 
@@ -53,6 +55,7 @@ export async function POST(req) {
       slug: normalizedSlug,
       data: { content: [], root: { props: { title } } },
       status: "draft",
+      createdById: session?.user?.id || null,
     },
   });
 

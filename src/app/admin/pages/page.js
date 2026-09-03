@@ -1,14 +1,79 @@
 // src/app/admin/pages/page.js
 export const dynamic = "force-dynamic";
-import Link from "next/link";
+
 import prisma from "@/lib/prisma";
 import NewPageForm from "./NewPageForm";
-import DeletePageButton from "./DeletePageButton";
+import PagesSearchBar from "./PagesSearchBar";
+import CategoryAccordion from "./CategoryAccordion";
 
 const CHROME_SLUGS = { "site-header": "Header", "site-footer": "Footer" };
 
-export default async function AdminPagesList() {
-  const pages = await prisma.page.findMany({ orderBy: { updatedAt: "desc" } });
+// Groups by the first "/"-separated segment of the slug — e.g.
+// "courses/ielts-prep" -> "courses", "events/open-day" -> "events".
+// home/site-header/site-footer are pinned into "Site" since they're
+// chrome, not content pages, and anything with no "/" at all falls
+// into "General Pages" (the catch-all for standalone pages like
+// About Us, Contact, etc).
+function getCategoryKey(slug) {
+  if (slug === "home" || slug in CHROME_SLUGS) return "site";
+  if (!slug.includes("/")) return "general";
+  return slug.split("/")[0];
+}
+
+const CATEGORY_LABELS = {
+  site: "Site",
+  general: "General Pages",
+};
+
+function labelForCategory(key) {
+  if (CATEGORY_LABELS[key]) return CATEGORY_LABELS[key];
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+// Fixed priority for the categories we know about; anything else
+// (courses, events, or any future nested-slug category) sorts
+// alphabetically in between, with "general" always last.
+const CATEGORY_ORDER = ["site"];
+
+function sortCategories(keys) {
+  return keys.sort((a, b) => {
+    if (a === "general") return 1;
+    if (b === "general") return -1;
+    const aPriority = CATEGORY_ORDER.indexOf(a);
+    const bPriority = CATEGORY_ORDER.indexOf(b);
+    if (aPriority !== -1 || bPriority !== -1) {
+      return (
+        (aPriority === -1 ? 99 : aPriority) -
+        (bPriority === -1 ? 99 : bPriority)
+      );
+    }
+    return labelForCategory(a).localeCompare(labelForCategory(b));
+  });
+}
+
+export default async function AdminPagesList({ searchParams }) {
+  const { q } = await searchParams;
+
+  const allPages = await prisma.page.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: {
+      createdBy: { select: { name: true, email: true } },
+    },
+  });
+
+  const pages = q
+    ? allPages.filter((p) =>
+        p.title.toLowerCase().includes(q.trim().toLowerCase()),
+      )
+    : allPages;
+
+  const grouped = {};
+  for (const page of pages) {
+    const key = getCategoryKey(page.slug);
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(page);
+  }
+  const categoryKeys = sortCategories(Object.keys(grouped));
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-6">
@@ -16,76 +81,39 @@ export default async function AdminPagesList() {
 
       <NewPageForm />
 
-      <div className="mt-8 divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden">
-        {pages.length === 0 && (
-          <p className="p-6 text-sm text-gray-500">
-            No pages yet. Create your first one above.
-          </p>
-        )}
-        {pages.map((page) => {
-          const isHome = page.slug === "home";
-          const isChrome = page.slug in CHROME_SLUGS;
-          const publicHref = isHome ? "/" : `/${page.slug}`;
+      <div className="mt-8">
+        <PagesSearchBar />
+      </div>
 
-          return (
-            <div
-              key={page.id}
-              className="flex items-center justify-between p-4 bg-white"
-            >
-              <div>
-                <p className="font-medium text-gray-900">
-                  {page.title}
-                  {isHome && (
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                      Homepage
-                    </span>
-                  )}
-                  {isChrome && (
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                      {CHROME_SLUGS[page.slug]}
-                    </span>
-                  )}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {isChrome ? "Site chrome — no standalone URL" : publicHref}{" "}
-                  &middot;{" "}
-                  <span
-                    className={
-                      page.status === "published"
-                        ? "text-green-600"
-                        : "text-amber-600"
-                    }
-                  >
-                    {page.status}
-                  </span>
-                  {page.draftData && page.status === "published" && (
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                      Draft changes pending
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Link
-                  href={`/admin/pages/${page.id}/edit`}
-                  className="text-blue-600 hover:underline text-sm font-medium"
-                >
-                  Edit
-                </Link>
-                {page.status === "published" && !isChrome && (
-                  <Link
-                    href={publicHref}
-                    target="_blank"
-                    className="text-gray-500 hover:underline text-sm"
-                  >
-                    View
-                  </Link>
-                )}
-                <DeletePageButton pageId={page.id} pageTitle={page.title} />
-              </div>
-            </div>
-          );
-        })}
+      <div className="mt-4 flex flex-col gap-4">
+        {categoryKeys.length === 0 && (
+          <div className="p-6 text-sm text-gray-500 border border-gray-200 rounded-lg bg-white">
+            {q
+              ? "No pages match your search."
+              : "No pages yet. Create your first one above."}
+          </div>
+        )}
+        {categoryKeys.map((key) => (
+          <CategoryAccordion
+            key={key}
+            label={labelForCategory(key)}
+            count={grouped[key].length}
+            defaultOpen={!!q}
+            pages={grouped[key].map((page) => ({
+              id: page.id,
+              slug: page.slug,
+              title: page.title,
+              status: page.status,
+              hasDraftPending: !!page.draftData && page.status === "published",
+              createdAt: page.createdAt,
+              createdByName:
+                page.createdBy?.name || page.createdBy?.email || null,
+              isHome: page.slug === "home",
+              isChrome: page.slug in CHROME_SLUGS,
+              chromeLabel: CHROME_SLUGS[page.slug],
+            }))}
+          />
+        ))}
       </div>
     </div>
   );

@@ -18,22 +18,36 @@ export async function GET(req, { params }) {
 
 // PUT /api/pages/:id
 //
-// 1. RENAME-ONLY: body is { title?, slug? }, no content/action.
-//    Blocks changing slug AWAY from a protected slug (home,
-//    site-header, site-footer) — title can still change freely.
+// 1. METADATA-ONLY: body is { title?, slug?, metaTitle?,
+//    metaDescription?, metaKeywords? }, no content/action. Blocks
+//    changing slug AWAY from a protected slug (home, site-header,
+//    site-footer) — title/SEO fields can still change freely.
 // 2. CONTENT SAVE: body is { content, action, title? } — unchanged.
 export async function PUT(req, { params }) {
   const { id } = await params;
   const body = await req.json();
-  const { content, action, title, slug } = body;
+  const {
+    content,
+    action,
+    title,
+    slug,
+    metaTitle,
+    metaDescription,
+    metaKeywords,
+  } = body;
 
-  // --- Rename-only path -------------------------------------------
+  // --- Metadata-only path (rename and/or SEO fields) ---------------
   if (content === undefined && action === undefined) {
-    if (!title && !slug) {
+    const hasSeoUpdate =
+      metaTitle !== undefined ||
+      metaDescription !== undefined ||
+      metaKeywords !== undefined;
+
+    if (!title && !slug && !hasSeoUpdate) {
       return NextResponse.json(
         {
           error:
-            "Provide title and/or slug to rename, or content+action to save page data",
+            "Provide title/slug to rename, SEO fields to update metadata, or content+action to save page data",
         },
         { status: 400 },
       );
@@ -83,6 +97,14 @@ export async function PUT(req, { params }) {
 
       updateData.slug = normalizedSlug;
     }
+
+    // Empty string means "clear it" (falls back to page.title at
+    // render time), so these are stored as null rather than "".
+    if (metaTitle !== undefined) updateData.metaTitle = metaTitle || null;
+    if (metaDescription !== undefined)
+      updateData.metaDescription = metaDescription || null;
+    if (metaKeywords !== undefined)
+      updateData.metaKeywords = metaKeywords || null;
 
     const page = await prisma.page.update({ where: { id }, data: updateData });
     return NextResponse.json(page);

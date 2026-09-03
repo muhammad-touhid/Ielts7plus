@@ -12,6 +12,7 @@ import CollapsibleSection from "./CollapsibleSection";
 import HeaderActions from "./HeaderActions";
 import OutlineSidebar from "./OutlineSidebar";
 import RenamePageForm from "./RenamePageForm";
+import SeoPanel from "./SeoPanel";
 import { PUCK_VIEWPORTS } from "@/lib/pageBuilder/fields/breakpoints";
 import { ThemeColorsProvider } from "@/lib/pageBuilder/theme/ThemeColorsContext";
 
@@ -22,6 +23,12 @@ export default function PuckEditorClient({ page }) {
   const [pageMeta, setPageMeta] = useState({
     title: page.title,
     slug: page.slug,
+  });
+  const [seoOpen, setSeoOpen] = useState(false);
+  const [seoMeta, setSeoMeta] = useState({
+    metaTitle: page.metaTitle || "",
+    metaDescription: page.metaDescription || "",
+    metaKeywords: page.metaKeywords || "",
   });
 
   const initialContent = page.draftData ||
@@ -91,6 +98,12 @@ export default function PuckEditorClient({ page }) {
               initialSlug={pageMeta.slug}
               onRenamed={handleRenamed}
             />
+            <button
+              onClick={() => setSeoOpen(true)}
+              className="text-sm text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md px-3 py-1.5"
+            >
+              SEO
+            </button>
             {page.draftData && status === "published" && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
                 Draft changes pending
@@ -131,6 +144,16 @@ export default function PuckEditorClient({ page }) {
           />
         </div>
       </div>
+
+      <SeoPanel
+        pageId={page.id}
+        open={seoOpen}
+        onClose={() => setSeoOpen(false)}
+        initialMetaTitle={seoMeta.metaTitle}
+        initialMetaDescription={seoMeta.metaDescription}
+        initialMetaKeywords={seoMeta.metaKeywords}
+        onSaved={(updated) => setSeoMeta(updated)}
+      />
     </ThemeColorsProvider>
   );
 }

@@ -36,7 +36,7 @@ const navItems = [
   },
   {
     label: "Pages",
-    icon: "ti ti-calendar-event",
+    icon: "ti ti-files",
     href: "/admin/pages",
   },
 
@@ -67,7 +67,7 @@ const navItems = [
   },
   {
     label: "Form Submissions",
-    icon: "ti ti-calendar-stats",
+    icon: "ti ti-file-description",
     href: "/admin/form-submissions",
   },
   {
@@ -76,18 +76,13 @@ const navItems = [
     href: "/admin/blog",
   },
   {
-    label: "Contact Submissions",
-    icon: "ti ti-mail",
-    href: "/admin/contacts",
-  },
-  {
     label: "Site Theme",
-    icon: "ti ti-mail",
+    icon: "ti ti-palette",
     href: "/admin/site-theme",
   },
   {
     label: "Subscriber",
-    icon: "ti ti-mail",
+    icon: "ti ti-user-plus",
     href: "/admin/newsletter",
   },
 ];

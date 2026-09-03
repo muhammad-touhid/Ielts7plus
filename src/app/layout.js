@@ -3,10 +3,6 @@ import "./globals.css";
 export const metadata = {
   title: "IELTS7+",
   description: "Get 7+ with IELTS7+",
-
-  verification: {
-    google: "qJU4elBOc-yFtgKqGT70GDxFp1R8HraCiwcTbEOJn2Q",
-  },
 };
 
 export default function RootLayout({ children }) {

@@ -20,6 +20,7 @@ model Admin {
   facebookUrl    String?
   showOnWebsite  Boolean  @default(true)
   createdAt      DateTime @default(now())
+  pages          Page[]
 }
 model Course {
   id               String   @id @default(cuid())
@@ -221,14 +222,19 @@ model VerificationToken {
 
 
 model Page {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  data      Json     // the LIVE PUBLISHED content — what /p/[slug] renders
-  draftData Json?    // unpublished edits, if any. Null once merged into `data` on publish.
-  status    String   @default("draft") // draft | published
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  data        Json
+  draftData   Json?
+  status      String   @default("draft")
+  createdById String?
+  createdBy   Admin?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
 }
 
 model SiteTheme {

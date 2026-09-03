@@ -3,6 +3,37 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ContactForm from "@/components/shared/ContactForm";
 
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const post = await prisma.blogPost.findUnique({
+    where: { slug, published: true },
+  });
+
+  if (!post) {
+    return { title: "Post Not Found" };
+  }
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+    keywords: post.category ? [post.category] : undefined,
+    authors: post.author ? [{ name: post.author }] : undefined,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      images: post.image ? [{ url: post.image }] : undefined,
+      publishedTime: post.createdAt?.toISOString?.(),
+    },
+    twitter: {
+      card: post.image ? "summary_large_image" : "summary",
+      title: post.title,
+      description: post.excerpt,
+      images: post.image ? [post.image] : undefined,
+    },
+  };
+}
+
 export default async function BlogPostPage({ params }) {
   const { slug } = await params;
   const post = await prisma.blogPost.findUnique({

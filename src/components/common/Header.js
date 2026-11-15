@@ -1,411 +1,324 @@
-"use client";
+import { genId } from "../genId";
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
-import SignInModal from "@/components/common/SignInModal";
+// Starting point for the "site-header" Page (see reservedSlugs.js /
+// getPublishedPage.js) — logo (links home) + horizontal Menu with
+// dropdowns matching the real Header.jsx's nav structure + a Sign In /
+// Dashboard auth button.
+//
+// KNOWN GAPS vs the real Header.jsx (accepted when choosing full
+// replacement over keeping the real Header):
+//   - No scroll-triggered background/color change (Section has no
+//     scroll-aware behavior).
+//   - Logo sizing is approximate — ImageBlock's width field is
+//     percentage-only, not fixed px, same limitation flagged for the
+//     CTA template's avatar row. The logo slot is a fixed 5rem wide
+//     (80px, same as the old Header.jsx logo) and the image fills it.
+//   - 3-equal column split (logo | menu | auth button) is a rough
+//     approximation of the real header's logo-left/nav-center/cta-right
+//     layout, not a pixel match.
+//
+// MOBILE: columnsMobile is "row", so the three columns stay side by
+// side on phones (logo | hamburger | profile) instead of stacking.
+export function headerTemplate() {
+  const sectionId = genId("section");
+  const logoSectionId = genId("section");
+  const menuSectionId = genId("section");
+  const buttonSectionId = genId("section");
 
-const navItems = [
-  {
-    label: "Courses",
-    dropdown: [
-      { label: "All Courses", desc: "", href: "/courses" },
-      { label: "Batch Schedule", desc: "", href: "/batch-schedule" },
-      { label: "IELTS", desc: "", href: "/courses/ielts-preparation" },
-      { label: "Spoken English", desc: "", href: "/courses/spoken-english" },
-      { label: "Advance Writing", desc: "", href: "/courses/advanced-writing" },
+  // Nested-Section-per-slot helper — same pattern as heroTemplate's
+  // inner content Section and ctaTemplate's button-row Section. Each
+  // slot gets its OWN contentWidth (resizable) and contentAlign
+  // (horizontal position), independent of the other slots — this is
+  // what actually gives you per-slot alignment control, rather than
+  // relying on each widget's own blockAlign inside a rigid equal-width
+  // grid column.
+  function slotSection(slotId, align, width) {
+    return {
+      type: "Section",
+      props: {
+        id: slotId,
+        columns: "1",
+        columnGap: "0px",
+        columnAlign: "center", // vertical centering within the slot
+        bgType: "color",
+        bgColor: "transparent",
+        bgImage: "",
+        overlayType: "none",
+        overlayColor: "#000000",
+        overlayColorFrom: "#1e3a8a",
+        overlayColorTo: "#1d4ed8",
+        overlayDirection: "to right",
+        overlayOpacity: "0",
+        minHeight: "auto",
+        verticalAlign: "center",
+        // MUST be narrower than the slot's actual column width for
+        // contentAlign's left/center/right margin trick to have any
+        // visible effect — "none" (no constraint) makes the box fill
+        // 100% of the column, leaving zero free space to shift within,
+        // so contentAlign silently does nothing regardless of value.
+        // Resize freely in the editor — just don't set it back to "none".
+        contentWidth: { desktop: width },
+        contentAlign: align, // "left" | "center" | "right"
+        stickyMode: "static",
+        padding: {
+          top: { desktop: "0" },
+          right: { desktop: "0" },
+          bottom: { desktop: "0" },
+          left: { desktop: "0" },
+          linked: false,
+          unit: "px",
+        },
+        margin: {
+          top: { desktop: "0" },
+          right: { desktop: "0" },
+          bottom: { desktop: "0" },
+          left: { desktop: "0" },
+          linked: false,
+          unit: "px",
+        },
+        borderWidth: "0px",
+        borderStyle: "none",
+        borderColor: "transparent",
+        borderRadius: {
+          topLeft: { desktop: "0px" },
+          topRight: { desktop: "0px" },
+          bottomRight: { desktop: "0px" },
+          bottomLeft: { desktop: "0px" },
+          linked: true,
+        },
+      },
+    };
+  }
+
+  return {
+    content: [
       {
-        label: "Grammar & Writing",
-        desc: "",
-        href: "/courses/grammar-writing",
+        type: "Section",
+        props: {
+          id: sectionId,
+          columns: "3-equal",
+          columnsMobile: "row", // keep logo | menu | profile on one row on phones
+          columnGap: "8px",
+          columnAlign: "center",
+          bgType: "color",
+          bgColor: "transparent", // transparent at top — hero shows through
+          bgImage: "",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "center",
+          contentWidth: { desktop: "80rem" },
+          contentAlign: "center",
+          // "fixed", not "sticky" — sticky stays in normal document
+          // flow until you scroll past it, which pushes Hero down
+          // below it instead of the header floating transparently on
+          // top of Hero from the first pixel. Fixed removes the header
+          // from flow entirely so Hero starts at the true top of the
+          // page. Tradeoff: any OTHER page's content that immediately
+          // follows the header and does NOT want to be covered by it
+          // will need manual top padding added in the editor — Hero
+          // wants the overlap, most other first-sections won't.
+          stickyMode: "fixed",
+          scrollBgColor: "#ffffff",
+          scrollThreshold: 10,
+          padding: {
+            top: { desktop: "16" },
+            right: { desktop: "24", mobile: "12" },
+            bottom: { desktop: "16" },
+            left: { desktop: "24", mobile: "12" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
       },
     ],
-  },
-  {
-    label: "Mock Test",
-    dropdown: [
-      { label: "Mock Test", desc: "", href: "/mock-test" },
-      { label: "IELTS Calculator", desc: "", href: "/band-calculator" },
-    ],
-  },
-  {
-    label: "About Us",
-    dropdown: [
-      { label: "About Us", desc: "", href: "/about" },
-      { label: "Success Stories", desc: "", href: "/success-stories" },
-      { label: "Guides", desc: "", href: "/guides" },
-      { label: "FAQ", desc: "", href: "/faq" },
-    ],
-  },
-  { label: "Events", href: "/events" },
-  { label: "Blog", href: "/blog" },
-  { label: "Contact", href: "/contact" },
-];
+    zones: {
+      [`${sectionId}:col-0`]: [slotSection(logoSectionId, "left", "5rem")],
+      [`${sectionId}:col-1`]: [slotSection(menuSectionId, "center", "40rem")],
+      [`${sectionId}:col-2`]: [slotSection(buttonSectionId, "right", "24rem")],
 
-export default function Header() {
-  const { data: session } = useSession();
-  const [scrolled, setScrolled] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [openMobileSub, setOpenMobileSub] = useState(null);
-  const [showSignIn, setShowSignIn] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const toggleMobileSub = (label) => {
-    setOpenMobileSub(openMobileSub === label ? null : label);
+      [`${logoSectionId}:col-0`]: [
+        {
+          type: "ImageBlock",
+          props: {
+            id: genId("image"),
+            src: "/images/IELTS7.jpeg",
+            alt: "IELTS7+ logo",
+            href: "/",
+            width: "100%",
+            height: "auto",
+            fit: "object-cover",
+            blockAlign: { desktop: "left" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "8px" },
+              topRight: { desktop: "8px" },
+              bottomRight: { desktop: "8px" },
+              bottomLeft: { desktop: "8px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: true,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${menuSectionId}:col-0`]: [
+        {
+          type: "Menu",
+          props: {
+            id: genId("menu"),
+            items: [
+              {
+                label: "Courses",
+                href: "/courses",
+                children: [
+                  { label: "All Courses", href: "/courses" },
+                  { label: "Batch Schedule", href: "/batch-schedule" },
+                  { label: "IELTS", href: "/courses/ielts-preparation" },
+                  {
+                    label: "Spoken English",
+                    href: "/courses/spoken-english",
+                  },
+                  {
+                    label: "Advanced Writing",
+                    href: "/courses/advanced-writing",
+                  },
+                  {
+                    label: "Grammar & Writing",
+                    href: "/courses/grammar-writing",
+                  },
+                ],
+              },
+              {
+                label: "Mock Test",
+                href: "/mock-test",
+                children: [
+                  { label: "Mock Test", href: "/mock-test" },
+                  { label: "IELTS Calculator", href: "/band-calculator" },
+                ],
+              },
+              {
+                label: "About Us",
+                href: "/about",
+                children: [
+                  { label: "About Us", href: "/about" },
+                  { label: "Success Stories", href: "/success-stories" },
+                  { label: "Guides", href: "/guides" },
+                  { label: "FAQ", href: "/faq" },
+                ],
+              },
+              { label: "Events", href: "/events", children: [] },
+              { label: "Blog", href: "/blog", children: [] },
+              { label: "Contact", href: "/contact", children: [] },
+            ],
+            orientation: "horizontal",
+            textColor: "#374151",
+            hoverColor: "#2563eb",
+            fontSize: { desktop: "0.9375rem" },
+            gap: "18px",
+            blockAlign: { desktop: "center" },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+          },
+        },
+      ],
+      [`${buttonSectionId}:col-0`]: [
+        {
+          type: "ButtonBlock",
+          props: {
+            id: genId("button"),
+            isAuthButton: true,
+            text: "Sign In",
+            href: "",
+            variant: "filled",
+            font: { type: "theme", token: "button" },
+            bgColor: "#2563eb",
+            bgOpacity: "100",
+            textColor: "#ffffff",
+            weight: "font-bold",
+            textCase: "none",
+            icon: "ti-login",
+            iconPosition: "left",
+            width: "inline-block",
+            size: { desktop: "0.875rem" },
+            align: { desktop: "right" },
+            borderWidth: "0px",
+            borderStyle: "none",
+            borderColor: "transparent",
+            borderRadius: {
+              topLeft: { desktop: "8px" },
+              topRight: { desktop: "8px" },
+              bottomRight: { desktop: "8px" },
+              bottomLeft: { desktop: "8px" },
+              linked: true,
+            },
+            padding: {
+              top: { desktop: "10" },
+              right: { desktop: "18" },
+              bottom: { desktop: "10" },
+              left: { desktop: "18" },
+              linked: false,
+              unit: "px",
+            },
+            margin: {
+              top: { desktop: "0" },
+              right: { desktop: "0" },
+              bottom: { desktop: "0" },
+              left: { desktop: "0" },
+              linked: false,
+              unit: "px",
+            },
+            dashboardLabel: "Dashboard",
+            signOutLabel: "Sign Out",
+            avatarColor: "#2563eb",
+            nameColor: "#1e293b",
+          },
+        },
+      ],
+    },
   };
-
-  const role = session?.user?.role;
-  const isLoggedIn = !!session;
-  const dashboardHref =
-    role === "admin" || role === "teacher" || role === "moderator"
-      ? "/admin"
-      : "/dashboard";
-
-  const handleSignOut = () => {
-    setShowUserMenu(false);
-    signOut({ callbackUrl: "/" });
-  };
-
-  return (
-    <>
-      <header
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white border-b border-gray-200"
-            : "bg-transparent border-b border-transparent"
-        }`}
-      >
-        <div className="mx-auto flex h-16 container items-center justify-between px-6">
-          {/* Logo */}
-          <Link href="/">
-            <Image
-              src="/images/IELTS7.jpeg"
-              alt="logo"
-              width={80}
-              height={0}
-              style={{ width: "auto", height: "auto" }}
-              className="rounded-xl"
-            />
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {navItems.map((item) =>
-              item.dropdown ? (
-                <div
-                  key={item.label}
-                  className="relative"
-                  onMouseEnter={() => setOpenDropdown(item.label)}
-                  onMouseLeave={() => setOpenDropdown(null)}
-                >
-                  <button
-                    className={`flex items-center gap-1 rounded-lg px-3 py-2 text-m transition-colors cursor-pointer ${
-                      scrolled
-                        ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                        : "text-white/90 hover:text-white"
-                    }`}
-                  >
-                    {item.label}
-                    <svg
-                      className={`h-4 w-4 transition-transform ${
-                        openDropdown === item.label ? "rotate-180" : ""
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  {openDropdown === item.label && (
-                    <div className="absolute left-0 top-full z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
-                      {item.dropdown.map((drop) => (
-                        <Link
-                          key={drop.label}
-                          href={drop.href}
-                          onClick={() => setOpenDropdown(null)}
-                          className="flex items-center gap-3 rounded-lg p-2 hover:bg-gray-50"
-                        >
-                          <div>
-                            <p className="text-m font-medium text-gray-900">
-                              {drop.label}
-                            </p>
-                            {drop.desc && (
-                              <p className="text-xs text-gray-500">
-                                {drop.desc}
-                              </p>
-                            )}
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`rounded-lg px-3 py-2 text-m transition-colors ${
-                    scrolled
-                      ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      : "text-white/90 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ),
-            )}
-          </nav>
-
-          {/* CTA + Hamburger */}
-          <div className="flex items-center gap-3">
-            {isLoggedIn ? (
-              /* User avatar + dropdown */
-              <div className="relative hidden md:block">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-white/10 transition-all"
-                >
-                  {session.user?.image ? (
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-blue-200"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-extrabold">
-                      {session.user?.name?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="text-left hidden lg:block">
-                    <p
-                      className={`text-xs font-bold leading-none ${scrolled ? "text-slate-800" : "text-white"}`}
-                    >
-                      {session.user?.name?.split(" ")[0]}
-                    </p>
-                  </div>
-                  <i
-                    className={`ti ti-chevron-down text-xs ${scrolled ? "text-slate-400" : "text-white/60"}`}
-                  />
-                </button>
-
-                {showUserMenu && (
-                  <div
-                    className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl border border-slate-100 shadow-lg p-1.5 z-50"
-                    onMouseLeave={() => setShowUserMenu(false)}
-                  >
-                    <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                      <p className="text-xs font-bold text-slate-800 truncate">
-                        {session.user?.name}
-                      </p>
-                      <p className="text-xs text-slate-400 truncate">
-                        {session.user?.email}
-                      </p>
-                      <span
-                        className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full mt-1 capitalize
-                        ${
-                          role === "admin"
-                            ? "bg-blue-50 text-blue-600"
-                            : role === "teacher"
-                              ? "bg-emerald-50 text-emerald-600"
-                              : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {role}
-                      </span>
-                    </div>
-                    <Link
-                      href={dashboardHref}
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-all"
-                    >
-                      <i className="ti ti-layout-dashboard text-slate-400" />
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-rose-500 hover:bg-rose-50 transition-all"
-                    >
-                      <i className="ti ti-logout text-rose-400" />
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Sign In button */
-              <button
-                onClick={() => setShowSignIn(true)}
-                className="hidden md:flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-bold text-white transition-all duration-200"
-              >
-                <i className="ti ti-login text-sm" />
-                Sign In
-              </button>
-            )}
-
-            {/* Hamburger */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className={`rounded-lg border p-2 md:hidden ${
-                scrolled
-                  ? "border-gray-200 text-gray-600"
-                  : "border-white/30 text-white"
-              }`}
-            >
-              {mobileOpen ? (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileOpen && (
-          <div className="border-t border-gray-200 bg-white px-6 pb-4 md:hidden">
-            {navItems.map((item) =>
-              item.dropdown ? (
-                <div key={item.label}>
-                  <button
-                    onClick={() => toggleMobileSub(item.label)}
-                    className="flex w-full items-center justify-between border-b border-gray-100 py-3 text-m text-gray-600"
-                  >
-                    {item.label}
-                    <svg
-                      className={`h-4 w-4 transition-transform ${
-                        openMobileSub === item.label ? "rotate-180" : ""
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {openMobileSub === item.label && (
-                    <div className="pl-3 pb-2">
-                      {item.dropdown.map((drop) => (
-                        <Link
-                          key={drop.label}
-                          href={drop.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="block py-2 text-m text-gray-500 hover:text-gray-900"
-                        >
-                          {drop.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block border-b border-gray-100 py-3 text-m text-gray-600"
-                >
-                  {item.label}
-                </Link>
-              ),
-            )}
-
-            {/* Mobile auth */}
-            {isLoggedIn ? (
-              <div className="mt-4 flex flex-col gap-2">
-                <div className="flex items-center gap-3 py-2">
-                  {session.user?.image ? (
-                    <img
-                      src={session.user.image}
-                      className="w-9 h-9 rounded-full object-cover"
-                      alt=""
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-extrabold">
-                      {session.user?.name?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">
-                      {session.user?.name}
-                    </p>
-                    <p className="text-xs text-slate-400 capitalize">{role}</p>
-                  </div>
-                </div>
-                <Link
-                  href={dashboardHref}
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full text-center rounded-lg bg-blue-600 py-2.5 text-sm font-bold text-white"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full rounded-lg border border-rose-200 py-2.5 text-sm font-bold text-rose-500"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  setShowSignIn(true);
-                }}
-                className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-bold text-white"
-              >
-                Sign In
-              </button>
-            )}
-          </div>
-        )}
-      </header>
-
-      {/* Sign In Modal */}
-      {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
-    </>
-  );
 }

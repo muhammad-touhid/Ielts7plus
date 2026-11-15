@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { TEXT_ALIGN_PRESETS, TEXT_SIZE_PRESETS } from "../fields/flexibleSize";
 import { responsiveField } from "../fields/responsiveField";
@@ -24,6 +25,12 @@ import { useThemeColors } from "../theme/ThemeColorsContext";
 // nav is controlled entirely via the scoped <style> block's media
 // queries, never inline (inline style always beats a stylesheet rule
 // regardless of media query, which broke the mobile toggle previously).
+//
+// MOBILE PANEL: the opened mobile menu is a position:"fixed" overlay
+// anchored just below the nearest fixed/sticky ancestor (the header),
+// NOT an inline block inside the column. Rendering it inline made the
+// header column grow to the menu's full height and broke the header
+// layout. As an overlay it takes no space in the header at all.
 //
 // MULTI-LEVEL DROPDOWNS: Puck's field schema can't be infinitely
 // recursive (a field can't reference itself in a plain JS object
@@ -120,39 +127,176 @@ function Flyout({ items, position, onClose }) {
   );
 }
 
-// Recursive mobile renderer — always-expanded indented list (no
-// per-level click-to-expand accordion) since 3 levels deep stays
-// readable without one, and it keeps the mobile menu's state simple.
-function MobileItems({ items, depth, onNavigate }) {
+// ---- Mobile panel helpers -------------------------------------------
+
+function normPath(p) {
+  if (!p) return "";
+  const clean = p.split("?")[0].split("#")[0];
+  return clean.length > 1 ? clean.replace(/\/$/, "") : clean;
+}
+
+function isSamePath(href, pathname) {
+  if (!href || href === "#" || !pathname) return false;
+  return normPath(href) === normPath(pathname);
+}
+
+function hasActiveDescendant(children, pathname) {
+  return (children || []).some(
+    (c) =>
+      isSamePath(c.href, pathname) || hasActiveDescendant(c.children, pathname),
+  );
+}
+
+const ROW_STYLE = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  width: "100%",
+  padding: "12px 14px",
+  borderRadius: 10,
+  background: "transparent",
+  border: "none",
+  textAlign: "left",
+  textDecoration: "none",
+  cursor: "pointer",
+  WebkitTapHighlightColor: "transparent",
+  transition: "background-color 0.15s, color 0.15s",
+};
+
+// One row of the mobile panel. Items with children are a button that
+// expands/collapses an indented group (accordion); items without
+// children are plain links. The page you're on is highlighted, and the
+// group containing it starts expanded.
+function MobileItem({ item, depth, onNavigate, pathname, scopedClass }) {
+  const children = item.children || [];
+  const hasChildren = children.length > 0;
+  const selfActive = isSamePath(item.href, pathname);
+  const branchActive =
+    selfActive || (hasChildren && hasActiveDescendant(children, pathname));
+  const [open, setOpen] = useState(hasChildren && branchActive);
+
+  const subClass = depth > 0 ? ` ${scopedClass}-msub` : "";
+
+  // If the parent has its own real link and no child points at it,
+  // keep it reachable as an "Overview" row inside the group.
+  const showOverview =
+    hasChildren &&
+    item.href &&
+    item.href !== "#" &&
+    !children.some((c) => c.href === item.href);
+
+  if (!hasChildren) {
+    return (
+      <Link
+        href={item.href || "#"}
+        className={`${scopedClass}-mrow${subClass}${selfActive ? ` ${scopedClass}-mactive` : ""}`}
+        style={ROW_STYLE}
+        onClick={onNavigate}
+        aria-current={selfActive ? "page" : undefined}
+      >
+        {item.label}
+      </Link>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        className={`${scopedClass}-mrow${subClass}${branchActive ? ` ${scopedClass}-mbranch` : ""}`}
+        style={{ ...ROW_STYLE, color: "#374151" }}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>{item.label}</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          style={{
+            flexShrink: 0,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+          }}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            margin: "2px 0 6px 14px",
+            paddingLeft: 8,
+            borderLeft: "2px solid #e5e7eb",
+          }}
+        >
+          {showOverview && (
+            <Link
+              href={item.href}
+              className={`${scopedClass}-mrow ${scopedClass}-msub${isSamePath(item.href, pathname) ? ` ${scopedClass}-mactive` : ""}`}
+              style={ROW_STYLE}
+              onClick={onNavigate}
+            >
+              Overview
+            </Link>
+          )}
+          {children.map((child, i) => (
+            <MobileItem
+              key={i}
+              item={child}
+              depth={depth + 1}
+              onNavigate={onNavigate}
+              pathname={pathname}
+              scopedClass={scopedClass}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileItems({ items, onNavigate, pathname, scopedClass }) {
   return (
     <>
       {items.map((item, i) => (
-        <div key={i}>
-          <Link
-            href={item.href || "#"}
-            style={{
-              display: "block",
-              padding: "8px 0",
-              paddingLeft: depth * 14,
-              fontWeight: depth === 0 ? 500 : 400,
-              fontSize: depth === 0 ? "1em" : "0.9em",
-              opacity: depth === 0 ? 1 : 0.85,
-            }}
-            onClick={onNavigate}
-          >
-            {item.label}
-          </Link>
-          {item.children?.length > 0 && (
-            <MobileItems
-              items={item.children}
-              depth={depth + 1}
-              onNavigate={onNavigate}
-            />
-          )}
-        </div>
+        <MobileItem
+          key={i}
+          item={item}
+          depth={0}
+          onNavigate={onNavigate}
+          pathname={pathname}
+          scopedClass={scopedClass}
+        />
       ))}
     </>
   );
+}
+
+// Where the mobile panel should start (viewport px from the top).
+// If the menu lives in a fixed/sticky header, anchor right under that
+// whole header; otherwise fall back to just under the toggle button.
+function getPanelTop(toggleEl) {
+  let el = toggleEl.parentElement;
+  while (el && el !== document.body) {
+    const pos = window.getComputedStyle(el).position;
+    if (pos === "fixed" || pos === "sticky") {
+      return el.getBoundingClientRect().bottom + 4;
+    }
+    el = el.parentElement;
+  }
+  return toggleEl.getBoundingClientRect().bottom + 12;
 }
 
 export const Menu = {
@@ -194,6 +338,14 @@ export const Menu = {
       options: [
         { label: "Horizontal (nav bar)", value: "horizontal" },
         { label: "Vertical (stacked list)", value: "vertical" },
+      ],
+    },
+    mobileMode: {
+      type: "radio",
+      label: "On Mobile",
+      options: [
+        { label: "Hamburger icon (opens a panel)", value: "toggle" },
+        { label: "Show items directly (good for footers)", value: "inline" },
       ],
     },
     textColor: colorField("Text Color", [
@@ -239,6 +391,7 @@ export const Menu = {
       { label: "Contact", href: "/contact", children: [] },
     ],
     orientation: "horizontal",
+    mobileMode: "toggle",
     textColor: "#374151",
     hoverColor: "#2563eb",
     fontSize: { desktop: "0.9375rem" },
@@ -257,6 +410,7 @@ export const Menu = {
     id,
     items,
     orientation,
+    mobileMode = "toggle",
     textColor,
     hoverColor,
     fontSize,
@@ -265,7 +419,9 @@ export const Menu = {
     margin,
   }) {
     const { themeColors } = useThemeColors();
+    const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileTop, setMobileTop] = useState(0);
     const [openDropdown, setOpenDropdown] = useState(null);
     const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
@@ -286,7 +442,13 @@ export const Menu = {
     const resolvedHover = isInherit(hoverColor)
       ? "var(--pb-scroll-hover-color, #2563eb)"
       : resolveColor(hoverColor, themeColors);
+    // The mobile panel always has a white background, so its links must
+    // be dark regardless of the header's (possibly white) text color.
+    const panelHover = isInherit(hoverColor) ? "#2563eb" : resolvedHover;
     const safeItems = Array.isArray(items) ? items : [];
+    // "inline": never collapse into a hamburger — the items stay visible
+    // (and wrap) on phones. Used for footer menus.
+    const isInline = mobileMode === "inline";
 
     const scopedCss = `
       .${scopedClass} a { color: ${resolvedText}; transition: color 0.2s; text-decoration: none; }
@@ -294,12 +456,27 @@ export const Menu = {
       .${scopedClass}-desktop { display: flex; }
       .${scopedClass}-toggle { display: none; }
       .${scopedClass}-mobile { display: flex; }
-      @media (max-width: 767px) {
+      .${scopedClass}-backdrop { display: block; }
+      .${scopedClass} .${scopedClass}-mobile a { color: #374151; }
+      .${scopedClass} .${scopedClass}-mobile a:hover { color: ${panelHover}; }
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-mrow { font-weight: 500; }
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-msub { font-weight: 400; font-size: 0.92em; }
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-mrow:hover,
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-mrow:active { background-color: #f3f4f6; color: ${panelHover}; }
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-mbranch { color: ${panelHover}; font-weight: 600; }
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-mactive { background-color: #eff6ff; color: ${panelHover}; font-weight: 600; }
+      .${scopedClass} .${scopedClass}-mobile .${scopedClass}-mactive:hover { background-color: #dbeafe; }
+      ${
+        isInline
+          ? ""
+          : `@media (max-width: 767px) {
         .${scopedClass}-desktop { display: none; }
         .${scopedClass}-toggle { display: inline-flex; }
+      }`
       }
       @media (min-width: 768px) {
-        .${scopedClass}-mobile { display: none; }
+        .${scopedClass}-mobile,
+        .${scopedClass}-backdrop { display: none; }
       }
     `;
 
@@ -311,6 +488,11 @@ export const Menu = {
       const rect = e.currentTarget.getBoundingClientRect();
       setDropdownPos({ top: rect.bottom, left: rect.left });
       setOpenDropdown(i);
+    }
+
+    function handleToggleClick(e) {
+      if (!mobileOpen) setMobileTop(getPanelTop(e.currentTarget));
+      setMobileOpen((v) => !v);
     }
 
     const activeItem = openDropdown !== null ? safeItems[openDropdown] : null;
@@ -336,11 +518,12 @@ export const Menu = {
               className={`${scopedClass}-desktop`}
               style={{
                 flexDirection: orientation === "vertical" ? "column" : "row",
-                flexWrap: "nowrap",
+                flexWrap: isInline ? "wrap" : "nowrap",
                 alignItems:
                   orientation === "vertical" ? "flex-start" : "center",
                 gap,
-                overflowX: orientation === "vertical" ? "visible" : "auto",
+                overflowX:
+                  orientation === "vertical" || isInline ? "visible" : "auto",
               }}
             >
               {safeItems.map((item, i) => {
@@ -405,12 +588,13 @@ export const Menu = {
             <button
               type="button"
               className={`${scopedClass}-toggle`}
-              onClick={() => setMobileOpen((v) => !v)}
+              onClick={handleToggleClick}
               style={{
                 alignItems: "center",
                 justifyContent: "center",
                 width: 36,
                 height: 36,
+                flexShrink: 0,
                 border: `1px solid ${resolvedText}`,
                 borderRadius: 8,
                 color: resolvedText,
@@ -418,6 +602,7 @@ export const Menu = {
                 cursor: "pointer",
               }}
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
             >
               <svg
                 width="18"
@@ -444,23 +629,44 @@ export const Menu = {
               </svg>
             </button>
 
-            {/* Mobile menu — recursive, always-expanded, indented per
-                depth level. */}
+            {/* Mobile menu — an overlay panel under the header, so it
+                takes NO space in the header itself. Recursive,
+                always-expanded, indented per depth level. Tapping the
+                transparent backdrop closes it. */}
             {mobileOpen && (
-              <nav
-                className={`${scopedClass}-mobile`}
-                style={{
-                  flexDirection: "column",
-                  gap: "4px",
-                  marginTop: 12,
-                }}
-              >
-                <MobileItems
-                  items={safeItems}
-                  depth={0}
-                  onNavigate={() => setMobileOpen(false)}
+              <>
+                <div
+                  className={`${scopedClass}-backdrop`}
+                  onClick={() => setMobileOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 9998 }}
                 />
-              </nav>
+                <nav
+                  className={`${scopedClass}-mobile`}
+                  style={{
+                    position: "fixed",
+                    top: mobileTop,
+                    left: 12,
+                    right: 12,
+                    flexDirection: "column",
+                    gap: "2px",
+                    padding: 8,
+                    maxHeight: `calc(100vh - ${mobileTop + 16}px)`,
+                    overflowY: "auto",
+                    background: "#ffffff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 12,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    zIndex: 9999,
+                  }}
+                >
+                  <MobileItems
+                    items={safeItems}
+                    onNavigate={() => setMobileOpen(false)}
+                    pathname={pathname}
+                    scopedClass={scopedClass}
+                  />
+                </nav>
+              </>
             )}
           </div>
         </div>

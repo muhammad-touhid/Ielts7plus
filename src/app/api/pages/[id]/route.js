@@ -5,6 +5,12 @@ import {
   RESERVED_SLUGS,
   PROTECTED_SLUGS,
 } from "@/lib/pageBuilder/reservedSlugs";
+import { revalidatePath } from "next/cache";
+
+const SYNCED_PREFIXES = [
+  { prefix: "events/", model: "event" },
+  { prefix: "courses/", model: "course" },
+];
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +111,60 @@ export async function PUT(req, { params }) {
       updateData.metaDescription = metaDescription || null;
     if (metaKeywords !== undefined)
       updateData.metaKeywords = metaKeywords || null;
+
+    // If this is an event page and the slug is changing, the Event row
+    // must follow. Event.slug is stored WITHOUT the "events/" prefix.
+    const slugChanged =
+      updateData.slug && updateData.slug !== existingPage.slug;
+    const synced = SYNCED_PREFIXES.find(({ prefix }) =>
+      existingPage.slug.startsWith(prefix),
+    );
+
+    if (slugChanged && synced) {
+      const { prefix, model } = synced;
+      const oldRecordSlug = existingPage.slug.slice(prefix.length);
+      const linked = await prisma[model].findUnique({
+        where: { slug: oldRecordSlug },
+      });
+
+      if (linked) {
+        // Card links are /<prefix><record.slug>, so the page must stay
+        // under the prefix or the link will 404.
+        if (!updateData.slug.startsWith(prefix)) {
+          return NextResponse.json(
+            {
+              error: `This page belongs to a ${model}, so its slug must stay under "${prefix}" (e.g. ${prefix}my-${model}).`,
+            },
+            { status: 409 },
+          );
+        }
+
+        const newRecordSlug = updateData.slug.slice(prefix.length);
+
+        const clash = await prisma[model].findUnique({
+          where: { slug: newRecordSlug },
+        });
+        if (clash && clash.id !== linked.id) {
+          return NextResponse.json(
+            { error: `A ${model} with this slug already exists` },
+            { status: 409 },
+          );
+        }
+
+        const [page] = await prisma.$transaction([
+          prisma.page.update({ where: { id }, data: updateData }),
+          prisma[model].update({
+            where: { id: linked.id },
+            data: { slug: newRecordSlug },
+          }),
+        ]);
+
+        revalidatePath(`/${prefix.slice(0, -1)}`);
+        revalidatePath(`/${existingPage.slug}`);
+        revalidatePath(`/${updateData.slug}`);
+        return NextResponse.json(page);
+      }
+    }
 
     const page = await prisma.page.update({ where: { id }, data: updateData });
     return NextResponse.json(page);

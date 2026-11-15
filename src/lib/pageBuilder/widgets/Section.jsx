@@ -63,6 +63,18 @@ const COLUMN_LAYOUTS = {
   },
 };
 
+// Grid tracks for each preset, used when "Keep side by side" is chosen
+// for mobile. Presets normally rely on Tailwind classes that collapse to
+// 1 column on small screens; this lets the same layouts stay in a row.
+const PRESET_TRACKS = {
+  1: "1fr",
+  "2-equal": "1fr 1fr",
+  "2-narrow-wide": "3fr 7fr",
+  "2-wide-narrow": "7fr 3fr",
+  "3-equal": "1fr 1fr 1fr",
+  "4-equal": "1fr 1fr 1fr 1fr",
+};
+
 const GRADIENT_DIRECTIONS = {
   "to right": "to right",
   "to bottom right": "to bottom right",
@@ -258,6 +270,19 @@ function columnLayoutField() {
 function baseFields() {
   return {
     columns: columnLayoutField(),
+    columnsMobile: {
+      type: "radio",
+      label: "Columns on Mobile",
+      options: [
+        { label: "Stack (default)", value: "stack" },
+        { label: "Keep side by side", value: "row" },
+      ],
+    },
+    columnsMobileTracks: {
+      type: "text",
+      label:
+        'Mobile Column Sizes (optional, only with "Keep side by side" — e.g. 1fr auto auto)',
+    },
     columnGap: flexibleSizeField("Column Gap", GAP_PRESETS),
     columnAlign: {
       type: "select",
@@ -506,6 +531,8 @@ export const Section = {
   defaultProps: {
     id: "section-default",
     columns: "1",
+    columnsMobile: "stack",
+    columnsMobileTracks: "",
     columnGap: "32px",
     columnAlign: "stretch",
     contentDirection: "column",
@@ -558,6 +585,8 @@ export const Section = {
   render: function SectionRender({
     id,
     columns,
+    columnsMobile = "stack",
+    columnsMobileTracks = "",
     columnGap,
     columnAlign,
     contentDirection = "column",
@@ -626,6 +655,17 @@ export const Section = {
       ? { className: "", count: countCustomColumns(columnsNormalized.value) }
       : COLUMN_LAYOUTS[columnsNormalized.value] || COLUMN_LAYOUTS["1"];
     const count = layout.count;
+
+    // "Keep side by side" on mobile: instead of relying on the preset's
+    // Tailwind classes (which collapse to 1 column on small screens),
+    // drive grid-template-columns directly so the same tracks apply at
+    // every width. Custom layouts always use this path already.
+    const keepRow = columnsMobile === "row";
+    const useTrackStyle = isCustomColumns || keepRow;
+    const trackTemplate = isCustomColumns
+      ? columnsNormalized.value || "1fr"
+      : PRESET_TRACKS[columnsNormalized.value] || "1fr";
+
     const scopedClass = `pb-section-${id}`;
 
     const hoverCss = buildHoverCss(
@@ -811,7 +851,7 @@ export const Section = {
             entries={spacingBoxToEntries("padding", padding)}
           />
           <div
-            className={`relative grid w-full ${layout.className} ${scopedClass}-content`}
+            className={`relative grid w-full ${useTrackStyle ? "" : layout.className} ${scopedClass}-content`}
             style={{
               gap: columnGap,
               alignItems: COLUMN_ALIGN_CSS[columnAlign] || "stretch",
@@ -822,13 +862,16 @@ export const Section = {
               className={`${scopedClass}-content`}
               entries={[
                 { property: "max-width", value: contentWidth },
-                ...(isCustomColumns
+                ...(useTrackStyle
                   ? [
                       {
                         property: "grid-template-columns",
                         value: {
-                          desktop: columnsNormalized.value || "1fr",
-                          mobile: "1fr",
+                          desktop: trackTemplate,
+                          mobile: keepRow
+                            ? (columnsMobileTracks || "").trim() ||
+                              trackTemplate
+                            : "1fr",
                         },
                       },
                     ]

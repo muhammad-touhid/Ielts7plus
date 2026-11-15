@@ -44,7 +44,8 @@ import { useThemeColors } from "../theme/ThemeColorsContext";
 //     entirely to an avatar+name trigger with a Dashboard/Sign Out
 //     dropdown — structurally different from a text button, so that
 //     state gets its own small extra fields (avatarColor, nameColor)
-//     via resolveFields.
+//     via resolveFields. On phones (below 768px) the name is hidden
+//     and only the avatar shows.
 //
 // Field panel switching uses Puck's resolveFields API (v0.15+,
 // confirmed against Puck's own docs/changelog) — href is hidden and
@@ -453,7 +454,13 @@ export const ButtonBlock = {
 
     function handleUserButtonClick(e) {
       const rect = e.currentTarget.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 8, left: rect.right - 208 });
+      // Dropdown is 208px wide, right-aligned to the avatar button.
+      // Clamp so it never runs off either edge of a narrow phone screen.
+      const left = Math.max(
+        8,
+        Math.min(rect.right - 208, window.innerWidth - 216),
+      );
+      setMenuPos({ top: rect.bottom + 8, left });
       setShowUserMenu((v) => !v);
     }
 
@@ -472,6 +479,8 @@ export const ButtonBlock = {
           className={scopedClass}
           entries={spacingBoxToEntries("margin", margin)}
         />
+        {/* Phones: avatar only, hide the name. */}
+        <style>{`@media (max-width: 767px) { .${scopedClass}-name { display: none; } }`}</style>
         <div className={wrapClass}>
           <div className={scopedClass}>
             <button
@@ -519,6 +528,7 @@ export const ButtonBlock = {
                 </div>
               )}
               <span
+                className={`${scopedClass}-name`}
                 style={{
                   color: resolvedName,
                   fontWeight: 700,

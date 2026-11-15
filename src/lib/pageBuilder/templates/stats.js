@@ -1,0 +1,252 @@
+import { genId } from "../genId";
+
+// Built directly from the real, existing Stats component — gradient
+// background (left-to-right, not the generic diagonal), grid pattern +
+// decorative blobs, and 4 stat cards each with a circular icon badge,
+// a big number, a bold label, and supporting text.
+export function statsTemplate() {
+  const sectionId = genId("section");
+  const items = [
+    {
+      icon: "ti-rosette-discount-check",
+      number: "100%",
+      heading: "Guaranteed Band Improvement",
+      para: "Personalized strategies to boost your IELTS score.",
+    },
+    {
+      icon: "ti-certificate-2",
+      number: "100%",
+      heading: "Certified IELTS Trainers",
+      para: "Experienced, British Council-trained instructors.",
+    },
+    {
+      icon: "ti-calendar-event",
+      number: "24",
+      heading: "Flexible Class Schedules",
+      para: "Morning, evening, and weekend batches to suit your lifestyle.",
+    },
+    {
+      icon: "ti-clipboard-text",
+      number: "100%",
+      heading: "Mock Tests & Real Exam Simulation",
+      para: "Regular practice with full-length tests under exam conditions.",
+    },
+  ];
+
+  const zones = {};
+  items.forEach((item, i) => {
+    zones[`${sectionId}:col-${i}`] = [
+      {
+        type: "IconBlock",
+        props: {
+          id: genId("icon"),
+          icon: item.icon,
+          size: "text-3xl",
+          color: "#ffffff",
+          containerStyle: "circle-translucent",
+          containerSize: "medium",
+          blockAlign: { desktop: "center" },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "20" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+        },
+      },
+      {
+        type: "Heading",
+        props: {
+          id: genId("heading"),
+          text: item.number,
+          tag: "h3",
+          size: { desktop: "2.25rem" },
+          align: { desktop: "center" },
+          maxWidth: { desktop: "none" },
+          blockAlign: { desktop: "center" },
+          color: "#ffffff",
+          weight: "font-extrabold",
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "8" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+        },
+      },
+      {
+        type: "Heading",
+        props: {
+          id: genId("heading"),
+          text: item.heading,
+          tag: "h4",
+          size: { desktop: "1rem" },
+          align: { desktop: "center" },
+          maxWidth: { desktop: "none" },
+          blockAlign: { desktop: "center" },
+          color: "#ffffff",
+          weight: "font-bold",
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "4" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+        },
+      },
+      {
+        type: "Text",
+        props: {
+          id: genId("text"),
+          text: item.para,
+          size: { desktop: "0.875rem" },
+          align: { desktop: "center" },
+          maxWidth: { desktop: "none" },
+          blockAlign: { desktop: "center" },
+          color: "#dbeafe",
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+          padding: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: true,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+        },
+      },
+    ];
+  });
+
+  return {
+    content: [
+      {
+        type: "Section",
+        props: {
+          id: sectionId,
+          columns: "4-equal",
+          columnGap: "40px",
+          bgType: "gradient",
+          bgColor: "#ffffff",
+          bgImage: "",
+          bgGradientDirection: "to right",
+          decorative: "grid-blobs",
+          overlayType: "none",
+          overlayColor: "#000000",
+          overlayColorFrom: "#1e3a8a",
+          overlayColorTo: "#1d4ed8",
+          overlayDirection: "to right",
+          overlayOpacity: "0",
+          minHeight: "auto",
+          verticalAlign: "flex-start",
+          contentWidth: { desktop: "72rem" },
+          contentAlign: "center",
+          padding: {
+            top: { desktop: "64" },
+            right: { desktop: "20" },
+            bottom: { desktop: "64" },
+            left: { desktop: "20" },
+            linked: false,
+            unit: "px",
+          },
+          margin: {
+            top: { desktop: "0" },
+            right: { desktop: "0" },
+            bottom: { desktop: "0" },
+            left: { desktop: "0" },
+            linked: false,
+            unit: "px",
+          },
+          borderWidth: "0px",
+          borderStyle: "none",
+          borderColor: "transparent",
+          borderRadius: {
+            topLeft: { desktop: "0px" },
+            topRight: { desktop: "0px" },
+            bottomRight: { desktop: "0px" },
+            bottomLeft: { desktop: "0px" },
+            linked: true,
+          },
+        },
+      },
+    ],
+    zones,
+  };
+}

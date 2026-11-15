@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 // GET single course
 export async function GET(req, { params }) {
@@ -28,28 +29,69 @@ export async function PUT(req, { params }) {
     const { id } = await params;
     const body = await req.json();
 
-    const course = await prisma.course.update({
-      where: { id },
-      data: {
-        slug: body.slug,
-        name: body.name,
-        tagline: body.tagline,
-        description: body.description,
-        icon: body.icon,
-        coverImage: body.coverImage || null,
-        price: body.price,
-        salePrice: body.salePrice || null,
-        duration: body.duration,
-        batchSize: body.batchSize,
-        classes: body.classes,
-        level: body.level,
-        badge: body.badge || null,
-        features: body.features,
-        highlights: body.highlights,
-        whatYouWillLearn: body.whatYouWillLearn,
-        published: body.published ?? false,
-      },
-    });
+    const existing = await prisma.course.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+
+    const courseData = {
+      slug: body.slug,
+      name: body.name,
+      tagline: body.tagline,
+      description: body.description,
+      icon: body.icon,
+      coverImage: body.coverImage || null,
+      price: body.price,
+      salePrice: body.salePrice || null,
+      duration: body.duration,
+      batchSize: body.batchSize,
+      classes: body.classes,
+      level: body.level,
+      badge: body.badge || null,
+      features: body.features,
+      highlights: body.highlights,
+      whatYouWillLearn: body.whatYouWillLearn,
+      published: body.published ?? false,
+    };
+
+    const slugChanged =
+      body.slug && existing.slug && body.slug !== existing.slug;
+    const ops = [prisma.course.update({ where: { id }, data: courseData })];
+
+    if (slugChanged) {
+      const oldPageSlug = `courses/${existing.slug}`;
+      const newPageSlug = `courses/${body.slug}`;
+
+      const linkedPage = await prisma.page.findUnique({
+        where: { slug: oldPageSlug },
+      });
+
+      if (linkedPage) {
+        const clash = await prisma.page.findUnique({
+          where: { slug: newPageSlug },
+        });
+        if (clash && clash.id !== linkedPage.id) {
+          return NextResponse.json(
+            { error: "A page with this slug already exists" },
+            { status: 409 },
+          );
+        }
+        ops.push(
+          prisma.page.update({
+            where: { id: linkedPage.id },
+            data: { slug: newPageSlug },
+          }),
+        );
+      }
+    }
+
+    const [course] = await prisma.$transaction(ops);
+
+    if (slugChanged) {
+      revalidatePath("/courses");
+      revalidatePath(`/courses/${existing.slug}`);
+      revalidatePath(`/courses/${body.slug}`);
+    }
 
     return NextResponse.json(course);
   } catch (error) {
